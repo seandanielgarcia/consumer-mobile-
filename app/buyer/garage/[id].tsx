@@ -17,7 +17,12 @@ export default function BuyerGarage() {
   const convex = useConvex();
   // TODO(SEA-3 F): sign-in is undecided; the buyer is the dev user from EXPO_PUBLIC_DEV_USER_ID, same as the seller screens.
   const buyerId = process.env.EXPO_PUBLIC_DEV_USER_ID as Id<"users"> | undefined;
-  const garage = useQuery(api.buyer.garage, location ? { garageId, lat: location.lat, lng: location.lng, buyerId } : "skip");
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 30000) * 30000);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Math.floor(Date.now() / 30000) * 30000), 30000);
+    return () => clearInterval(timer);
+  }, []);
+  const garage = useQuery(api.buyer.garage, location ? { garageId, lat: location.lat, lng: location.lng, buyerId, now } : "skip");
   const [picked, setPicked] = useState<Id<"items">[]>(selected ? [selected as Id<"items">] : []);
   const [notice, setNotice] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
