@@ -1,45 +1,76 @@
 import { useConvex, useQuery } from "convex/react";
+import { ConvexError } from "convex/values";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { startCheckout } from "../../../src/buyer/checkout";
 import { formatPrice, itemLabel } from "../../../src/buyer/format";
 import { useBuyerLocation } from "../../../src/buyer/location";
+import { useCurrentUser } from "../../../src/lib/useCurrentUser";
 import { colors, fonts } from "../../../src/theme";
 
 export default function BuyerGarage() {
-  const { id, selected } = useLocalSearchParams<{ id: string; selected?: string }>();
+  const { id, selected, resume } = useLocalSearchParams<{ id: string; selected?: string; resume?: string }>();
   const garageId = id as Id<"garages">;
   const location = useBuyerLocation();
   const convex = useConvex();
-  // TODO(SEA-3 F): sign-in is undecided; the buyer is the dev user from EXPO_PUBLIC_DEV_USER_ID, same as the seller screens.
-  const buyerId = process.env.EXPO_PUBLIC_DEV_USER_ID as Id<"users"> | undefined;
+  const buyerId = useCurrentUser()?.userId;
   const [now, setNow] = useState(() => Math.floor(Date.now() / 30000) * 30000);
   useEffect(() => {
     const timer = setInterval(() => setNow(Math.floor(Date.now() / 30000) * 30000), 30000);
     return () => clearInterval(timer);
   }, []);
   const garage = useQuery(api.buyer.garage, location ? { garageId, lat: location.lat, lng: location.lng, buyerId, now } : "skip");
-  const [picked, setPicked] = useState<Id<"items">[]>(selected ? [selected as Id<"items">] : []);
+  const [picked, setPicked] = useState<Id<"items">[]>(() => (selected?.split(",").filter(Boolean) ?? []) as Id<"items">[]);
   const [notice, setNotice] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
   const titles = useRef(new Map<string, string>());
+  const resumed = useRef(false);
+  const checkoutInProgress = useRef(false);
   const { width } = useWindowDimensions();
   const cardWidth = (width - 40 - 14) / 2;
 
+  const removeUnavailable = useCallback((itemIds: Id<"items">[]) => {
+    setPicked((current) => current.filter((id) => !itemIds.includes(id)));
+    const names = itemIds.map((id) => titles.current.get(id) ?? "an item");
+    setNotice(`Someone just bought ${names.join(" and ")}. We took ${names.length === 1 ? "it" : "them"} out of your cart.`);
+  }, []);
+
+  const checkout = useCallback(async (userId: Id<"users">, itemIds: Id<"items">[]) => {
+    if (checkoutInProgress.current || itemIds.length === 0) return;
+    checkoutInProgress.current = true;
+    setNotice(null);
+    setBuying(true);
+    try {
+      const orderId = await startCheckout(convex, userId, garageId, itemIds);
+      router.replace({ pathname: "/buyer/paid", params: { orderId } });
+    } catch (error) {
+      if (error instanceof ConvexError && error.data?.code === "ITEM_UNAVAILABLE" && itemIds.includes(error.data.itemId)) {
+        removeUnavailable([error.data.itemId]);
+      } else {
+        setNotice(error instanceof Error ? error.message : "Checkout failed.");
+      }
+    } finally {
+      checkoutInProgress.current = false;
+      setBuying(false);
+    }
+  }, [convex, garageId, removeUnavailable]);
+
   useEffect(() => {
     if (!garage) return;
-    garage.items.forEach((i) => titles.current.set(i._id, i.title));
-    const live = new Set<string>(garage.items.map((i) => i._id));
-    const gone = picked.filter((p) => !live.has(p));
-    if (gone.length === 0) return;
-    setPicked(picked.filter((p) => live.has(p)));
-    const names = gone.map((g) => titles.current.get(g) ?? "An item");
-    setNotice(`${names.join(" and ")} just got picked up by someone else, so we took ${gone.length > 1 ? "them" : "it"} out of your picks.`);
-  }, [garage, picked]);
+    garage.items.forEach((item) => titles.current.set(item._id, item.title));
+    const live = new Set(garage.items.map((item) => item._id));
+    const unavailable = picked.filter((id) => !live.has(id));
+    if (resume === "1" && buyerId && !resumed.current) {
+      resumed.current = true;
+      router.setParams({ resume: "0" });
+      if (unavailable.length === 0) void checkout(buyerId, picked);
+    }
+    if (unavailable.length > 0) removeUnavailable(unavailable);
+  }, [garage, picked, resume, buyerId, checkout, removeUnavailable]);
 
   const pickedItems = garage?.items.filter((i) => picked.includes(i._id)) ?? [];
   const total = pickedItems.reduce((sum, i) => sum + i.priceCents, 0);
@@ -49,17 +80,16 @@ export default function BuyerGarage() {
     setPicked((p) => (p.includes(itemId) ? p.filter((x) => x !== itemId) : [...p, itemId]));
   };
 
-  const buy = async () => {
-    setBuying(true);
-    try {
-      if (!buyerId) throw new Error("Set EXPO_PUBLIC_DEV_USER_ID to check out.");
-      const orderId = await startCheckout(convex, buyerId, garageId, pickedItems.map((i) => i._id));
-      router.replace({ pathname: "/buyer/paid", params: { orderId } });
-    } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Checkout failed.");
-    } finally {
-      setBuying(false);
+  const buy = () => {
+    const itemIds = pickedItems.map((item) => item._id);
+    if (!buyerId) {
+      router.push({
+        pathname: "/signin",
+        params: { next: `/buyer/garage/${encodeURIComponent(garageId)}?selected=${encodeURIComponent(itemIds.join(","))}&resume=1` },
+      });
+      return;
     }
+    void checkout(buyerId, itemIds);
   };
 
   if (garage === null) {

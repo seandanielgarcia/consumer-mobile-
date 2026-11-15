@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "convex/react";
 import * as Linking from "expo-linking";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, type Href } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { api } from "../convex/_generated/api";
@@ -32,9 +32,15 @@ export default function SignIn() {
 
   useEffect(() => {
     if (!pending || !verified) return;
-    setCurrentUser({ userId: pending.userId }).then(() =>
-      next === "back" && router.canGoBack() ? router.back() : router.replace("/seller/price"),
-    );
+    void setCurrentUser({ userId: pending.userId }).then(() => {
+      if (next === "back" && router.canGoBack()) {
+        router.back();
+      } else if (typeof next === "string" && /^\/buyer\/garage\/[a-z0-9]+\?/.test(next)) {
+        router.replace(next as Href);
+      } else {
+        router.replace("/seller/price");
+      }
+    }).catch(() => setError("Couldn't save your sign-in. Try again."));
   }, [pending, verified, next]);
 
   const submit = async () => {
