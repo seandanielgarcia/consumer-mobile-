@@ -43,6 +43,7 @@ export const createOrderCheckout = action({
         initial_price: totalCents / 100,
         currency: "usd",
         force_create_new_plan: true,
+        product_id: process.env.WHOP_PRODUCT_ID,
       },
       metadata: { orderId },
       redirect_url: `${process.env.CONVEX_SITE_URL}/whop/return?orderId=${orderId}`,
