@@ -200,6 +200,9 @@ export const devCleanup = internalMutation({
     for (const g of dropGarages) await ctx.db.delete(g._id);
     for (const u of dropUsers) await ctx.db.delete(u._id);
     return report;
+  },
+});
+
 // Demo reset (scripts/reset-demo.sh). Seed yards go back to all-live with their orders removed, and throwaway
 // sign-in users (phones starting +1555999 or +15550199) plus the demo accounts (Sam and Maya B) are deleted with
 // their yards, items and orders. Orders are only ever touched inside a seed or throwaway yard.
