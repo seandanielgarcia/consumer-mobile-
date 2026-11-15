@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   InputAccessoryView,
   Keyboard,
+  Linking,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -63,30 +64,32 @@ const visibleFields = (d: Draft): Field[] =>
 
 const PRICE_ACCESSORY = "price-done";
 
-const DEFAULT_LOCATION = { neighborhood: "Mission", lat: 37.76, lng: -122.42 };
+const LOCATION_NEEDED = "Location is needed so buyers nearby can find your yard.";
+
+class LocationUnavailable extends Error {
+  constructor() {
+    super(LOCATION_NEEDED);
+  }
+}
 
 const withTimeout = <T,>(promise: Promise<T>, ms: number) =>
   Promise.race([promise, new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
 
+// No silent fallback: without permission or a fix we stop and tell the seller. Coordinates are rounded to
+// 0.01° before anything else sees them (AGENTS.md: no exact address, ever).
 async function approximateLocation() {
-  try {
-    const permission = await Location.requestForegroundPermissionsAsync();
-    if (!permission.granted) return DEFAULT_LOCATION;
-    const position =
-      (await withTimeout(Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }), 5000).catch(
-        () => null,
-      )) ?? (await Location.getLastKnownPositionAsync().catch(() => null));
-    if (!position) return DEFAULT_LOCATION;
-    const { latitude, longitude } = position.coords;
-    const [place] = await withTimeout(Location.reverseGeocodeAsync({ latitude, longitude }), 3000).catch(() => null) ?? [];
-    return {
-      neighborhood: place?.district ?? place?.subregion ?? "Nearby",
-      lat: Math.round(latitude * 100) / 100,
-      lng: Math.round(longitude * 100) / 100,
-    };
-  } catch {
-    return DEFAULT_LOCATION;
-  }
+  const permission = await Location.requestForegroundPermissionsAsync().catch(() => null);
+  if (!permission?.granted) throw new LocationUnavailable();
+  const position =
+    (await withTimeout(Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }), 5000).catch(
+      () => null,
+    )) ?? (await Location.getLastKnownPositionAsync().catch(() => null));
+  if (!position) throw new LocationUnavailable();
+  const lat = Math.round(position.coords.latitude * 100) / 100;
+  const lng = Math.round(position.coords.longitude * 100) / 100;
+  const [place] =
+    (await withTimeout(Location.reverseGeocodeAsync({ latitude: lat, longitude: lng }), 3000).catch(() => null)) ?? [];
+  return { neighborhood: place?.district ?? place?.subregion ?? "Nearby", lat, lng };
 }
 
 const dollars = (cents: number) => (cents > 0 ? `$${Math.round(cents / 100)}` : "");
@@ -124,12 +127,21 @@ export default function SellerReview() {
   const [undo, setUndo] = useState<number | null>(null);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [locationDenied, setLocationDenied] = useState(false);
   const user = useCurrentUser();
   const [wantsOpen, setWantsOpen] = useState(false);
   const location = useRef<ReturnType<typeof approximateLocation> | null>(null);
 
+  // Asked while the AI runs; a denial only surfaces when the seller taps Open my yard.
+  const askLocation = () => {
+    const asked = approximateLocation();
+    asked.catch(() => {});
+    location.current = asked;
+    return asked;
+  };
+
   useEffect(() => {
-    location.current = approximateLocation();
+    askLocation();
   }, []);
 
   const update = (index: number, patch: Partial<Draft>) =>
@@ -181,6 +193,7 @@ export default function SellerReview() {
 
   const openGarage = () => {
     setError(null);
+    setLocationDenied(false);
     setWantsOpen(true);
     if (user) return;
     requireUser("Sign in to open your yard").catch((e) => {
@@ -198,7 +211,8 @@ export default function SellerReview() {
   const openFor = async (ownerId: Id<"users">) => {
     setOpening(true);
     try {
-      const { neighborhood, lat, lng } = await (location.current ?? approximateLocation());
+      // Ask again if the first try failed: the seller may have just allowed location in Settings.
+      const { neighborhood, lat, lng } = await (location.current ?? askLocation()).catch(() => askLocation());
       const { garageId, itemIds, firstOpen } = await openWithItems({
         ownerId,
         neighborhood,
@@ -221,8 +235,13 @@ export default function SellerReview() {
         pathname: "/seller/open",
         params: { garageId, picked: itemIds.join(","), first: firstOpen ? "1" : "0" },
       });
-    } catch {
-      setError("Couldn't open your yard. Try again.");
+    } catch (e) {
+      if (e instanceof LocationUnavailable) {
+        setError(LOCATION_NEEDED);
+        setLocationDenied(true);
+      } else {
+        setError("Couldn't open your yard. Try again.");
+      }
       setOpening(false);
     }
   };
@@ -273,6 +292,11 @@ export default function SellerReview() {
           )}
         </ScrollView>
         {error && <Text style={styles.error}>{error}</Text>}
+        {locationDenied && (
+          <Pressable onPress={() => Linking.openSettings()} style={styles.settings} accessibilityRole="button">
+            <Text style={styles.settingsText}>Open Settings</Text>
+          </Pressable>
+        )}
         <Pressable
           onPress={openGarage}
           disabled={approved.length === 0 || opening}
@@ -679,4 +703,15 @@ const styles = StyleSheet.create({
   summaryMeta: { ...type.meta, color: MUTED },
   summaryPrice: { fontFamily: fonts.display, fontSize: 18, color: colors.ink },
   error: { fontFamily: fonts.medium, fontSize: 14, color: "#B3261E", textAlign: "center" },
+  settings: {
+    alignSelf: "center",
+    minHeight: spacing.minButton,
+    paddingHorizontal: 20,
+    borderRadius: spacing.radius,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  settingsText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.ink },
 });
