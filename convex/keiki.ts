@@ -65,6 +65,10 @@ function details(item: { title: string; category?: string; size?: string; brand?
   return { title, category, size, brand, condition, color, description };
 }
 
+function itemLink(itemId: Id<"items">) {
+  return `${process.env.CONVEX_SITE_URL}/i/${itemId}`;
+}
+
 function toCents(price: number): number | null {
   const cents = Math.round(price * 100);
   return Number.isSafeInteger(cents) && cents > 0 ? cents : null;
@@ -136,7 +140,7 @@ export const addItem = internalAction({
     return {
       item_id: itemId,
       ...details(listing),
-      ...(live ? { price: priceCents / 100 } : { suggested_price: priceCents / 100 }),
+      ...(live ? { price: priceCents / 100, link: itemLink(itemId) } : { suggested_price: priceCents / 100 }),
       status: live ? "live" : "draft",
       missing: missingFields(listing, live),
     };
@@ -164,6 +168,7 @@ export const setPrice = internalMutation({
       ...details(updated),
       price: updated.priceCents / 100,
       status: updated.status,
+      ...(updated.status === "live" && { link: itemLink(item._id) }),
       missing: missingFields(updated, updated.status === "live"),
     };
   },

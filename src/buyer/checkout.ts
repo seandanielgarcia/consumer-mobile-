@@ -5,7 +5,7 @@ import * as WebBrowser from "expo-web-browser";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 
-function waitForReturn(purchaseUrl: string): Promise<boolean> {
+function waitForReturn(purchaseUrl: string, returnUrl: string): Promise<boolean> {
   return new Promise((resolve) => {
     let settled = false;
     const finish = (returned: boolean) => {
@@ -15,7 +15,7 @@ function waitForReturn(purchaseUrl: string): Promise<boolean> {
       resolve(returned);
     };
     const subscription = Linking.addEventListener("url", ({ url }) => {
-      if (!url.startsWith("garagesale://buyer/paid")) return;
+      if (!url.startsWith(returnUrl) && !url.startsWith("garagesale://buyer/paid")) return;
       finish(true);
       setTimeout(() => WebBrowser.dismissBrowser(), 300);
     });
@@ -26,15 +26,29 @@ function waitForReturn(purchaseUrl: string): Promise<boolean> {
   });
 }
 
+export const PAID_GRACE_MS = 10000;
+
+export async function waitForPaid(convex: ConvexReactClient, orderId: Id<"orders">): Promise<boolean> {
+  const deadline = Date.now() + PAID_GRACE_MS;
+  while (true) {
+    const status = (await convex.query(api.orders.getOrder, { orderId }).catch(() => null))?.status;
+    if (status === "paid" || status === "picked_up") return true;
+    if (status !== "pending" || Date.now() > deadline) return false;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+}
+
 export async function startCheckout(
   convex: ConvexReactClient,
   buyerId: Id<"users">,
   garageId: Id<"garages">,
   itemIds: Id<"items">[],
-): Promise<{ orderId: Id<"orders">; returned: boolean }> {
+): Promise<{ orderId: Id<"orders">; paid: boolean }> {
   const { orderId } = await convex.mutation(api.orders.createPending, { buyerId, garageId, itemIds });
-  const { purchaseUrl } = (await convex.action(anyApi.whop.createOrderCheckout, { orderId })) as { purchaseUrl: string };
-  const returned = await waitForReturn(purchaseUrl);
-  if (returned) void convex.mutation(api.orders.confirmReturn, { orderId }).catch(() => undefined);
-  return { orderId, returned };
+  const returnUrl = Linking.createURL("buyer/paid", { queryParams: { garageId, items: itemIds.join(",") } });
+  const { purchaseUrl } = (await convex.action(anyApi.whop.createOrderCheckout, { orderId, returnUrl })) as { purchaseUrl: string };
+  const returned = await waitForReturn(purchaseUrl, returnUrl);
+  if (!returned) return { orderId, paid: false };
+  await convex.mutation(api.orders.confirmReturn, { orderId }).catch(() => undefined);
+  return { orderId, paid: await waitForPaid(convex, orderId) };
 }

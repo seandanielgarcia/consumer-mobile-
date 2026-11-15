@@ -26,12 +26,18 @@
     "react-native-svg": "15.16.0"
   },
   "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
+    "@types/node": "^26.6.6",
     "@types/react": "~19.3.0",
-    "typescript": "~6.0.3"
+    "convex-test": "^0.0.71",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
   },
   "scripts": {
     "start": "expo start",
     "ios": "expo start --ios",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit -p .",
     "typecheck:convex": "convex typecheck"
   },
