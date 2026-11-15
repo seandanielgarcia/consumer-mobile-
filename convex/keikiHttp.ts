@@ -39,7 +39,7 @@ function reply(body: Json) {
 function keikiRoute(handler: (ctx: ActionCtx, input: Json, context: Json, phones: string[]) => Promise<Json>) {
   return httpAction(async (ctx, request) => {
     const token = process.env.KEIKI_TOOL_TOKEN;
-    if (token && new URL(request.url).searchParams.get("token") !== token) {
+    if (!token || new URL(request.url).searchParams.get("token") !== token) {
       return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
     }
     let body: Json;
