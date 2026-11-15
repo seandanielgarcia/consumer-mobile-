@@ -86,7 +86,8 @@ export default function SellerPrice() {
   };
 
   const ready = drafts.length > 0 && drafts.every((d) => d.status !== "loading");
-  const valid = drafts.filter((d) => d.status === "ready" && d.storageId && d.title.trim() && d.priceCents > 0);
+  const uploaded = drafts.filter((d) => d.status === "ready");
+  const canOpen = ready && uploaded.length > 0 && uploaded.every((d) => d.title.trim() && d.priceCents > 0);
 
   const openGarage = async () => {
     if (!user) {
@@ -105,7 +106,7 @@ export default function SellerPrice() {
         neighborhood: place?.district ?? place?.subregion ?? "Nearby",
         lat: coords.latitude,
         lng: coords.longitude,
-        items: valid.map((d) => ({
+        items: uploaded.map((d) => ({
           storageId: d.storageId!,
           title: d.title.trim(),
           size: d.size.trim(),
@@ -136,7 +137,8 @@ export default function SellerPrice() {
               <Pressable
                 key={option}
                 onPress={() => applyPreset(option)}
-                style={[styles.pill, selected && styles.pillSelected]}
+                disabled={!ready}
+                style={[styles.pill, selected && styles.pillSelected, !ready && styles.pillDisabled]}
               >
                 <Text style={[styles.pillText, selected && styles.pillTextSelected]}>
                   {option === "ai" ? "AI suggests" : `$${option / 100}`}
@@ -203,8 +205,8 @@ export default function SellerPrice() {
       {error && <Text style={styles.error}>{error}</Text>}
       <Pressable
         onPress={openGarage}
-        disabled={!ready || valid.length === 0 || opening}
-        style={[styles.cta, (!ready || valid.length === 0 || opening) && styles.ctaDisabled]}
+        disabled={!canOpen || opening}
+        style={[styles.cta, (!canOpen || opening) && styles.ctaDisabled]}
         accessibilityRole="button"
       >
         {opening ? <ActivityIndicator color={colors.cream} /> : <Text style={styles.ctaText}>Open my garage</Text>}
@@ -237,6 +239,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   pillSelected: { backgroundColor: colors.ink },
+  pillDisabled: { opacity: 0.5 },
   pillText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.ink },
   pillTextSelected: { color: colors.cream },
   list: { flex: 1 },
