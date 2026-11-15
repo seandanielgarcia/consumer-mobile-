@@ -28,6 +28,32 @@ type Draft = {
 
 const sizeRelevant = (d: Draft) => d.size.trim() !== "" || /cloth|shoe|apparel|wear/i.test(d.category);
 
+const DEFAULT_LOCATION = { neighborhood: "Mission", lat: 37.76, lng: -122.42 };
+
+const withTimeout = <T,>(promise: Promise<T>, ms: number) =>
+  Promise.race([promise, new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
+
+async function approximateLocation() {
+  try {
+    const permission = await Location.requestForegroundPermissionsAsync();
+    if (!permission.granted) return DEFAULT_LOCATION;
+    const position =
+      (await withTimeout(Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }), 5000).catch(
+        () => null,
+      )) ?? (await Location.getLastKnownPositionAsync().catch(() => null));
+    if (!position) return DEFAULT_LOCATION;
+    const { latitude, longitude } = position.coords;
+    const [place] = await withTimeout(Location.reverseGeocodeAsync({ latitude, longitude }), 3000).catch(() => null) ?? [];
+    return {
+      neighborhood: place?.district ?? place?.subregion ?? "Nearby",
+      lat: Math.round(latitude * 100) / 100,
+      lng: Math.round(longitude * 100) / 100,
+    };
+  } catch {
+    return DEFAULT_LOCATION;
+  }
+}
+
 const dollars = (cents: number) => (cents > 0 ? `$${Math.round(cents / 100)}` : "$");
 
 const parseDollars = (text: string) => {
@@ -56,6 +82,7 @@ export default function SellerReview() {
       aiGenerated: false,
     })),
   );
+  const [focus, setFocus] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [opening, setOpening] = useState(false);
@@ -99,7 +126,12 @@ export default function SellerReview() {
   const kept = drafts.filter((d) => d.review !== "removed");
   const approved = kept.filter((d) => d.review === "approved");
   const pending = drafts.map((d, i) => ({ d, i })).filter(({ d }) => d.review === "pending");
-  const current = pending.find(({ d }) => d.status !== "loading") ?? pending[0];
+  const focused = pending.find(({ i }) => i === focus && drafts[i].status !== "loading");
+  const current = focused ?? pending.find(({ d }) => d.status !== "loading") ?? pending[0];
+
+  useEffect(() => {
+    if (current && current.d.status !== "loading" && current.i !== focus) setFocus(current.i);
+  }, [current?.i, current?.d.status, focus]);
 
   const advance = (patch: Partial<Draft>) => {
     if (!current) return;
@@ -116,15 +148,12 @@ export default function SellerReview() {
     setOpening(true);
     setError(null);
     try {
-      const permission = await Location.requestForegroundPermissionsAsync();
-      if (!permission.granted) throw new Error("Location is needed so buyers nearby can find you.");
-      const { coords } = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      const [place] = await Location.reverseGeocodeAsync({ latitude: coords.latitude, longitude: coords.longitude });
+      const { neighborhood, lat, lng } = await approximateLocation();
       const { garageId, itemIds, firstOpen } = await openWithItems({
         ownerId: user.userId,
-        neighborhood: place?.district ?? place?.subregion ?? "Nearby",
-        lat: Math.round(coords.latitude * 100) / 100,
-        lng: Math.round(coords.longitude * 100) / 100,
+        neighborhood,
+        lat,
+        lng,
         items: approved.map((d) => ({
           storageId: d.storageId!,
           title: d.title.trim(),
@@ -143,7 +172,7 @@ export default function SellerReview() {
         params: { garageId, picked: itemIds.slice(0, 3).join(","), first: firstOpen ? "1" : "0" },
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't open your garage. Try again.");
+      setError("Couldn't open your garage. Try again.");
       setOpening(false);
     }
   };
@@ -215,7 +244,7 @@ export default function SellerReview() {
       </View>
       <ScrollView style={styles.flex} contentContainerStyle={styles.itemBody} keyboardShouldPersistTaps="handled">
         <View style={styles.photoFrame}>
-          <Image source={{ uri: d.uri }} style={styles.photo} contentFit="cover" />
+          <Image key={d.uri} source={{ uri: d.uri }} style={styles.photo} contentFit="cover" transition={0} />
           {!loading && !failed && (
             <View style={styles.sticker}>
               <TextInput
@@ -354,7 +383,7 @@ const styles = StyleSheet.create({
   photo: { width: "100%", aspectRatio: 1, backgroundColor: colors.line },
   sticker: { position: "absolute", left: 18, bottom: 22 },
   priceInput: {
-    minWidth: 96,
+    width: 110,
     height: 60,
     paddingHorizontal: 14,
     borderRadius: 12,
@@ -384,7 +413,7 @@ const styles = StyleSheet.create({
   chips: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
   chip: { height: 34, paddingHorizontal: 14, borderRadius: 999, backgroundColor: colors.white, justifyContent: "center" },
   chipEmpty: { backgroundColor: "transparent", borderWidth: 1, borderStyle: "dashed", borderColor: colors.muted },
-  chipInput: { minWidth: 96, borderWidth: 2, borderColor: colors.ink, fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
+  chipInput: { width: 120, borderWidth: 2, borderColor: colors.ink, fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
   chipText: { fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
   chipTextEmpty: { color: colors.muted },
   detailsToggle: { minHeight: 34, justifyContent: "center", paddingHorizontal: 4 },
