@@ -16,7 +16,8 @@ export const pendingOrder = internalQuery({
     const order = await ctx.db.get(orderId);
     if (!order) throw new Error("Order not found");
     if (order.status !== "pending") throw new Error("Order is not awaiting payment");
-    return { totalCents: order.totalCents };
+    const buyer = await ctx.db.get(order.buyerId);
+    return { totalCents: order.totalCents, buyerFirstName: buyer?.name.trim().split(/\s+/)[0] ?? "" };
   },
 });
 
@@ -35,7 +36,7 @@ export const setOrderCheckout = internalMutation({
 export const createOrderCheckout = action({
   args: { orderId: v.id("orders") },
   handler: async (ctx, { orderId }): Promise<{ purchaseUrl: string }> => {
-    const { totalCents } = await ctx.runQuery(internal.whop.pendingOrder, { orderId });
+    const { totalCents, buyerFirstName } = await ctx.runQuery(internal.whop.pendingOrder, { orderId });
     const checkout = await whopClient().checkoutConfigurations.create({
       variant: {
         title: "yard sale order",
@@ -45,12 +46,16 @@ export const createOrderCheckout = action({
         force_create_new_plan: true,
         product_id: process.env.WHOP_PRODUCT_ID,
       },
+      payment_method_configuration: { enabled: ["card", "apple_pay"], disabled: [], include_platform_defaults: false },
       metadata: { orderId },
       redirect_url: `${process.env.CONVEX_SITE_URL}/whop/return?orderId=${orderId}`,
     });
     if (!checkout.purchase_url) throw new Error("Whop returned no purchase_url");
     await ctx.runMutation(internal.whop.setOrderCheckout, { orderId, whopCheckoutId: checkout.id });
-    return { purchaseUrl: checkout.purchase_url };
+    const purchaseUrl = new URL(checkout.purchase_url);
+    if (buyerFirstName) purchaseUrl.searchParams.set("name", buyerFirstName);
+    purchaseUrl.searchParams.set("address.country", "US");
+    return { purchaseUrl: purchaseUrl.toString() };
   },
 });
 
