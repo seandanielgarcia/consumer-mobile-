@@ -1,11 +1,11 @@
 import { useQuery } from "convex/react";
 import { router, usePathname } from "expo-router";
 import { useState } from "react";
-import { Alert, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
-import { useHeaderBackState } from "../lib/headerBack";
+import { guardedLeave, useHeaderBackState } from "../lib/headerBack";
 import { requireUser, signOut, useCurrentUser } from "../lib/useCurrentUser";
 import { colors, fonts, spacing } from "../theme";
 
@@ -37,11 +37,7 @@ export function AppHeader() {
   };
   const leave = (then: () => void) => {
     setOpen(false);
-    if (!pathname.startsWith("/seller/price")) return then();
-    Alert.alert("Discard your photos?", undefined, [
-      { text: "Keep reviewing", style: "cancel" },
-      { text: "Discard", style: "destructive", onPress: then },
-    ]);
+    guardedLeave(then);
   };
   const goYard = () => leave(() => router.dismissTo("/"));
   const doSignOut = () =>

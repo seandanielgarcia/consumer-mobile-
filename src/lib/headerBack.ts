@@ -31,3 +31,25 @@ export function useHeaderBack(label: string, onPress: () => void) {
     }, [label]),
   );
 }
+
+type LeaveGuard = (leave: () => void) => void;
+let guard: LeaveGuard | null = null;
+
+export function guardedLeave(leave: () => void) {
+  if (guard) return guard(leave);
+  leave();
+}
+
+export function useLeaveGuard(onLeave: LeaveGuard) {
+  const handler = useRef(onLeave);
+  handler.current = onLeave;
+  useFocusEffect(
+    useCallback(() => {
+      const mine: LeaveGuard = (leave) => handler.current(leave);
+      guard = mine;
+      return () => {
+        if (guard === mine) guard = null;
+      };
+    }, []),
+  );
+}

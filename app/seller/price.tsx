@@ -1,5 +1,5 @@
 import { useAction, useMutation } from "convex/react";
-import { useHeaderBack } from "../../src/lib/headerBack";
+import { useHeaderBack, useLeaveGuard } from "../../src/lib/headerBack";
 import { Image } from "expo-image";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import * as Location from "expo-location";
@@ -206,13 +206,15 @@ export default function SellerReview() {
   const toggle = (index: number) =>
     update(index, { review: drafts[index].review === "approved" ? "removed" : "approved" });
 
-  const discard = () => {
-    if (approved.length === 0) return router.dismissTo("/");
+  const confirmDiscard = (leave: () => void) => {
+    if (approved.length === 0) return leave();
     Alert.alert(`Discard ${approved.length} ${approved.length === 1 ? "item" : "items"}?`, undefined, [
       { text: "Keep reviewing", style: "cancel" },
-      { text: "Discard", style: "destructive", onPress: () => router.dismissTo("/") },
+      { text: "Discard", style: "destructive", onPress: leave },
     ]);
   };
+  const discard = () => confirmDiscard(() => router.dismissTo("/"));
+  useLeaveGuard(confirmDiscard);
 
   useHeaderBack("Back", () => (editingIndex === null ? discard() : setEditingIndex(null)));
 
