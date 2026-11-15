@@ -7,6 +7,8 @@ export const colors = {
   line: "#CFC3AA",
   hairline: "#EDE6D6",
   white: "#FFFFFF",
+  surfaceMuted: "#F2F2F2",
+  error: "#B3261E",
 } as const;
 
 export const fonts = {
