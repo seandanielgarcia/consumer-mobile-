@@ -1,14 +1,13 @@
 import { useQuery } from "convex/react";
-import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
-import { detailLine, formatPrice } from "../../src/buyer/format";
+import { ItemCard } from "../../src/buyer/ItemCard";
 import { locateMe, locatePlace, useBuyerLocation } from "../../src/buyer/location";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
-import { colors, fonts } from "../../src/theme";
+import { colors, fonts, type } from "../../src/theme";
 
 function Pill({ label, active, onPress }: { label: string; active: boolean; onPress?: () => void }) {
   return (
@@ -35,7 +34,17 @@ function Pill({ label, active, onPress }: { label: string; active: boolean; onPr
 
 const RADII = [1, 2, 5, 10];
 
-function LocationSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+function LocationSheet({
+  visible,
+  onClose,
+  radiusMiles,
+  onRadius,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  radiusMiles: number;
+  onRadius: (r: number) => void;
+}) {
   const [place, setPlace] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,15 +68,28 @@ function LocationSheet({ visible, onClose }: { visible: boolean; onClose: () => 
       <Pressable style={{ flex: 1, backgroundColor: "rgba(17,17,17,0.35)" }} onPress={close} />
       <KeyboardAvoidingView behavior="padding">
         <View style={{ backgroundColor: colors.cream, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, gap: 14 }}>
-          <Text style={{ fontFamily: fonts.display, fontSize: 24, color: colors.ink }}>Shop near…</Text>
+          <Text style={{ fontFamily: fonts.display, fontSize: type.itemTitle, color: colors.ink }}>Shop near…</Text>
+          <View style={{ flexDirection: "row", backgroundColor: colors.white, borderRadius: 999, borderWidth: 1, borderColor: colors.line, padding: 3 }}>
+            {RADII.map((r) => (
+              <Pressable
+                key={r}
+                onPress={() => onRadius(r)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: radiusMiles === r }}
+                style={{ flex: 1, height: 38, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: radiusMiles === r ? colors.ink : "transparent" }}
+              >
+                <Text style={{ fontFamily: fonts.semibold, fontSize: type.row, color: radiusMiles === r ? colors.cream : colors.ink }}>{r} mi</Text>
+              </Pressable>
+            ))}
+          </View>
           <Pressable
             disabled={busy}
             onPress={() => run(locateMe)}
-            style={{ height: 52, borderRadius: 26, backgroundColor: colors.ink, alignItems: "center", justifyContent: "center" }}
+            style={{ height: 52, borderRadius: 999, backgroundColor: colors.ink, alignItems: "center", justifyContent: "center" }}
           >
             <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: colors.cream }}>Use my location</Text>
           </Pressable>
-          <View style={{ height: 50, borderRadius: 25, backgroundColor: colors.white, borderWidth: 2, borderColor: colors.ink, flexDirection: "row", alignItems: "center", paddingLeft: 16, paddingRight: 6 }}>
+          <View style={{ height: 50, borderRadius: 999, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: "center", paddingLeft: 16, paddingRight: 6 }}>
             <TextInput
               value={place}
               onChangeText={setPlace}
@@ -123,18 +145,11 @@ export default function BuyerNearYou() {
   }, [results, size, under30]);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.cream }} contentContainerStyle={{ paddingTop: 56, paddingHorizontal: 16, paddingBottom: 40, gap: 14 }} keyboardShouldPersistTaps="handled">
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", paddingHorizontal: 4 }}>
-        <Text style={{ fontFamily: fonts.display, fontSize: 30, letterSpacing: -1, color: colors.ink }}>Near you</Text>
-        <Pressable onPress={() => setSheetOpen(true)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Change location">
-          <Text style={{ fontFamily: fonts.body, fontSize: 14, color: colors.muted, textDecorationLine: "underline" }}>
-            {location ? `${location.label} · ${radiusMiles} mi` : "Finding you…"}
-          </Text>
-        </Pressable>
-      </View>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.cream }} contentContainerStyle={{ paddingTop: 56, paddingHorizontal: 16, paddingBottom: 40, gap: 12 }} keyboardShouldPersistTaps="handled">
+      <Text style={{ fontFamily: fonts.display, fontSize: type.title, letterSpacing: -0.5, color: colors.ink }}>Near you</Text>
 
-      <View style={{ height: 50, borderRadius: 25, backgroundColor: colors.white, borderWidth: 2, borderColor: colors.ink, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16 }}>
-        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={colors.ink} strokeWidth={2}>
+      <View style={{ height: 44, borderRadius: 12, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14 }}>
+        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.ink} strokeWidth={2}>
           <Circle cx={11} cy={11} r={7} />
           <Path d="M20 20l-4-4" />
         </Svg>
@@ -146,23 +161,18 @@ export default function BuyerNearYou() {
           accessibilityLabel="Search items"
           autoCorrect={false}
           returnKeyType="search"
-          style={{ flex: 1, fontSize: 17, fontFamily: fonts.body, color: colors.ink }}
+          style={{ flex: 1, fontSize: type.row, fontFamily: fonts.body, color: colors.ink }}
         />
       </View>
 
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        <Pill label={size ? `Size ${size}` : "Size"} active={!!size} onPress={() => setSizeOpen((o) => !o)} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+        <Pill label={location ? `${location.label} · ${radiusMiles} mi ▾` : "Finding you… ▾"} active={false} onPress={() => setSheetOpen(true)} />
+        <Pill label={size ? `Size ${size} ▾` : "Size ▾"} active={!!size} onPress={() => setSizeOpen((o) => !o)} />
         <Pill label="Under $30" active={under30} onPress={() => setUnder30((u) => !u)} />
-        <Pill label="Closest first" active />
-      </View>
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        {RADII.map((r) => (
-          <Pill key={r} label={`${r} mi`} active={radiusMiles === r} onPress={() => setRadiusMiles(r)} />
-        ))}
-      </View>
+      </ScrollView>
       {sizeOpen && (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {sizes.length === 0 && <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted }}>No sizes in these results</Text>}
+          {sizes.length === 0 && <Text style={{ fontFamily: fonts.body, fontSize: type.meta, color: colors.muted }}>No sizes in these results</Text>}
           {sizes.map((s) => (
             <Pill
               key={s}
@@ -180,35 +190,22 @@ export default function BuyerNearYou() {
       {results === undefined ? (
         <ActivityIndicator color={colors.ink} style={{ marginTop: 40 }} />
       ) : shown.length === 0 ? (
-        <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted, textAlign: "center", marginTop: 40 }}>
-          {q.trim() ? `Nothing matching "${q.trim()}" within ${radiusMiles} mi yet.` : `No yards open within ${radiusMiles} mi yet.`}
+        <Text style={{ fontFamily: fonts.body, fontSize: type.row, color: colors.muted, textAlign: "center", marginTop: 40 }}>
+          {q.trim() ? `Nothing matching "${q.trim()}" within ${radiusMiles} mi yet.` : `Nothing within ${radiusMiles} mi yet.`}
         </Text>
       ) : (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16 }}>
-          {shown.map((item) => (
-            <Pressable
-              key={item._id}
-              style={{ width: cardWidth, gap: 4 }}
-              onPress={() => router.push({ pathname: "/buyer/item/[id]", params: { id: item._id } })}
-            >
-              <Image
-                source={{ uri: item.photoUrl }}
-                style={{ width: cardWidth, height: cardWidth, borderRadius: 14, backgroundColor: colors.line, marginBottom: 4 }}
-                contentFit="cover"
-                transition={150}
-              />
-              <Text style={{ fontFamily: fonts.display, fontSize: 18, color: colors.ink }}>{formatPrice(item.priceCents)}</Text>
-              <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 14, color: colors.ink }}>
-                {item.title}
-              </Text>
-              <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted }}>
-                {detailLine([item.condition, item.size, item.brand, `${item.distanceMi} mi`])}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        <>
+          <Text style={{ fontFamily: fonts.body, fontSize: type.meta, color: colors.muted }}>
+            {shown.length} {shown.length === 1 ? "item" : "items"}
+          </Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16 }}>
+            {shown.map((item) => (
+              <ItemCard key={item._id} item={item} width={cardWidth} onPress={() => router.push({ pathname: "/buyer/item/[id]", params: { id: item._id } })} />
+            ))}
+          </View>
+        </>
       )}
-      <LocationSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} />
+      <LocationSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} radiusMiles={radiusMiles} onRadius={setRadiusMiles} />
     </ScrollView>
   );
 }
