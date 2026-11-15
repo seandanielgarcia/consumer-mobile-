@@ -239,7 +239,7 @@ export default function SellerPrice() {
                   <Text style={styles.description} numberOfLines={2}>
                     {draft.description || "Tap to add a description"}
                   </Text>
-                  {draft.aiGenerated && <Text style={styles.hint} numberOfLines={1}>filled in from your photo · tap to edit</Text>}
+                  {draft.aiGenerated && <Text style={styles.hint}>filled in from your photo · tap to edit</Text>}
                 </Pressable>
               )}
             </View>
