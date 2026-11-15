@@ -1,0 +1,64 @@
+import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
+import { roundCoord } from "./lib/location";
+
+export const mine = query({
+  args: { ownerId: v.id("users") },
+  handler: async (ctx, { ownerId }) => {
+    const garage = await ctx.db
+      .query("garages")
+      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+      .first();
+    if (!garage) return null;
+    const items = await ctx.db
+      .query("items")
+      .withIndex("by_garage", (q) => q.eq("garageId", garage._id))
+      .order("desc")
+      .collect();
+    return { garage, items: items.filter((item) => item.status === "live") };
+  },
+});
+
+export const get = query({
+  args: { garageId: v.id("garages") },
+  handler: async (ctx, { garageId }) => {
+    const garage = await ctx.db.get(garageId);
+    if (!garage) return null;
+    return { _id: garage._id, neighborhood: garage.neighborhood, isOpen: garage.isOpen };
+  },
+});
+
+export const openWithItems = mutation({
+  args: {
+    ownerId: v.id("users"),
+    neighborhood: v.string(),
+    lat: v.number(),
+    lng: v.number(),
+    items: v.array(
+      v.object({
+        storageId: v.id("_storage"),
+        title: v.string(),
+        size: v.string(),
+        description: v.string(),
+        priceCents: v.number(),
+        aiGenerated: v.boolean(),
+      }),
+    ),
+  },
+  handler: async (ctx, { ownerId, neighborhood, lat, lng, items }) => {
+    if (items.length === 0) throw new Error("Add at least one item");
+    const location = { neighborhood, approxLat: roundCoord(lat), approxLng: roundCoord(lng), isOpen: true };
+    const existing = await ctx.db
+      .query("garages")
+      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+      .first();
+    const garageId = existing?._id ?? (await ctx.db.insert("garages", { ownerId, ...location }));
+    if (existing) await ctx.db.patch(existing._id, location);
+    for (const item of items) {
+      const photoUrl = await ctx.storage.getUrl(item.storageId);
+      if (!photoUrl) throw new Error("Photo upload missing");
+      await ctx.db.insert("items", { ...item, garageId, photoUrl, status: "live" });
+    }
+    return { garageId, firstOpen: !existing };
+  },
+});
