@@ -2,6 +2,7 @@ import type { Whop } from "@whop/sdk";
 import { unwrapWebhook } from "@whop/sdk/helpers";
 import { httpRouter } from "convex/server";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { httpAction } from "./_generated/server";
 import { registerKeikiRoutes } from "./keikiHttp";
 
@@ -25,6 +26,11 @@ http.route({
     const userId = event.data.metadata?.userId;
     if (event.type === "payment.succeeded" && typeof userId === "string") {
       await ctx.runMutation(internal.users.setPremium, { userId });
+    }
+    const orderId = event.data.metadata?.orderId;
+    if (event.type === "payment.succeeded" && typeof orderId === "string") {
+      await ctx.runMutation(internal.orders.markPaid, { orderId: orderId as Id<"orders"> });
+      // TODO: text the seller once Keiki outbound is wired up.
     }
     return new Response("OK", { status: 200 });
   }),
