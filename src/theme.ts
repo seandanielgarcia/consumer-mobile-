@@ -5,7 +5,7 @@ export const colors = {
   ink: "#111111",
   muted: "#5A5245",
   line: "#CFC3AA",
-  frameEdge: "#E2D6BF",
+  hairline: "#E2D6BF",
   white: "#FFFFFF",
 } as const;
 

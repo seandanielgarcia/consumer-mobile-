@@ -30,6 +30,7 @@ export default function BuyerGarage() {
   const titles = useRef(new Map<string, string>());
   const lastSelected = useRef(selected);
   const checkoutInProgress = useRef(false);
+  const checkoutSelection = useRef(new Set<Id<"items">>());
   const { width } = useWindowDimensions();
   const cardWidth = (width - 40 - 14) / 2;
 
@@ -42,12 +43,14 @@ export default function BuyerGarage() {
   const checkout = useCallback(async (userId: Id<"users">, itemIds: Id<"items">[]) => {
     if (checkoutInProgress.current || itemIds.length === 0) return;
     checkoutInProgress.current = true;
+    checkoutSelection.current = new Set(itemIds);
     setNotice(null);
     setBuying(true);
     try {
       const orderId = await startCheckout(convex, userId, garageId, itemIds);
       router.replace({ pathname: "/buyer/paid", params: { orderId } });
     } catch (error) {
+      checkoutSelection.current.clear();
       if (error instanceof ConvexError && error.data?.code === "ITEM_UNAVAILABLE" && itemIds.includes(error.data.itemId)) {
         removeUnavailable([error.data.itemId]);
       } else {
@@ -70,9 +73,9 @@ export default function BuyerGarage() {
     if (!garage) return;
     garage.items.forEach((item) => titles.current.set(item._id, item.title));
     const live = new Set(garage.items.map((item) => item._id));
-    const unavailable = picked.filter((id) => !live.has(id));
+    const unavailable = picked.filter((id) => !live.has(id) && !checkoutSelection.current.has(id));
     if (unavailable.length > 0) removeUnavailable(unavailable);
-  }, [garage, picked, removeUnavailable]);
+  }, [garage, picked, buying, removeUnavailable]);
 
   const pickedItems = garage?.items.filter((i) => picked.includes(i._id)) ?? [];
   const total = pickedItems.reduce((sum, i) => sum + i.priceCents, 0);
@@ -154,7 +157,7 @@ export default function BuyerGarage() {
                   paddingBottom: 12,
                   gap: 8,
                   transform: [{ rotate: index % 2 === 0 ? "-2deg" : "2deg" }],
-                  shadowColor: colors.frameEdge,
+                  shadowColor: colors.hairline,
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 1,
                   shadowRadius: 0,
@@ -192,7 +195,7 @@ export default function BuyerGarage() {
         </ScrollView>
       )}
 
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingTop: 14, paddingHorizontal: 20, paddingBottom: 34, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.frameEdge }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingTop: 14, paddingHorizontal: 20, paddingBottom: 34, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.hairline }}>
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: fonts.body, fontSize: 14, color: colors.muted }}>{pickedItems.length} picked</Text>
           <Text style={{ fontFamily: fonts.display, fontSize: 26, color: colors.ink }}>{formatPrice(total)}</Text>

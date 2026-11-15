@@ -48,7 +48,7 @@ export default function BuyerPaid() {
       </ScrollView>
       <View style={{ paddingHorizontal: 20, paddingBottom: 34 }}>
         <Pressable
-          onPress={() => router.replace("/buyer")}
+          onPress={() => router.dismissTo("/buyer")}
           style={{ height: 60, borderRadius: 30, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" }}
         >
           <Text style={{ fontFamily: fonts.semibold, fontSize: 18, color: colors.cream }}>Back to browsing</Text>
