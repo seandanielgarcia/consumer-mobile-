@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, type MutationCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 
 export const generateUploadUrl = mutation({
   args: {},
@@ -79,5 +80,54 @@ export const setStatus = mutation({
       }
     }
     return { itemId, status, orderId: order?._id ?? null };
+  },
+});
+
+async function ownedItem(ctx: MutationCtx, itemId: Id<"items">, ownerId: Id<"users">) {
+  const item = await ctx.db.get(itemId);
+  if (!item) throw new Error("Item not found");
+  const garage = await ctx.db.get(item.garageId);
+  if (!garage || garage.ownerId !== ownerId) throw new Error("This item isn't in your yard");
+  return item;
+}
+
+// Edit a listing from the yard grid. Reserved items are frozen until pickup, since a buyer already paid for them.
+export const update = mutation({
+  args: {
+    itemId: v.id("items"),
+    ownerId: v.id("users"),
+    title: v.string(),
+    category: v.optional(v.string()),
+    size: v.optional(v.string()),
+    brand: v.optional(v.string()),
+    condition: v.optional(v.string()),
+    color: v.optional(v.string()),
+    description: v.string(),
+    priceCents: v.number(),
+  },
+  handler: async (ctx, { itemId, ownerId, ...fields }) => {
+    const item = await ownedItem(ctx, itemId, ownerId);
+    if (item.status === "reserved") throw new Error("Reserved items can't be edited until pickup");
+    if (!fields.title.trim()) throw new Error("Add a title");
+    if (!Number.isInteger(fields.priceCents) || fields.priceCents <= 0) throw new Error("Set a price");
+    await ctx.db.patch(itemId, {
+      ...fields,
+      title: fields.title.trim(),
+      description: fields.description.trim(),
+      aiGenerated: false,
+    });
+    return itemId;
+  },
+});
+
+// Remove a listing and its photo. Reserved items can't be removed, since a buyer already paid for them.
+export const remove = mutation({
+  args: { itemId: v.id("items"), ownerId: v.id("users") },
+  handler: async (ctx, { itemId, ownerId }) => {
+    const item = await ownedItem(ctx, itemId, ownerId);
+    if (item.status === "reserved") throw new Error("Reserved items can't be removed until pickup");
+    await ctx.db.delete(itemId);
+    if (item.storageId) await ctx.storage.delete(item.storageId).catch(() => {});
+    return itemId;
   },
 });
