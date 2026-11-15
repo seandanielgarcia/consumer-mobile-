@@ -147,19 +147,29 @@ export const demoOrder = internalMutation({
   },
 });
 
+// Guard rails shared by devCleanup and resetDemo, so a cleanup can't wipe a demo or smoke test that is in flight:
+// - nothing created in the last PROTECT_RECENT_MS is deleted or relisted unless the caller passes force: true;
+// - users on the SMOKE_PHONE_PREFIX (automated smoke tests, CX-3) are never touched unless force: true;
+// - the demo accounts (Sam, Maya B, DEMO_ACCOUNT_PHONES) are treated like throwaway users by both cleanups.
+const PROTECT_RECENT_MS = 15 * 60 * 1000;
+const SMOKE_PHONE_PREFIX = "+1555977";
+const isSmokePhone = (phone: string) => phone.startsWith(SMOKE_PHONE_PREFIX);
+const isRecent = (doc: { _creationTime: number }, now: number) => now - doc._creationTime < PROTECT_RECENT_MS;
+
 const SEED_PHONES = new Set(SEED.map((g) => g.phone));
 const SEED_TITLES = new Set(SEED.flatMap((g) => g.items.map((i) => i.title)));
-const KEEP_NAMES = new Set(["Sam", "Maya B"]);
 const TEST_TITLE = /^(QA|E2E|Zqlatency)|\(edited\)|bundle/i;
 const isFictional = (phone: string) => /^\+1(555|\d{3}555)/.test(phone);
 
 export const devCleanup = internalMutation({
-  args: { dryRun: v.boolean(), alsoPhones: v.optional(v.array(v.string())) },
-  handler: async (ctx, { dryRun, alsoPhones }) => {
+  args: { dryRun: v.boolean(), alsoPhones: v.optional(v.array(v.string())), force: v.optional(v.boolean()) },
+  handler: async (ctx, { dryRun, alsoPhones, force }) => {
+    const now = Date.now();
+    const protect = <T extends { _creationTime: number }>(doc: T) => !force && isRecent(doc, now);
     const extra = new Set(alsoPhones ?? []);
     const users = await ctx.db.query("users").collect();
     const keepUser = (u: Doc<"users">) =>
-      !extra.has(u.phone) && (SEED_PHONES.has(u.phone) || KEEP_NAMES.has(u.name) || !isFictional(u.phone));
+      (!force && isSmokePhone(u.phone)) || protect(u) || (!extra.has(u.phone) && (SEED_PHONES.has(u.phone) || !isFictional(u.phone)));
     const dropUsers = users.filter((u) => !keepUser(u));
     const dropUserIds = new Set<Id<"users">>(dropUsers.map((u) => u._id));
     const seedOwnerIds = new Set(users.filter((u) => SEED_PHONES.has(u.phone)).map((u) => u._id));
@@ -171,15 +181,27 @@ export const devCleanup = internalMutation({
 
     const items = await ctx.db.query("items").collect();
     const dropItems = items.filter(
-      (i) => dropGarageIds.has(i.garageId) || TEST_TITLE.test(i.title) || (seedGarageIds.has(i.garageId) && !SEED_TITLES.has(i.title)),
+      (i) =>
+        !protect(i) &&
+        (dropGarageIds.has(i.garageId) || TEST_TITLE.test(i.title) || (seedGarageIds.has(i.garageId) && !SEED_TITLES.has(i.title))),
     );
     const dropItemIds = new Set<Id<"items">>(dropItems.map((i) => i._id));
-    const resetItems = items.filter((i) => !dropItemIds.has(i._id) && seedGarageIds.has(i.garageId) && i.status !== "live");
 
     const orders = await ctx.db.query("orders").collect();
     const dropOrders = orders.filter(
-      (o) => dropUserIds.has(o.buyerId) || dropGarageIds.has(o.garageId) || o.itemIds.some((id) => dropItemIds.has(id)),
+      (o) =>
+        !protect(o) && (dropUserIds.has(o.buyerId) || dropGarageIds.has(o.garageId) || o.itemIds.some((id) => dropItemIds.has(id))),
     );
+    // Items held by a protected (recent) order stay reserved; everything else in a seed yard goes back to live.
+    const heldByProtected = new Set(orders.filter((o) => protect(o)).flatMap((o) => o.itemIds));
+    const resetItems = items.filter(
+      (i) => !dropItemIds.has(i._id) && !heldByProtected.has(i._id) && seedGarageIds.has(i.garageId) && i.status !== "live",
+    );
+    const protectedCount = {
+      users: users.filter((u) => protect(u) || (!force && isSmokePhone(u.phone))).length,
+      items: items.filter((i) => protect(i)).length,
+      orders: orders.filter((o) => protect(o)).length,
+    };
 
     const report = {
       users: dropUsers.map((u) => `${u.name} ${u.phone}`),
@@ -187,6 +209,7 @@ export const devCleanup = internalMutation({
       items: dropItems.map((i) => `${i.title} (${i.status})`),
       orders: dropOrders.map((o) => `${o._id} ${o.status} $${o.totalCents / 100}`),
       resetToLive: resetItems.map((i) => `${i.title} (${i.status})`),
+      protected: protectedCount,
     };
     if (dryRun) return report;
 
@@ -205,7 +228,8 @@ export const devCleanup = internalMutation({
 
 // Demo reset (scripts/reset-demo.sh). Seed yards go back to all-live with their orders removed, and throwaway
 // sign-in users (phones starting +1555999 or +15550199) plus the demo accounts (Sam and Maya B) are deleted with
-// their yards, items and orders. Orders are only ever touched inside a seed or throwaway yard.
+// their yards, items and orders. Orders are only ever touched inside a seed or throwaway yard. Anything created in
+// the last 15 minutes, and any smoke-test user (+1555977…), is left alone unless force: true.
 const DEMO_SELLER_PHONES = SEED.map((g) => g.phone);
 const THROWAWAY_PHONE_PREFIXES = ["+1555999", "+15550199"];
 const DEMO_ACCOUNT_PHONES = ["+15555550101", "+15555550102"]; // Sam, Maya B
@@ -214,11 +238,17 @@ async function garagesOf(ctx: MutationCtx, ownerId: Id<"users">) {
   return await ctx.db.query("garages").withIndex("by_owner", (q) => q.eq("ownerId", ownerId)).collect();
 }
 
-// Same cleanup as demoOrder: release the order's reserved items before the order goes away.
-async function deleteOrdersIn(ctx: MutationCtx, garageId: Id<"garages">) {
+// Same cleanup as demoOrder: release the order's reserved items before the order goes away. Recent orders are kept
+// (unless force) and the item ids they hold are returned so the caller leaves those items reserved.
+async function deleteOrdersIn(ctx: MutationCtx, garageId: Id<"garages">, now: number, force: boolean) {
   let deleted = 0;
+  const kept = new Set<Id<"items">>();
   const orders = await ctx.db.query("orders").withIndex("by_garage", (q) => q.eq("garageId", garageId)).collect();
   for (const order of orders) {
+    if (!force && isRecent(order, now)) {
+      order.itemIds.forEach((id) => kept.add(id));
+      continue;
+    }
     for (const id of order.itemIds) {
       const item = await ctx.db.get(id);
       if (item?.status === "reserved") await ctx.db.patch(id, { status: "live" });
@@ -226,21 +256,25 @@ async function deleteOrdersIn(ctx: MutationCtx, garageId: Id<"garages">) {
     await ctx.db.delete(order._id);
     deleted++;
   }
-  return deleted;
+  return { deleted, kept };
 }
 
 export const resetDemo = internalMutation({
-  args: {},
-  handler: async (ctx) => {
-    const counts = { itemsRelisted: 0, ordersDeleted: 0, usersDeleted: 0, garagesDeleted: 0, itemsDeleted: 0 };
+  args: { force: v.optional(v.boolean()) },
+  handler: async (ctx, { force = false }) => {
+    const now = Date.now();
+    const counts = { itemsRelisted: 0, ordersDeleted: 0, usersDeleted: 0, garagesDeleted: 0, itemsDeleted: 0, protectedUsers: 0, protectedOrders: 0 };
 
     for (const phone of DEMO_SELLER_PHONES) {
       const user = await ctx.db.query("users").withIndex("by_phone", (q) => q.eq("phone", phone)).unique();
       if (!user) continue;
       for (const garage of await garagesOf(ctx, user._id)) {
-        counts.ordersDeleted += await deleteOrdersIn(ctx, garage._id);
+        const { deleted, kept } = await deleteOrdersIn(ctx, garage._id, now, force);
+        counts.ordersDeleted += deleted;
+        counts.protectedOrders += kept.size > 0 ? 1 : 0;
         const items = await ctx.db.query("items").withIndex("by_garage", (q) => q.eq("garageId", garage._id)).collect();
         for (const item of items) {
+          if (kept.has(item._id)) continue;
           if (item.status === "reserved" || item.status === "sold") {
             await ctx.db.patch(item._id, { status: "live" });
             counts.itemsRelisted++;
@@ -263,8 +297,13 @@ export const resetDemo = internalMutation({
       );
     }
     for (const user of throwaway) {
+      if (!force && (isSmokePhone(user.phone) || isRecent(user, now))) {
+        counts.protectedUsers++;
+        continue;
+      }
       for (const garage of await garagesOf(ctx, user._id)) {
-        counts.ordersDeleted += await deleteOrdersIn(ctx, garage._id);
+        const { deleted } = await deleteOrdersIn(ctx, garage._id, now, true);
+        counts.ordersDeleted += deleted;
         const items = await ctx.db.query("items").withIndex("by_garage", (q) => q.eq("garageId", garage._id)).collect();
         for (const item of items) {
           await ctx.db.delete(item._id);
