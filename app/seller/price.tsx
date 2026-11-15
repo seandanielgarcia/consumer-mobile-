@@ -2,12 +2,12 @@ import { useAction, useMutation } from "convex/react";
 import { Image } from "expo-image";
 import * as Location from "expo-location";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { getPickedPhotos } from "../../src/lib/pickedPhotos";
-import { requireUser, SignInCancelled } from "../../src/lib/useCurrentUser";
+import { requireUser, SignInCancelled, useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../../src/theme";
 
 type Draft = {
@@ -99,6 +99,13 @@ export default function SellerReview() {
   const [editingChip, setEditingChip] = useState<ChipField | null>(null);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const user = useCurrentUser();
+  const [wantsOpen, setWantsOpen] = useState(false);
+  const location = useRef<ReturnType<typeof approximateLocation> | null>(null);
+
+  useEffect(() => {
+    location.current = approximateLocation();
+  }, []);
 
   const update = (index: number, patch: Partial<Draft>) =>
     setDrafts((prev) => prev.map((d, i) => (i === index ? { ...d, ...patch } : d)));
@@ -157,18 +164,26 @@ export default function SellerReview() {
     setEditing(null);
   };
 
-  const openGarage = async () => {
+  const openGarage = () => {
     setError(null);
-    let ownerId: Id<"users">;
-    try {
-      ownerId = await requireUser();
-    } catch (e) {
+    setWantsOpen(true);
+    if (user) return;
+    requireUser().catch((e) => {
+      setWantsOpen(false);
       if (!(e instanceof SignInCancelled)) setError("Couldn't sign you in. Try again.");
-      return;
-    }
+    });
+  };
+
+  useEffect(() => {
+    if (!wantsOpen || !user) return;
+    setWantsOpen(false);
+    openFor(user.userId);
+  }, [wantsOpen, user]);
+
+  const openFor = async (ownerId: Id<"users">) => {
     setOpening(true);
     try {
-      const { neighborhood, lat, lng } = await approximateLocation();
+      const { neighborhood, lat, lng } = await (location.current ?? approximateLocation());
       const { garageId, itemIds, firstOpen } = await openWithItems({
         ownerId,
         neighborhood,
