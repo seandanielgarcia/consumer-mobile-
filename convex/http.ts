@@ -22,10 +22,6 @@ http.route({
     } catch {
       return new Response("Invalid webhook signature", { status: 401 });
     }
-    const userId = event.data.metadata?.userId;
-    if (event.type === "payment.succeeded" && typeof userId === "string") {
-      await ctx.runMutation(internal.users.setPremium, { userId });
-    }
     const rawOrderId = event.data.metadata?.orderId;
     if (event.type === "payment.succeeded" && typeof rawOrderId === "string") {
       const orderId = await ctx.runQuery(internal.whop.normalizeOrderId, { orderId: rawOrderId });

@@ -10,9 +10,13 @@ import { colors, fonts, spacing } from "../../src/theme";
 const ROTATIONS = ["-5deg", "2deg", "-1deg"];
 
 export default function SellerOpen() {
-  const { garageId, first } = useLocalSearchParams<{ garageId: Id<"garages">; first?: string }>();
+  const { garageId, picked, first } = useLocalSearchParams<{ garageId: Id<"garages">; picked?: string; first?: string }>();
   const garage = useQuery(api.garages.get, { garageId });
-  const items = useQuery(api.items.liveByGarage, { garageId }) ?? [];
+  const live = useQuery(api.items.liveByGarage, { garageId }) ?? [];
+  const pickedIds = picked ? picked.split(",") : [];
+  const items = pickedIds.length
+    ? pickedIds.flatMap((id) => live.filter((item) => item._id === id))
+    : live.slice(0, 3);
 
   return (
     <View style={styles.screen}>
