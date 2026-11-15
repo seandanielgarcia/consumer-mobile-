@@ -6,7 +6,12 @@ export default defineSchema({
     name: v.string(),
     phone: v.string(),
     avatarColor: v.string(),
-  }).index("by_phone", ["phone"]),
+    verified: v.optional(v.boolean()),
+    verifyCode: v.optional(v.string()),
+    verifyCodeExpiresAt: v.optional(v.number()),
+  })
+    .index("by_phone", ["phone"])
+    .index("by_verifyCode", ["verifyCode"]),
 
   garages: defineTable({
     ownerId: v.id("users"),
@@ -21,7 +26,11 @@ export default defineSchema({
     photoUrl: v.string(),
     storageId: v.optional(v.id("_storage")),
     title: v.string(),
-    size: v.string(),
+    category: v.optional(v.string()),
+    size: v.optional(v.string()),
+    brand: v.optional(v.string()),
+    condition: v.optional(v.string()),
+    color: v.optional(v.string()),
     description: v.string(),
     priceCents: v.number(),
     status: v.union(v.literal("draft"), v.literal("live"), v.literal("reserved"), v.literal("sold")),
