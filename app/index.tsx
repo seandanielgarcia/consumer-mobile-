@@ -25,25 +25,27 @@ export default function Landing() {
 
   return (
     <View style={styles.screen}>
-      <Text style={styles.wordmark}>garage sale</Text>
-      <Text style={styles.tagline}>Share a photo and set a price, we'll take care of the rest</Text>
-      <View style={styles.spacer} />
-      {mine && mine.items.length > 0 && (
-        <Pressable
-          style={styles.garageRow}
-          onPress={() => router.push({ pathname: "/seller/open", params: { garageId: mine.garage._id } })}
-        >
-          <Text style={styles.garageRowText}>Your garage · {mine.items.length} live</Text>
-          <Text style={styles.garageRowText}>→</Text>
-        </Pressable>
-      )}
-      <Pressable style={styles.button} onPress={pickPhotos} accessibilityRole="button">
-        <Text style={styles.buttonText}>Sell your stuff</Text>
-      </Pressable>
-      <Pressable style={styles.button} onPress={() => router.push("/buyer")} accessibilityRole="button">
-        <Text style={styles.buttonText}>Shop near you</Text>
-      </Pressable>
-      <View style={styles.spacer} />
+      <View style={styles.block}>
+        <Text style={styles.wordmark}>garage sale</Text>
+        <Text style={styles.tagline}>Share a photo and set a price, we'll take care of the rest</Text>
+        <View style={styles.buttons}>
+          <Pressable style={styles.button} onPress={pickPhotos} accessibilityRole="button">
+            <Text style={styles.buttonText}>Sell your stuff</Text>
+          </Pressable>
+          <Pressable style={styles.button} onPress={() => router.push("/buyer")} accessibilityRole="button">
+            <Text style={styles.buttonText}>Shop near you</Text>
+          </Pressable>
+        </View>
+        {mine && mine.items.length > 0 && (
+          <Pressable
+            style={styles.garageRow}
+            onPress={() => router.push({ pathname: "/seller/open", params: { garageId: mine.garage._id } })}
+          >
+            <Text style={styles.garageRowText}>Your garage · {mine.items.length} live</Text>
+            <Text style={styles.garageRowText}>→</Text>
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 }
@@ -55,10 +57,11 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: spacing.sidePad,
     paddingBottom: 34,
-    gap: 14,
+    justifyContent: "center",
   },
+  block: { gap: 12 },
+  buttons: { gap: 12, marginTop: 20 },
   wordmark: { fontFamily: fonts.display, fontSize: 44, letterSpacing: -1.5, color: colors.cream },
-  spacer: { flex: 1 },
   garageRow: {
     flexDirection: "row",
     justifyContent: "space-between",
