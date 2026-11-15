@@ -6,7 +6,8 @@ import { action } from "./_generated/server";
 export const createCheckout = action({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }): Promise<string> => {
-    if (!(await ctx.runQuery(internal.users.exists, { userId }))) throw new Error("Unknown user");
+    const blocker = await ctx.runQuery(internal.users.checkoutBlocker, { userId });
+    if (blocker) throw new Error(blocker);
     const client = new WhopClient({
       token: process.env.WHOP_API_KEY!,
       environment: process.env.WHOP_ENVIRONMENT === "production" ? WhopEnvironment.Production : WhopEnvironment.Sandbox,
@@ -15,7 +16,7 @@ export const createCheckout = action({
       variant: {
         title: "Garage Sale Premium",
         billing_type: "one_time",
-        initial_price: 4.99,
+        initial_price: 5,
         currency: "usd",
       },
       metadata: { userId },

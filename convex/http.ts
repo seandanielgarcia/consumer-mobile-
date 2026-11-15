@@ -3,8 +3,11 @@ import { unwrapWebhook } from "@whop/sdk/helpers";
 import { httpRouter } from "convex/server";
 import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
+import { registerKeikiRoutes } from "./keikiHttp";
 
 const http = httpRouter();
+
+registerKeikiRoutes(http);
 
 http.route({
   path: "/whop",

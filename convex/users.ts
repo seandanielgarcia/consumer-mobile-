@@ -21,12 +21,17 @@ export const getOrCreateByPhone = mutation({
 
 export const isPremium = query({
   args: { userId: v.id("users") },
-  handler: async (ctx, { userId }) => (await ctx.db.get(userId))?.premium === true,
+  handler: async (ctx, { userId }) => (await ctx.db.get(userId))?.isPremium === true,
 });
 
-export const exists = internalQuery({
+export const checkoutBlocker = internalQuery({
   args: { userId: v.id("users") },
-  handler: async (ctx, { userId }) => (await ctx.db.get(userId)) !== null,
+  handler: async (ctx, { userId }) => {
+    const user = await ctx.db.get(userId);
+    if (!user) return "Unknown user";
+    if (user.isPremium) return "Already premium";
+    return null;
+  },
 });
 
 export const setPremium = internalMutation({
@@ -34,7 +39,7 @@ export const setPremium = internalMutation({
   handler: async (ctx, args) => {
     const userId = ctx.db.normalizeId("users", args.userId);
     if (!userId || !(await ctx.db.get(userId))) return false;
-    await ctx.db.patch(userId, { premium: true });
+    await ctx.db.patch(userId, { isPremium: true });
     return true;
   },
 });

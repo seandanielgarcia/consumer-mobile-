@@ -15,7 +15,7 @@ export default function Premium() {
   const [error, setError] = useState<string | null>(null);
 
   const unlock = async () => {
-    if (!user) return;
+    if (!user || premium !== false) return;
     setBusy(true);
     setError(null);
     try {
@@ -35,18 +35,18 @@ export default function Premium() {
       </Pressable>
       <Text style={styles.headline}>{premium ? "You're premium." : "Go premium."}</Text>
       <Text style={styles.body}>
-        {premium ? "Thanks for supporting Garage Sale." : "One-time $4.99. Unlock everything Garage Sale has to offer."}
+        {premium ? "Thanks for supporting Garage Sale." : "One-time $5. Unlock everything Garage Sale has to offer."}
       </Text>
       {!user && <Text style={styles.error}>Sign in first.</Text>}
       {error && <Text style={styles.error}>{error}</Text>}
       {!premium && (
         <Pressable
-          style={[styles.cta, (!user || busy) && styles.ctaDisabled]}
+          style={[styles.cta, (premium !== false || busy) && styles.ctaDisabled]}
           onPress={unlock}
-          disabled={!user || busy}
+          disabled={premium !== false || busy}
           accessibilityRole="button"
         >
-          {busy ? <ActivityIndicator color={colors.cream} /> : <Text style={styles.ctaText}>Unlock premium · $4.99</Text>}
+          {busy ? <ActivityIndicator color={colors.cream} /> : <Text style={styles.ctaText}>Unlock premium · $5</Text>}
         </Pressable>
       )}
     </View>
