@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { colors, fonts, primaryButton, primaryButtonText, spacing, type } from "../theme";
 
@@ -61,6 +61,8 @@ export function EditItemSheet({
 }) {
   const [picker, setPicker] = useState<ChoiceField | null>(null);
   const [pickerText, setPickerText] = useState("");
+  const priceFresh = useRef(false);
+  const priceSelection = useRef({ start: 0, end: 0 });
   const fields: ChoiceField[] = sizeRelevant(value)
     ? ["condition", "size", "brand", "color", "category"]
     : ["condition", "brand", "color", "category"];
@@ -110,8 +112,23 @@ export function EditItemSheet({
               <TextInput
                 accessibilityLabel="Price"
                 value={value.priceCents > 0 ? String(Math.round(value.priceCents / 100)) : ""}
+                selectTextOnFocus
+                onFocus={() => {
+                  priceFresh.current = true;
+                }}
+                onSelectionChange={(e) => {
+                  priceSelection.current = e.nativeEvent.selection;
+                }}
                 onChangeText={(text) => {
-                  const dollars = parseInt(text.replace(/\D/g, ""), 10);
+                  const previous = value.priceCents > 0 ? String(Math.round(value.priceCents / 100)) : "";
+                  const { start, end } = priceSelection.current;
+                  const allSelected = previous !== "" && start === 0 && end === previous.length;
+                  const typed =
+                    priceFresh.current && !allSelected && text === previous + text.slice(-1) && text.length === previous.length + 1
+                      ? text.slice(-1)
+                      : text;
+                  priceFresh.current = false;
+                  const dollars = parseInt(typed.replace(/\D/g, ""), 10);
                   onChange({ priceCents: Number.isNaN(dollars) ? 0 : dollars * 100 });
                 }}
                 placeholder="Required"
