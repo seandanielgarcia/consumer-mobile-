@@ -21,7 +21,7 @@ export default function BuyerItem() {
     return (
       <View style={{ flex: 1, backgroundColor: colors.cream, alignItems: "center", justifyContent: "center", padding: 20, gap: 16 }}>
         <Text style={{ fontFamily: fonts.body, fontSize: typeSize.row, color: colors.muted }}>This one's no longer available.</Text>
-        <Pressable onPress={() => router.replace("/buyer")}>
+        <Pressable onPress={() => router.dismissTo("/buyer")} hitSlop={12} style={{ minHeight: 44, justifyContent: "center" }}>
           <Text style={{ fontFamily: fonts.semibold, fontSize: typeSize.row, color: colors.brand }}>Back to browsing</Text>
         </Pressable>
       </View>

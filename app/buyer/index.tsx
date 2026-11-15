@@ -148,6 +148,14 @@ export default function BuyerNearYou() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.cream }} contentContainerStyle={{ paddingTop: 56, paddingHorizontal: 16, paddingBottom: 40, gap: 12 }} keyboardShouldPersistTaps="handled">
+      <Pressable
+        onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}
+        hitSlop={12}
+        accessibilityRole="button"
+        style={{ alignSelf: "flex-start", minHeight: 44, justifyContent: "center" }}
+      >
+        <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted }}>← Home</Text>
+      </Pressable>
       <Text style={{ fontFamily: fonts.display, fontSize: typeSize.title, letterSpacing: -0.5, color: colors.ink }}>Near you</Text>
 
       <View style={{ height: 44, borderRadius: 12, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14 }}>

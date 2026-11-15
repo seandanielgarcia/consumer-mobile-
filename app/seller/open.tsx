@@ -128,7 +128,7 @@ export default function SellerOpen() {
           </Pressable>
         </View>
       )}
-      <Pressable style={styles.donePill} accessibilityRole="button" onPress={() => router.replace("/")}>
+      <Pressable style={styles.donePill} accessibilityRole="button" onPress={() => router.dismissTo("/")}>
         <Text style={styles.donePillText}>Done</Text>
       </Pressable>
     </View>

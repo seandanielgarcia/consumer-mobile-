@@ -6,6 +6,8 @@ import { useEffect } from "react";
 import { loadCurrentUser, useCurrentUserLoaded } from "../src/lib/useCurrentUser";
 import { colors } from "../src/theme";
 
+export const unstable_settings = { initialRouteName: "index" };
+
 const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
   unsavedChangesWarning: false,
 });
@@ -26,6 +28,7 @@ export default function RootLayout() {
     <ConvexProvider client={convex}>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.cream } }}>
         <Stack.Screen name="signin" options={{ presentation: "modal" }} />
+        <Stack.Screen name="buyer/paid" options={{ gestureEnabled: false }} />
       </Stack>
     </ConvexProvider>
   );

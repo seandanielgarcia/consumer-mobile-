@@ -235,7 +235,7 @@ export default function SellerReview() {
   if (currentIndex === undefined) {
     return (
       <View style={styles.summaryScreen}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} hitSlop={12} style={styles.back}>
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
         <Text style={styles.headline}>Ready to go</Text>
@@ -350,6 +350,9 @@ export default function SellerReview() {
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={styles.topBar}>
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} hitSlop={12} style={styles.back} accessibilityRole="button">
+          <Text style={styles.backText}>← Back</Text>
+        </Pressable>
         <Text style={styles.counter}>
           {approved.length + 1} of {kept.length}
         </Text>
@@ -553,7 +556,7 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   flex: { flex: 1 },
-  back: { alignSelf: "flex-start" },
+  back: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center" },
   backText: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
   headline: { ...type.title, color: colors.ink },
   topBar: {
