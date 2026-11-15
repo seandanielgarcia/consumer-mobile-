@@ -28,7 +28,9 @@
   },
   "scripts": {
     "start": "expo start",
-    "ios": "expo start --ios"
+    "ios": "expo start --ios",
+    "typecheck": "tsc --noEmit -p .",
+    "typecheck:convex": "convex typecheck"
   },
   "private": true
 }
