@@ -6,12 +6,15 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { textKeiki } from "../../src/lib/keiki";
 import { formatPlace } from "../../src/lib/place";
+import { shareYard } from "../../src/lib/shareYard";
+import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../../src/theme";
 
 const ROTATIONS = ["-5deg", "2deg", "-1deg"];
 
 export default function SellerOpen() {
   const { garageId, picked, first } = useLocalSearchParams<{ garageId: Id<"garages">; picked?: string; first?: string }>();
+  const user = useCurrentUser();
   const garage = useQuery(api.garages.get, { garageId });
   const all = useQuery(api.items.byGarage, { garageId }) ?? [];
 
@@ -44,6 +47,9 @@ export default function SellerOpen() {
         </View>
         {extra > 0 && <Text style={styles.moreLine}>+{extra} more in your yard</Text>}
       </View>
+      <Pressable style={styles.sharePill} accessibilityRole="button" onPress={() => shareYard(garageId, user?.name)}>
+        <Text style={styles.sharePillText}>Share my yard</Text>
+      </Pressable>
       <Pressable style={styles.donePill} accessibilityRole="button" onPress={() => router.dismissTo("/")}>
         <Text style={styles.donePillText}>Done</Text>
       </Pressable>
@@ -83,6 +89,15 @@ const styles = StyleSheet.create({
   },
   stickerText: { fontFamily: fonts.display, fontSize: 13, color: colors.ink },
   moreLine: { fontFamily: fonts.body, fontSize: 15, color: colors.cream, textAlign: "center" },
+  sharePill: {
+    height: 56,
+    borderRadius: spacing.radius,
+    borderWidth: 1.5,
+    borderColor: colors.cream,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sharePillText: { fontFamily: fonts.semibold, fontSize: 17, color: colors.cream },
   donePill: {
     height: 56,
     borderRadius: spacing.radius,

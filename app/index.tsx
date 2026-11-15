@@ -10,6 +10,7 @@ import { EditItemSheet, type EditableItem } from "../src/components/EditItemShee
 import { setPickedPhotos } from "../src/lib/pickedPhotos";
 import { loadSamplePhotos } from "../src/lib/samplePhotos";
 import { formatPlace } from "../src/lib/place";
+import { shareYard } from "../src/lib/shareYard";
 import { stockImages } from "../src/lib/stockImages";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCurrentUser } from "../src/lib/useCurrentUser";
@@ -190,7 +191,12 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
         </Pressable>
       </View>
       <Text style={styles.yardHeadline}>Your yard{counts ? ` · ${counts}` : ""}</Text>
-      <Text style={styles.yardMeta}>{formatPlace(garage)}</Text>
+      <View style={styles.yardMetaRow}>
+        <Text style={[styles.yardMeta, styles.yardMetaText]}>{formatPlace(garage)}</Text>
+        <Pressable onPress={() => shareYard(garage._id, user.name)} hitSlop={8} accessibilityRole="button" style={styles.shareLink}>
+          <Text style={styles.shareLinkText}>Share my yard</Text>
+        </Pressable>
+      </View>
       {error && !editing && <Text style={styles.error}>{error}</Text>}
       <FlatList
         data={items}
@@ -248,13 +254,22 @@ function YardCard({
   return (
     <View style={styles.card}>
       <Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel={`Edit ${item.title}`} style={styles.cardBody}>
-        <Image source={{ uri: item.photoUrl }} style={styles.cardPhoto} contentFit="cover" />
+        <View>
+          <Image source={{ uri: item.photoUrl }} style={styles.cardPhoto} contentFit="cover" />
+          {item.size && (
+            <View style={styles.sizeBadge} accessible={false}>
+              <Text style={styles.sizeText} numberOfLines={1}>
+                {item.size}
+              </Text>
+            </View>
+          )}
+        </View>
         <Text style={styles.cardPrice}>${Math.round(item.priceCents / 100)}</Text>
         <Text style={styles.cardTitle} numberOfLines={1}>
           {item.title}
         </Text>
         <Text style={[styles.cardMeta, reserved && styles.cardReserved]} numberOfLines={1}>
-          {reserved ? "Reserved" : sold ? "Sold" : [item.size, item.condition].filter(Boolean).join(" · ") || " "}
+          {reserved ? "Reserved" : sold ? "Sold" : item.condition || " "}
         </Text>
       </Pressable>
       {(reserved || sold) && (
@@ -336,11 +351,27 @@ const styles = StyleSheet.create({
   yardWordmark: { fontFamily: fonts.display, fontSize: 20, letterSpacing: -0.5, color: colors.brand },
   yardHeadline: { fontFamily: fonts.display, fontSize: 30, lineHeight: 34, letterSpacing: -1, color: colors.ink },
   yardMeta: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
+  yardMetaRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  yardMetaText: { flex: 1 },
+  shareLink: { minHeight: spacing.minButton, justifyContent: "center" },
+  shareLinkText: { fontFamily: fonts.medium, fontSize: 15, color: colors.brand },
   grid: { paddingTop: 8, paddingBottom: 12, gap: 14 },
   gridRow: { gap: 14 },
   card: { flex: 1, gap: 6 },
   cardBody: { gap: 2 },
   cardPhoto: { width: "100%", aspectRatio: 1, borderRadius: 16, backgroundColor: colors.hairline, marginBottom: 6 },
+  sizeBadge: {
+    position: "absolute",
+    right: 8,
+    bottom: 14,
+    maxWidth: 80,
+    height: 22,
+    paddingHorizontal: 8,
+    borderRadius: 11,
+    backgroundColor: "rgba(17,17,17,0.85)",
+    justifyContent: "center",
+  },
+  sizeText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.white },
   cardPrice: { fontFamily: fonts.display, fontSize: 17, lineHeight: 22, color: colors.ink },
   cardTitle: { fontFamily: fonts.body, fontSize: 15, lineHeight: 20, color: colors.ink },
   cardMeta: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted },

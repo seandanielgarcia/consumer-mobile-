@@ -240,6 +240,13 @@ export default function SellerReview() {
                 >
                   <View>
                     <Image source={{ uri: d.uri }} style={styles.cardPhoto} contentFit="cover" transition={0} />
+                    {d.status === "ready" && size !== "" && (
+                      <View style={styles.sizeBadge} accessible={false}>
+                        <Text style={styles.sizeText} numberOfLines={1}>
+                          {size}
+                        </Text>
+                      </View>
+                    )}
                     {d.status === "loading" && (
                       <View style={styles.cardSpinner}>
                         <ActivityIndicator color={colors.white} />
@@ -253,7 +260,7 @@ export default function SellerReview() {
                         {d.title || "Add a title"}
                       </Text>
                       <Text style={missingField(d) ? styles.cardFix : styles.cardMeta} numberOfLines={1}>
-                        {missingField(d) ? `Add ${missingField(d)}` : [size, d.condition.trim()].filter(Boolean).join(" · ") || " "}
+                        {missingField(d) ? `Add ${missingField(d)}` : d.condition.trim() || " "}
                       </Text>
                     </>
                   ) : (
@@ -350,6 +357,18 @@ const styles = StyleSheet.create({
   cardRemoved: { opacity: 0.45 },
   cardPhoto: { width: "100%", aspectRatio: 1, borderRadius: 16, backgroundColor: HAIRLINE, marginBottom: 6 },
   cardSpinner: { position: "absolute", top: 0, right: 0, bottom: 6, left: 0, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(17,17,17,0.25)" },
+  sizeBadge: {
+    position: "absolute",
+    right: 8,
+    bottom: 14,
+    maxWidth: 80,
+    height: 22,
+    paddingHorizontal: 8,
+    borderRadius: 11,
+    backgroundColor: "rgba(17,17,17,0.85)",
+    justifyContent: "center",
+  },
+  sizeText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.white },
   cardPrice: { fontFamily: fonts.display, fontSize: 17, lineHeight: 22, color: colors.ink },
   cardTitle: { fontFamily: fonts.body, fontSize: 15, lineHeight: 20, color: colors.ink },
   cardMeta: { ...type.meta, color: MUTED },
