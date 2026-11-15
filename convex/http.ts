@@ -34,7 +34,7 @@ http.route({
         if (unavailableItemIds.length > 0) {
           console.warn(`Order ${orderId} paid with unavailable items ${unavailableItemIds.join(", ")}; seller must refund those lines in Whop`);
         }
-        if (!alreadyPaid) await ctx.scheduler.runAfter(0, internal.notify.notifySellerSold, { orderId, unavailableItemIds });
+        if (!alreadyPaid) await ctx.scheduler.runAfter(0, internal.whop.notifySellerSold, { orderId, unavailableItemIds });
       } catch (error) {
         console.error(`Whop payment ${event.data.id} could not mark order ${orderId} paid: ${error}`);
       }
