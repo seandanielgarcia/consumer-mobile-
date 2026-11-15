@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { colors, fonts, primaryButton, primaryButtonText, spacing, type } from "../theme";
 
@@ -61,6 +61,7 @@ export function EditItemSheet({
 }) {
   const [picker, setPicker] = useState<ChoiceField | null>(null);
   const [pickerText, setPickerText] = useState("");
+  const priceFresh = useRef(false);
   const fields: ChoiceField[] = sizeRelevant(value)
     ? ["condition", "size", "brand", "color", "category"]
     : ["condition", "brand", "color", "category"];
@@ -110,8 +111,18 @@ export function EditItemSheet({
               <TextInput
                 accessibilityLabel="Price"
                 value={value.priceCents > 0 ? String(Math.round(value.priceCents / 100)) : ""}
+                selectTextOnFocus
+                onFocus={() => {
+                  priceFresh.current = true;
+                }}
                 onChangeText={(text) => {
-                  const dollars = parseInt(text.replace(/\D/g, ""), 10);
+                  const previous = value.priceCents > 0 ? String(Math.round(value.priceCents / 100)) : "";
+                  const typed =
+                    priceFresh.current && previous && text.length > previous.length && text.startsWith(previous)
+                      ? text.slice(previous.length)
+                      : text;
+                  priceFresh.current = false;
+                  const dollars = parseInt(typed.replace(/\D/g, ""), 10);
                   onChange({ priceCents: Number.isNaN(dollars) ? 0 : dollars * 100 });
                 }}
                 placeholder="Required"
