@@ -153,8 +153,30 @@ export const demoOrder = internalMutation({
 // - the demo accounts (Sam, Maya B, DEMO_ACCOUNT_PHONES) are treated like throwaway users by both cleanups.
 const PROTECT_RECENT_MS = 15 * 60 * 1000;
 const SMOKE_PHONE_PREFIX = "+1555977";
+const DEMO_ACCOUNT_PHONES = ["+15555550101", "+15555550102"]; // Sam, Maya B (DEMO_PHONES on the deployment)
 const isSmokePhone = (phone: string) => phone.startsWith(SMOKE_PHONE_PREFIX);
 const isRecent = (doc: { _creationTime: number }, now: number) => now - doc._creationTime < PROTECT_RECENT_MS;
+// The one rule for the demo logins: never deleted by any cleanup at any age; resetDemo only resets their yards and orders, and only `resetDemo --force` wipes them.
+const isDemoAccount = (phone: string) => DEMO_ACCOUNT_PHONES.includes(phone);
+
+// A recent order (unless force) protects everything it points to: the order, its items, its yard, the yard's owner and the buyer.
+async function protectedByRecentOrders(ctx: MutationCtx, now: number, force: boolean) {
+  const orders = new Set<Id<"orders">>();
+  const items = new Set<Id<"items">>();
+  const garages = new Set<Id<"garages">>();
+  const users = new Set<Id<"users">>();
+  if (force) return { orders, items, garages, users };
+  for (const order of await ctx.db.query("orders").collect()) {
+    if (!isRecent(order, now)) continue;
+    orders.add(order._id);
+    order.itemIds.forEach((id) => items.add(id));
+    garages.add(order.garageId);
+    users.add(order.buyerId);
+    const garage = await ctx.db.get(order.garageId);
+    if (garage) users.add(garage.ownerId);
+  }
+  return { orders, items, garages, users };
+}
 
 const SEED_PHONES = new Set(SEED.map((g) => g.phone));
 const SEED_TITLES = new Set(SEED.flatMap((g) => g.items.map((i) => i.title)));
@@ -166,16 +188,21 @@ export const devCleanup = internalMutation({
   handler: async (ctx, { dryRun, alsoPhones, force }) => {
     const now = Date.now();
     const protect = <T extends { _creationTime: number }>(doc: T) => !force && isRecent(doc, now);
+    const held = await protectedByRecentOrders(ctx, now, force === true);
     const extra = new Set(alsoPhones ?? []);
     const users = await ctx.db.query("users").collect();
     const keepUser = (u: Doc<"users">) =>
-      (!force && isSmokePhone(u.phone)) || protect(u) || (!extra.has(u.phone) && (SEED_PHONES.has(u.phone) || !isFictional(u.phone)));
+      isDemoAccount(u.phone) ||
+      held.users.has(u._id) ||
+      (!force && isSmokePhone(u.phone)) ||
+      protect(u) ||
+      (!extra.has(u.phone) && (SEED_PHONES.has(u.phone) || !isFictional(u.phone)));
     const dropUsers = users.filter((u) => !keepUser(u));
     const dropUserIds = new Set<Id<"users">>(dropUsers.map((u) => u._id));
     const seedOwnerIds = new Set(users.filter((u) => SEED_PHONES.has(u.phone)).map((u) => u._id));
 
     const garages = await ctx.db.query("garages").collect();
-    const dropGarages = garages.filter((g) => dropUserIds.has(g.ownerId));
+    const dropGarages = garages.filter((g) => dropUserIds.has(g.ownerId) && !held.garages.has(g._id));
     const dropGarageIds = new Set<Id<"garages">>(dropGarages.map((g) => g._id));
     const seedGarageIds = new Set(garages.filter((g) => seedOwnerIds.has(g.ownerId)).map((g) => g._id));
 
@@ -183,6 +210,7 @@ export const devCleanup = internalMutation({
     const dropItems = items.filter(
       (i) =>
         !protect(i) &&
+        !held.items.has(i._id) &&
         (dropGarageIds.has(i.garageId) || TEST_TITLE.test(i.title) || (seedGarageIds.has(i.garageId) && !SEED_TITLES.has(i.title))),
     );
     const dropItemIds = new Set<Id<"items">>(dropItems.map((i) => i._id));
@@ -190,17 +218,16 @@ export const devCleanup = internalMutation({
     const orders = await ctx.db.query("orders").collect();
     const dropOrders = orders.filter(
       (o) =>
-        !protect(o) && (dropUserIds.has(o.buyerId) || dropGarageIds.has(o.garageId) || o.itemIds.some((id) => dropItemIds.has(id))),
+        !held.orders.has(o._id) && (dropUserIds.has(o.buyerId) || dropGarageIds.has(o.garageId) || o.itemIds.some((id) => dropItemIds.has(id))),
     );
     // Items held by a protected (recent) order stay reserved; everything else in a seed yard goes back to live.
-    const heldByProtected = new Set(orders.filter((o) => protect(o)).flatMap((o) => o.itemIds));
     const resetItems = items.filter(
-      (i) => !dropItemIds.has(i._id) && !heldByProtected.has(i._id) && seedGarageIds.has(i.garageId) && i.status !== "live",
+      (i) => !dropItemIds.has(i._id) && !held.items.has(i._id) && seedGarageIds.has(i.garageId) && i.status !== "live",
     );
     const protectedCount = {
-      users: users.filter((u) => protect(u) || (!force && isSmokePhone(u.phone))).length,
-      items: items.filter((i) => protect(i)).length,
-      orders: orders.filter((o) => protect(o)).length,
+      users: users.filter((u) => protect(u) || held.users.has(u._id) || (!force && isSmokePhone(u.phone))).length,
+      items: items.filter((i) => protect(i) || held.items.has(i._id)).length,
+      orders: held.orders.size,
     };
 
     const report = {
@@ -232,7 +259,6 @@ export const devCleanup = internalMutation({
 // the last 15 minutes, and any smoke-test user (+1555977…), is left alone unless force: true.
 const DEMO_SELLER_PHONES = SEED.map((g) => g.phone);
 const THROWAWAY_PHONE_PREFIXES = ["+1555999", "+15550199"];
-const DEMO_ACCOUNT_PHONES = ["+15555550101", "+15555550102"]; // Sam, Maya B
 
 async function garagesOf(ctx: MutationCtx, ownerId: Id<"users">) {
   return await ctx.db.query("garages").withIndex("by_owner", (q) => q.eq("ownerId", ownerId)).collect();
@@ -263,15 +289,17 @@ export const resetDemo = internalMutation({
   args: { force: v.optional(v.boolean()) },
   handler: async (ctx, { force = false }) => {
     const now = Date.now();
-    const counts = { itemsRelisted: 0, ordersDeleted: 0, usersDeleted: 0, garagesDeleted: 0, itemsDeleted: 0, protectedUsers: 0, protectedOrders: 0 };
+    const held = await protectedByRecentOrders(ctx, now, force);
+    const counts = { itemsRelisted: 0, ordersDeleted: 0, usersDeleted: 0, garagesDeleted: 0, itemsDeleted: 0, protectedUsers: 0, protectedOrders: held.orders.size };
 
-    for (const phone of DEMO_SELLER_PHONES) {
+    // Seed yards, and (unless --force) the demo logins' yards, are reset in place: orders out, items back to live.
+    const resetPhones = force ? DEMO_SELLER_PHONES : [...DEMO_SELLER_PHONES, ...DEMO_ACCOUNT_PHONES];
+    for (const phone of resetPhones) {
       const user = await ctx.db.query("users").withIndex("by_phone", (q) => q.eq("phone", phone)).unique();
       if (!user) continue;
       for (const garage of await garagesOf(ctx, user._id)) {
         const { deleted, kept } = await deleteOrdersIn(ctx, garage._id, now, force);
         counts.ordersDeleted += deleted;
-        counts.protectedOrders += kept.size > 0 ? 1 : 0;
         const items = await ctx.db.query("items").withIndex("by_garage", (q) => q.eq("garageId", garage._id)).collect();
         for (const item of items) {
           if (kept.has(item._id)) continue;
@@ -284,9 +312,11 @@ export const resetDemo = internalMutation({
     }
 
     const throwaway: Doc<"users">[] = [];
-    for (const phone of DEMO_ACCOUNT_PHONES) {
-      const user = await ctx.db.query("users").withIndex("by_phone", (q) => q.eq("phone", phone)).unique();
-      if (user) throwaway.push(user);
+    if (force) {
+      for (const phone of DEMO_ACCOUNT_PHONES) {
+        const user = await ctx.db.query("users").withIndex("by_phone", (q) => q.eq("phone", phone)).unique();
+        if (user) throwaway.push(user);
+      }
     }
     for (const prefix of THROWAWAY_PHONE_PREFIXES) {
       throwaway.push(
@@ -297,12 +327,14 @@ export const resetDemo = internalMutation({
       );
     }
     for (const user of throwaway) {
-      if (!force && (isSmokePhone(user.phone) || isRecent(user, now))) {
+      // Skip smoke users, anyone created recently, and anyone a recent order points to (buyer or yard owner).
+      if (!force && (isSmokePhone(user.phone) || isRecent(user, now) || held.users.has(user._id))) {
         counts.protectedUsers++;
         continue;
       }
       for (const garage of await garagesOf(ctx, user._id)) {
-        const { deleted } = await deleteOrdersIn(ctx, garage._id, now, true);
+        if (held.garages.has(garage._id)) continue;
+        const { deleted } = await deleteOrdersIn(ctx, garage._id, now, force);
         counts.ordersDeleted += deleted;
         const items = await ctx.db.query("items").withIndex("by_garage", (q) => q.eq("garageId", garage._id)).collect();
         for (const item of items) {
