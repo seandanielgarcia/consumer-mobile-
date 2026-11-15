@@ -62,7 +62,7 @@ export default function SellerOpen() {
     <View style={styles.screen}>
       <Text style={styles.headline}>Your yard is open.</Text>
       <View style={styles.metaRow}>
-        <Text style={styles.meta}>{garage ? `${garage.neighborhood} · visible within about 2 mi` : " "}</Text>
+        <Text style={styles.meta}>{garage ? `${garage.neighborhood} · visible to buyers nearby` : " "}</Text>
         {sold.length > 0 && (
           <Pressable
             onPress={relistSold}
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   },
   soldText: { fontFamily: fonts.semibold, fontSize: 15, color: colors.cream },
   polaroids: { flexDirection: "row", justifyContent: "center", gap: 10, paddingVertical: 12 },
-  polaroid: { width: 108, backgroundColor: colors.white, paddingTop: 6, paddingHorizontal: 6, paddingBottom: 8, gap: 6 },
+  polaroid: { width: 108, minHeight: spacing.minButton, backgroundColor: colors.white, paddingTop: 6, paddingHorizontal: 6, paddingBottom: 8, gap: 6 },
   polaroidPhoto: { height: 132, backgroundColor: colors.line },
   polaroidFooter: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 28 },
   sticker: { paddingHorizontal: 8, height: 28, borderRadius: 8, borderWidth: 2, borderColor: colors.ink, justifyContent: "center" },

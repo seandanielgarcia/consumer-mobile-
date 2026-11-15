@@ -217,7 +217,7 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
         </View>
       </View>
       <Text style={styles.yardHeadline}>Your yard{counts ? ` · ${counts}` : ""}</Text>
-      <Text style={styles.yardMeta}>{garage.neighborhood} · visible within about 2 mi</Text>
+      <Text style={styles.yardMeta}>{garage.neighborhood} · visible to buyers nearby</Text>
       {error && !editing && <Text style={styles.error}>{error}</Text>}
       <FlatList
         data={items}
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
   grid: { paddingTop: 8, paddingBottom: 12, gap: 14 },
   gridRow: { gap: 14 },
   card: { flex: 1, gap: 6 },
-  cardBody: { backgroundColor: colors.white, padding: 8, paddingBottom: 10, gap: 8 },
+  cardBody: { minHeight: spacing.minButton, backgroundColor: colors.white, padding: 8, paddingBottom: 10, gap: 8 },
   cardPhoto: { width: "100%", aspectRatio: 0.85, backgroundColor: colors.line },
   cardSticker: {
     position: "absolute",
