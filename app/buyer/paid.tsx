@@ -1,16 +1,29 @@
 import { useQuery } from "convex/react";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import { PAID_GRACE_MS } from "../../src/buyer/checkout";
 import { detailLine, formatPrice } from "../../src/buyer/format";
+import { PAYMENT_FAILED } from "../../src/buyer/useBuy";
 import { PrimaryButton } from "../../src/components/PrimaryButton";
 import { colors, fonts, type, typeSize } from "../../src/theme";
 
 export default function BuyerPaid() {
-  const { orderId } = useLocalSearchParams<{ orderId?: string }>();
+  const { orderId, garageId, items } = useLocalSearchParams<{ orderId?: string; garageId?: string; items?: string }>();
   const order = useQuery(api.orders.getOrder, orderId ? { orderId: orderId as Id<"orders"> } : "skip");
+  const [graceOver, setGraceOver] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setGraceOver(true), PAID_GRACE_MS);
+    return () => clearTimeout(timer);
+  }, []);
+  const unpaid = order && (order.status === "cancelled" || (order.status === "pending" && graceOver));
+  useEffect(() => {
+    if (!unpaid || !garageId) return;
+    router.replace({ pathname: "/buyer/garage/[id]", params: { id: garageId, selected: items ?? "", notice: PAYMENT_FAILED } });
+  }, [unpaid, garageId]);
 
   if (order === undefined && orderId) {
     return <ActivityIndicator color={colors.ink} style={{ flex: 1, backgroundColor: colors.cream }} />;
