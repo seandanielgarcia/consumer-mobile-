@@ -8,6 +8,7 @@ import { api } from "../convex/_generated/api";
 import type { Doc } from "../convex/_generated/dataModel";
 import { ItemEditFields, type ItemFields } from "../src/components/ItemEditFields";
 import { setPickedPhotos } from "../src/lib/pickedPhotos";
+import { loadSamplePhotos } from "../src/lib/samplePhotos";
 import { signOut, useCurrentUser } from "../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../src/theme";
 
@@ -37,6 +38,11 @@ async function pickFromCamera() {
   router.push("/seller/price");
 }
 
+async function pickSamplePhotos() {
+  setPickedPhotos(await loadSamplePhotos());
+  router.push("/seller/price");
+}
+
 function addMore() {
   ActionSheetIOS.showActionSheetWithOptions(
     { title: "Add more", options: ["Photo library", "Camera", "Cancel"], cancelButtonIndex: 2 },
@@ -57,17 +63,22 @@ export default function Home() {
   const user = useCurrentUser();
   const mine = useQuery(api.garages.mine, user ? { ownerId: user.userId } : "skip");
   if (user && mine) return <Yard user={user} garage={mine.garage} />;
-  return <Landing signedIn={!!user} name={user?.name} />;
+  return <Landing user={user} />;
 }
 
 // Signed out, or signed in without a yard yet.
-function Landing({ signedIn, name }: { signedIn: boolean; name?: string }) {
+function Landing({ user }: { user: { userId: Doc<"users">["_id"]; name?: string } | null }) {
   const samples = useQuery(api.items.sampleLive) ?? [];
+  const isDemoUser = useQuery(api.users.isDemoUser, user ? { userId: user.userId } : "skip");
+  // Dev builds, demo numbers, and signed-out users (unless EXPO_PUBLIC_SHOW_SAMPLES=0).
+  const showSamplePhotos = __DEV__ || isDemoUser === true || (!user && process.env.EXPO_PUBLIC_SHOW_SAMPLES !== "0");
   return (
     <View style={styles.screen}>
       <View style={styles.block}>
         <Text style={styles.wordmark}>yard sale</Text>
-        <Text style={styles.tagline}>Share a photo and set a price, we'll take care of the rest</Text>
+        <Text style={styles.tagline} numberOfLines={1} adjustsFontSizeToFit>
+          Share a photo and set a price, we'll take care of the rest
+        </Text>
         <View style={styles.stack}>
           {samples.map((item, index) => (
             <View key={item._id} style={[styles.polaroid, POLAROID_POSITIONS[index]]}>
@@ -86,14 +97,21 @@ function Landing({ signedIn, name }: { signedIn: boolean; name?: string }) {
             <Text style={styles.buttonText}>Shop near you</Text>
           </Pressable>
         </View>
-        {signedIn && (
-          <View style={styles.session}>
-            <Text style={styles.sessionText}>{name ? `Hi ${name}` : "Signed in"} · </Text>
-            <Pressable onPress={signOut} hitSlop={8} accessibilityRole="button">
-              <Text style={[styles.sessionText, styles.signOut]}>Sign out</Text>
+        <View style={styles.landingLinks}>
+          {showSamplePhotos && (
+            <Pressable onPress={pickSamplePhotos} hitSlop={8} style={styles.linkButton} accessibilityRole="button">
+              <Text style={[styles.sessionText, styles.signOut]}>Use sample photos</Text>
             </Pressable>
-          </View>
-        )}
+          )}
+          {user && (
+            <View style={styles.session}>
+              <Text style={styles.sessionText}>{user.name ? `Hi ${user.name}` : "Signed in"} · </Text>
+              <Pressable onPress={signOut} hitSlop={8} style={styles.linkButton} accessibilityRole="button">
+                <Text style={[styles.sessionText, styles.signOut]}>Sign out</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -180,9 +198,10 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
     );
   };
 
+  // "Your yard · N live · N reserved · N sold" (zero counts other than live are omitted)
   const counts = (["live", "reserved", "sold"] as const)
     .map((status) => [items.filter((item) => item.status === status).length, status] as const)
-    .filter(([n]) => n > 0)
+    .filter(([n, status]) => n > 0 || status === "live")
     .map(([n, status]) => `${n} ${status}`)
     .join(" · ");
 
@@ -197,10 +216,8 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
           </Pressable>
         </View>
       </View>
-      <Text style={styles.yardHeadline}>Your yard</Text>
-      <Text style={styles.yardMeta}>
-        {garage.neighborhood} · visible within about 2 mi{counts ? ` · ${counts}` : ""}
-      </Text>
+      <Text style={styles.yardHeadline}>Your yard{counts ? ` · ${counts}` : ""}</Text>
+      <Text style={styles.yardMeta}>{garage.neighborhood} · visible within about 2 mi</Text>
       {error && !editing && <Text style={styles.error}>{error}</Text>}
       <FlatList
         data={items}
@@ -217,8 +234,8 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
         <Pressable style={styles.cta} onPress={addMore} accessibilityRole="button">
           <Text style={styles.ctaText}>Add more</Text>
         </Pressable>
-        <Pressable style={styles.shopLink} onPress={() => router.push("/buyer")} accessibilityRole="button">
-          <Text style={styles.shopLinkText}>Shop near you</Text>
+        <Pressable style={styles.shopPill} onPress={() => router.push("/buyer")} accessibilityRole="button">
+          <Text style={styles.shopPillText}>Shop near you</Text>
         </Pressable>
       </View>
 
@@ -344,6 +361,8 @@ const styles = StyleSheet.create({
   },
   stickerText: { fontFamily: fonts.display, fontSize: 15, color: colors.ink },
   wordmark: { fontFamily: fonts.display, fontSize: 44, letterSpacing: -1.5, color: colors.cream },
+  landingLinks: { marginTop: 8, alignItems: "center" },
+  linkButton: { minHeight: spacing.minButton, justifyContent: "center" },
   session: { flexDirection: "row", justifyContent: "center", alignItems: "center", minHeight: spacing.minButton },
   sessionText: { fontFamily: fonts.body, fontSize: 14, color: colors.cream },
   signOut: { textDecorationLine: "underline" },
@@ -363,7 +382,7 @@ const styles = StyleSheet.create({
   yardWordmark: { fontFamily: fonts.display, fontSize: 20, letterSpacing: -0.5, color: colors.brand },
   yardSessionText: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
   signOutButton: { minHeight: spacing.minButton, justifyContent: "center" },
-  yardHeadline: { fontFamily: fonts.display, fontSize: 40, lineHeight: 42, letterSpacing: -1.5, color: colors.ink },
+  yardHeadline: { fontFamily: fonts.display, fontSize: 30, lineHeight: 34, letterSpacing: -1, color: colors.ink },
   yardMeta: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
   grid: { paddingTop: 8, paddingBottom: 12, gap: 14 },
   gridRow: { gap: 14 },
@@ -401,14 +420,22 @@ const styles = StyleSheet.create({
   cta: {
     flex: 1,
     height: spacing.cta,
-    borderRadius: 30,
+    borderRadius: spacing.radius,
     backgroundColor: colors.brand,
     alignItems: "center",
     justifyContent: "center",
   },
   ctaText: { fontFamily: fonts.semibold, fontSize: 18, color: colors.cream },
-  shopLink: { minHeight: spacing.minButton, justifyContent: "center", paddingHorizontal: 8 },
-  shopLinkText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.brand, textDecorationLine: "underline" },
+  shopPill: {
+    height: spacing.cta,
+    paddingHorizontal: 20,
+    borderRadius: spacing.radius,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shopPillText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.ink },
   error: { fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
 
   // Edit sheet
@@ -436,7 +463,7 @@ const styles = StyleSheet.create({
   secondary: {
     height: spacing.cta,
     paddingHorizontal: 24,
-    borderRadius: 30,
+    borderRadius: spacing.radius,
     borderWidth: 2,
     borderColor: colors.ink,
     alignItems: "center",

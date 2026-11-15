@@ -147,11 +147,12 @@ export const demoOrder = internalMutation({
   },
 });
 
-// Demo reset (scripts/reset-demo.sh). Seed garages go back to all-live with their orders removed, and throwaway
-// sign-in users (phones starting +1555999 or +15550199) are deleted with their garages, items and orders.
-// Orders are only ever touched inside a seed or throwaway garage.
+// Demo reset (scripts/reset-demo.sh). Seed yards go back to all-live with their orders removed, and throwaway
+// sign-in users (phones starting +1555999 or +15550199) plus the demo accounts (Sam and Maya B) are deleted with
+// their yards, items and orders. Orders are only ever touched inside a seed or throwaway yard.
 const DEMO_SELLER_PHONES = SEED.map((g) => g.phone);
 const THROWAWAY_PHONE_PREFIXES = ["+1555999", "+15550199"];
+const DEMO_ACCOUNT_PHONES = ["+15555550101", "+15555550102"]; // Sam, Maya B
 
 async function garagesOf(ctx: MutationCtx, ownerId: Id<"users">) {
   return await ctx.db.query("garages").withIndex("by_owner", (q) => q.eq("ownerId", ownerId)).collect();
@@ -193,6 +194,10 @@ export const resetDemo = internalMutation({
     }
 
     const throwaway: Doc<"users">[] = [];
+    for (const phone of DEMO_ACCOUNT_PHONES) {
+      const user = await ctx.db.query("users").withIndex("by_phone", (q) => q.eq("phone", phone)).unique();
+      if (user) throwaway.push(user);
+    }
     for (const prefix of THROWAWAY_PHONE_PREFIXES) {
       throwaway.push(
         ...(await ctx.db

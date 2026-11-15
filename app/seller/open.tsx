@@ -1,12 +1,12 @@
 import { useMutation, useQuery } from "convex/react";
 import { Image } from "expo-image";
-import * as Linking from "expo-linking";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ActionSheetIOS, Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "../../convex/_generated/api";
 import type { Doc, Id } from "../../convex/_generated/dataModel";
 import { ChatIcon } from "../../src/components/icons";
+import { textKeiki } from "../../src/lib/keiki";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../../src/theme";
 
@@ -60,6 +60,7 @@ export default function SellerOpen() {
 
   return (
     <View style={styles.screen}>
+      <Text style={styles.headline}>Your yard is open.</Text>
       <View style={styles.metaRow}>
         <Text style={styles.meta}>{garage ? `${garage.neighborhood} · visible within about 2 mi` : " "}</Text>
         {sold.length > 0 && (
@@ -73,7 +74,6 @@ export default function SellerOpen() {
           </Pressable>
         )}
       </View>
-      <Text style={styles.headline}>Your yard is open.</Text>
       <View style={styles.polaroids}>
         {items.slice(0, 3).map((item, index) => {
           const reserved = item.status === "reserved";
@@ -123,19 +123,14 @@ export default function SellerOpen() {
             </View>
             <Text style={styles.keikiTitle}>More later? Text Keiki a pic and a price.</Text>
           </View>
-          <Pressable
-            style={styles.saveButton}
-            accessibilityRole="button"
-            onPress={() =>
-              Linking.openURL(
-                `sms:+17796251378&body=${encodeURIComponent("hey keiki, i have a few things to add to my yard (K-FERUEU)")}`,
-              )
-            }
-          >
-            <Text style={styles.saveText}>Save Keiki to contacts</Text>
+          <Pressable style={styles.secondaryPill} accessibilityRole="button" onPress={textKeiki}>
+            <Text style={styles.secondaryPillText}>Text Keiki</Text>
           </Pressable>
         </View>
       )}
+      <Pressable style={styles.donePill} accessibilityRole="button" onPress={() => router.replace("/")}>
+        <Text style={styles.donePillText}>Done</Text>
+      </Pressable>
     </View>
   );
 }
@@ -150,11 +145,11 @@ const styles = StyleSheet.create({
     gap: 20,
     justifyContent: "center",
   },
+  headline: { fontFamily: fonts.display, fontSize: 44, lineHeight: 43, letterSpacing: -1.5, color: colors.cream },
   metaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", minHeight: spacing.minButton },
   meta: { fontFamily: fonts.body, fontSize: 15, color: colors.cream },
   soldButton: { minHeight: spacing.minButton, justifyContent: "center", paddingHorizontal: 4 },
   soldText: { fontFamily: fonts.semibold, fontSize: 15, color: colors.cream, textDecorationLine: "underline" },
-  headline: { fontFamily: fonts.display, fontSize: 44, lineHeight: 43, letterSpacing: -1.5, color: colors.cream },
   polaroids: { flexDirection: "row", justifyContent: "center", gap: 10, paddingVertical: 12 },
   polaroid: { width: 108, backgroundColor: colors.white, paddingTop: 6, paddingHorizontal: 6, paddingBottom: 8, gap: 6 },
   polaroidPhoto: { height: 132, backgroundColor: colors.line },
@@ -193,12 +188,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   keikiTitle: { flex: 1, fontFamily: fonts.display, fontSize: 17, color: colors.ink },
-  saveButton: {
+  secondaryPill: {
     height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.ink,
+    borderRadius: spacing.radius,
+    borderWidth: 2,
+    borderColor: colors.ink,
     alignItems: "center",
     justifyContent: "center",
   },
-  saveText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.cream },
+  secondaryPillText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.ink },
+  donePill: {
+    height: spacing.cta,
+    borderRadius: spacing.radius,
+    backgroundColor: colors.cream,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  donePillText: { fontFamily: fonts.semibold, fontSize: 18, color: colors.ink },
 });

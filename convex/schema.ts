@@ -9,7 +9,6 @@ export default defineSchema({
     verified: v.optional(v.boolean()),
     verifyCode: v.optional(v.string()),
     verifyCodeExpiresAt: v.optional(v.number()),
-    verifyCodeIssuedAt: v.optional(v.number()),
   })
     .index("by_phone", ["phone"])
     .index("by_verifyCode", ["verifyCode"]),
