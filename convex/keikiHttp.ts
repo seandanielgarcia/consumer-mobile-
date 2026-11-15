@@ -52,7 +52,6 @@ function keikiRoute(handler: (ctx: ActionCtx, input: Json, context: Json, phones
     const context = asObject(body.context);
     const phones = [asString(context.phone), asString(context.userId), asString(request.headers.get("X-Orchid-User-Id"))]
       .filter((p): p is string => !!p);
-    if (phones.length === 0) return reply({ error: "no_garage" });
     try {
       return reply(await handler(ctx, input, context, phones));
     } catch (e) {
@@ -105,6 +104,16 @@ export function registerKeikiRoutes(http: HttpRouter) {
       const itemId = asString(input.item_id);
       if (!itemId) return { error: "missing_item_id" };
       return await ctx.runMutation(internal.keiki.updateItem, { phones, itemId, status: asString(input.status) ?? "" });
+    }),
+  });
+
+  http.route({
+    path: "/keiki/verify_phone",
+    method: "POST",
+    handler: keikiRoute(async (ctx, input, _context, phones) => {
+      const code = asString(input.code);
+      if (!code) return { error: "bad_code" };
+      return await ctx.runMutation(internal.keiki.verifyPhone, { phones, code });
     }),
   });
 }

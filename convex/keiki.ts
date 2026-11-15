@@ -18,6 +18,17 @@ function phoneCandidates(raw: string): string[] {
   return [...new Set(candidates.filter(Boolean))];
 }
 
+async function userForPhones(ctx: QueryCtx, phones: string[]): Promise<Doc<"users"> | null> {
+  for (const phone of phones.flatMap(phoneCandidates)) {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_phone", (q) => q.eq("phone", phone))
+      .first();
+    if (user) return user;
+  }
+  return null;
+}
+
 async function garageForPhones(ctx: QueryCtx, phones: string[]): Promise<Doc<"garages"> | null> {
   for (const phone of phones.flatMap(phoneCandidates)) {
     const user = await ctx.db
@@ -186,10 +197,26 @@ export const updateItem = internalMutation({
   handler: async (ctx, { phones, itemId, status }): Promise<ToolResult> => {
     const found = await itemInGarage(ctx, phones, itemId);
     if (!found.item) return found.error;
-    // TODO(SEA-4 removed): "removed" waits on Hailey (H5): map to draft or add a 5th status.
-    if (status !== "sold") return { error: "unsupported_status" };
     const { item } = found;
-    await ctx.db.patch(item._id, { status: "sold" });
-    return { item_id: item._id, title: item.title, status: "sold" };
+    if (status === "sold") {
+      await ctx.db.patch(item._id, { status: "sold" });
+      return { item_id: item._id, title: item.title, status: "sold" };
+    }
+    if (status !== "removed") return { error: "unsupported_status" };
+    if (item.status !== "draft" && item.status !== "live") return { error: "item_not_editable", status: item.status };
+    await ctx.db.patch(item._id, { status: "draft" });
+    return { item_id: item._id, title: item.title, status: "draft" };
+  },
+});
+
+export const verifyPhone = internalMutation({
+  args: { phones: v.array(v.string()), code: v.string() },
+  handler: async (ctx, { phones, code }): Promise<ToolResult> => {
+    const user = await userForPhones(ctx, phones);
+    if (!user) return { error: "no_user" };
+    if (!user.verifyCode || user.verifyCode !== code.trim()) return { error: "bad_code" };
+    if (!user.verifyCodeExpiresAt || user.verifyCodeExpiresAt <= Date.now()) return { error: "expired" };
+    await ctx.db.patch(user._id, { verified: true, verifyCode: undefined, verifyCodeExpiresAt: undefined });
+    return { ok: true };
   },
 });
