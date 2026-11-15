@@ -7,6 +7,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { detailLine, formatPrice } from "../../../src/buyer/format";
 import { useBuyerLocation } from "../../../src/buyer/location";
 import { useBuy } from "../../../src/buyer/useBuy";
+import { PrimaryButton } from "../../../src/components/PrimaryButton";
 import { colors, fonts } from "../../../src/theme";
 
 export default function BuyerItem() {
@@ -78,7 +79,7 @@ export default function BuyerItem() {
               {rows.map(([label, value], i) => (
                 <View
                   key={label}
-                  style={{ height: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderTopWidth: i ? 1 : 0, borderTopColor: "#EDE6D6" }}
+                  style={{ height: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderTopWidth: i ? 1 : 0, borderTopColor: colors.hairline }}
                 >
                   <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted }}>{label}</Text>
                   <Text style={{ fontFamily: fonts.medium, fontSize: 15, color: colors.ink }}>{value}</Text>
@@ -92,18 +93,8 @@ export default function BuyerItem() {
           {error && <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: colors.ink }}>{error}</Text>}
         </View>
       </ScrollView>
-      <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 34, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: "#EDE6D6" }}>
-        <Pressable
-          onPress={() => buy([item._id])}
-          disabled={buying}
-          style={{ height: 56, borderRadius: 16, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" }}
-        >
-          {buying ? (
-            <ActivityIndicator color={colors.cream} />
-          ) : (
-            <Text style={{ fontFamily: fonts.display, fontSize: 18, color: colors.white }}>Buy · {formatPrice(item.priceCents)}</Text>
-          )}
-        </Pressable>
+      <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 34, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.hairline }}>
+        <PrimaryButton label={`Buy · ${formatPrice(item.priceCents)}`} onPress={() => buy([item._id])} loading={buying} />
       </View>
     </View>
   );

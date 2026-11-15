@@ -96,7 +96,15 @@ export const garage = query({
       distanceMi: roughMiles(lat, lng, garage),
       items: items
         .filter((i) => i.status === "live" && !held.has(i._id))
-        .map((i) => ({ _id: i._id, title: i.title, size: i.size, priceCents: i.priceCents, photoUrl: i.photoUrl })),
+        .map((i) => ({
+          _id: i._id,
+          title: i.title,
+          size: i.size,
+          condition: i.condition,
+          brand: i.brand,
+          priceCents: i.priceCents,
+          photoUrl: i.photoUrl,
+        })),
     };
   },
 });

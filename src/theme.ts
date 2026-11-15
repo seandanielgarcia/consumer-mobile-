@@ -5,6 +5,7 @@ export const colors = {
   ink: "#111111",
   muted: "#5A5245",
   line: "#CFC3AA",
+  hairline: "#EDE6D6",
   white: "#FFFFFF",
 } as const;
 
@@ -25,5 +26,16 @@ export const spacing = {
   radius: 999,
 } as const;
 
-export const theme = { colors, fonts, spacing };
+export const type = {
+  hero: 40,
+  title: 28,
+  itemTitle: 22,
+  sentence: 17,
+  row: 15,
+  meta: 13,
+  listPrice: 18,
+  heroPrice: 32,
+} as const;
+
+export const theme = { colors, fonts, spacing, type };
 export default theme;
