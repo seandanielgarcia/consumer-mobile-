@@ -21,11 +21,11 @@ export const search = query({
         ctx.db
           .query("items")
           .withSearchIndex("search_title", (s) => s.search("title", term).eq("status", "live"))
-          .take(50),
+          .take(200),
         ctx.db
           .query("items")
           .withSearchIndex("search_description", (s) => s.search("description", term).eq("status", "live"))
-          .take(50),
+          .take(200),
       ]);
       const seen = new Set<Id<"items">>();
       items = [...byTitle, ...byDescription].filter((i) => !seen.has(i._id) && seen.add(i._id));
@@ -60,7 +60,7 @@ export const search = query({
         distanceMi,
       });
     }
-    return results;
+    return results.sort((a, b) => a.distanceMi - b.distanceMi);
   },
 });
 
