@@ -39,6 +39,11 @@ export const pendingOrder = internalQuery({
   },
 });
 
+export const normalizeOrderId = internalQuery({
+  args: { orderId: v.string() },
+  handler: async (ctx, { orderId }) => ctx.db.normalizeId("orders", orderId),
+});
+
 export const setOrderCheckout = internalMutation({
   args: { orderId: v.id("orders"), whopCheckoutId: v.string() },
   handler: async (ctx, { orderId, whopCheckoutId }) => {

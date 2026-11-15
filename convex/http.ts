@@ -2,7 +2,6 @@ import type { Whop } from "@whop/sdk";
 import { unwrapWebhook } from "@whop/sdk/helpers";
 import { httpRouter } from "convex/server";
 import { internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
 import { httpAction } from "./_generated/server";
 import { registerKeikiRoutes } from "./keikiHttp";
 
@@ -27,10 +26,22 @@ http.route({
     if (event.type === "payment.succeeded" && typeof userId === "string") {
       await ctx.runMutation(internal.users.setPremium, { userId });
     }
-    const orderId = event.data.metadata?.orderId;
-    if (event.type === "payment.succeeded" && typeof orderId === "string") {
-      await ctx.runMutation(internal.orders.markPaid, { orderId: orderId as Id<"orders"> });
-      // TODO: text the seller once Keiki outbound is wired up.
+    const rawOrderId = event.data.metadata?.orderId;
+    if (event.type === "payment.succeeded" && typeof rawOrderId === "string") {
+      const orderId = await ctx.runQuery(internal.whop.normalizeOrderId, { orderId: rawOrderId });
+      if (!orderId) {
+        console.error(`Whop payment ${event.data.id} names unknown order ${rawOrderId}`);
+        return new Response("OK", { status: 200 });
+      }
+      try {
+        const { unavailableItemIds } = await ctx.runMutation(internal.orders.markPaid, { orderId });
+        if (unavailableItemIds.length > 0) {
+          console.warn(`Order ${orderId} paid with unavailable items ${unavailableItemIds.join(", ")}; seller must refund those lines in Whop`);
+        }
+        // TODO: text the seller (sellerName, sellerPhone from markPaid) once Keiki outbound is wired up; name any unavailableItemIds and ask them to refund those lines manually in Whop.
+      } catch (error) {
+        console.error(`Whop payment ${event.data.id} could not mark order ${orderId} paid: ${error}`);
+      }
     }
     return new Response("OK", { status: 200 });
   }),
