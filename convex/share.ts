@@ -46,7 +46,7 @@ p{margin:6px 0 0;font-size:15px}
 .title{font-size:14px;margin-top:4px}
 .cta{position:fixed;left:16px;right:16px;bottom:28px;display:block;height:56px;line-height:56px;border-radius:999px;background:#2340FF;color:#fff;text-align:center;font-weight:800;font-size:18px;text-decoration:none}
 </style></head><body>${body}
-${appUrl ? `<a class="cta" href="${escape(appUrl)}">Open in yard sale</a><script>location.href=${JSON.stringify(appUrl)}</script>` : ""}
+${appUrl ? `<a class="cta" href="${escape(appUrl)}">Open in yardsale</a><script>location.href=${JSON.stringify(appUrl)}</script>` : ""}
 </body></html>`;
 }
 
@@ -59,9 +59,9 @@ export function registerShareRoutes(http: HttpRouter) {
       const yard = await ctx.runQuery(internal.share.yard, { id });
       const headers = { "Content-Type": "text/html; charset=utf-8" };
       if (!yard) {
-        return new Response(page("yard sale", "This yard is gone.", undefined, "<header><h1>This yard is gone.</h1></header>"), { status: 404, headers });
+        return new Response(page("yardsale", "This yard is gone.", undefined, "<header><h1>This yard is gone.</h1></header>"), { status: 404, headers });
       }
-      const title = `${yard.ownerName}'s yard sale`;
+      const title = `${yard.ownerName}'s yard`;
       const description = `${yard.items.length} item${yard.items.length === 1 ? "" : "s"} in ${yard.neighborhood} · pickup only`;
       const cards = yard.items
         .map(
