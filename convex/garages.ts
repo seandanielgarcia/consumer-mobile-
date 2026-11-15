@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { roundCoord } from "./lib/location";
+import { internal } from "./_generated/api";
 
 export const mine = query({
   args: { ownerId: v.id("users") },
@@ -58,6 +59,7 @@ export const openWithItems = mutation({
       .first();
     const garageId = existing?._id ?? (await ctx.db.insert("garages", { ownerId, ...location }));
     if (existing) await ctx.db.patch(existing._id, location);
+    if (!existing?.isOpen) await ctx.scheduler.runAfter(0, internal.yard.notifyYardOpen, { garageId });
     const itemIds = [];
     for (const item of items) {
       const photoUrl = await ctx.storage.getUrl(item.storageId);
