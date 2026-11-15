@@ -1,14 +1,21 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery } from "convex/react";
 import * as Linking from "expo-linking";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { router } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { api } from "../convex/_generated/api";
 import type { Id } from "../convex/_generated/dataModel";
-import { setCurrentUser } from "../src/lib/useCurrentUser";
+import { cancelSignIn, setCurrentUser } from "../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../src/theme";
 
 const KEIKI_NUMBER = "+17796251378";
+const KEIKI_NUMBER_DISPLAY = "+1 779-625-1378";
+const PENDING_KEY = "garage-sale/pending-verification";
+
+type Pending = { userId: Id<"users">; code: string; phone: string; name: string; startedAt: number };
+
+const PENDING_TTL_MS = 10 * 60 * 1000;
 
 const normalizePhone = (input: string) => {
   const digits = input.replace(/\D/g, "");
@@ -18,31 +25,58 @@ const normalizePhone = (input: string) => {
 };
 
 export default function SignIn() {
-  const { next } = useLocalSearchParams<{ next?: string }>();
   const startVerification = useMutation(api.users.startVerification);
   const devSkip = useMutation(api.users.devSkipVerification);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [pending, setPending] = useState<{ userId: Id<"users">; code: string } | null>(null);
+  const [pending, setPendingState] = useState<Pending | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const done = useRef(false);
   const verified = useQuery(api.users.isVerified, pending ? { userId: pending.userId } : "skip");
   const normalized = normalizePhone(phone);
   const canContinue = name.trim() !== "" && normalized !== null && !saving;
 
+  const setPending = (next: Pending | null) => {
+    setPendingState(next);
+    if (next) AsyncStorage.setItem(PENDING_KEY, JSON.stringify(next)).catch(() => {});
+    else AsyncStorage.removeItem(PENDING_KEY).catch(() => {});
+  };
+
   useEffect(() => {
-    if (!pending || !verified) return;
-    setCurrentUser({ userId: pending.userId }).then(() =>
-      next === "back" && router.canGoBack() ? router.back() : router.replace("/seller/price"),
-    );
-  }, [pending, verified, next]);
+    AsyncStorage.getItem(PENDING_KEY)
+      .then((stored) => {
+        const restored = stored ? (JSON.parse(stored) as Pending) : null;
+        if (restored && Date.now() - (restored.startedAt ?? 0) < PENDING_TTL_MS) setPendingState(restored);
+        else AsyncStorage.removeItem(PENDING_KEY).catch(() => {});
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => () => {
+    if (!done.current) cancelSignIn();
+  }, []);
+
+  const finish = (userId: Id<"users">, firstName: string) => {
+    done.current = true;
+    AsyncStorage.removeItem(PENDING_KEY).catch(() => {});
+    if (router.canGoBack()) router.back();
+    setCurrentUser({ userId, name: firstName });
+  };
+
+  useEffect(() => {
+    if (pending && verified) finish(pending.userId, pending.name);
+  }, [pending, verified]);
 
   const submit = async () => {
     if (!normalized) return;
     setSaving(true);
     setError(null);
     try {
-      setPending(await startVerification({ phone: normalized, name: name.trim() }));
+      const firstName = name.trim();
+      const result = await startVerification({ phone: normalized, name: firstName });
+      if (result.verified) finish(result.userId, firstName);
+      else setPending({ userId: result.userId, code: result.code ?? "", phone: phone.trim(), name: firstName, startedAt: Date.now() });
     } catch {
       setError("Couldn't save that. Try again.");
     }
@@ -51,7 +85,7 @@ export default function SignIn() {
 
   const textKeiki = () => {
     if (!pending) return;
-    const body = encodeURIComponent(`hey keiki, verify me (K-FERUEU) code ${pending.code}`);
+    const body = encodeURIComponent(`K-FERUEU verify ${pending.code}`);
     Linking.openURL(`sms:${KEIKI_NUMBER}&body=${body}`);
   };
 
@@ -67,24 +101,27 @@ export default function SignIn() {
   return (
     <KeyboardAvoidingView behavior="padding" style={styles.screen}>
       <Pressable onPress={() => (pending ? setPending(null) : router.back())} hitSlop={12} style={styles.back}>
-        <Text style={styles.backText}>← Back</Text>
+        <Text style={styles.backText}>{pending ? "← Back" : "Cancel"}</Text>
       </Pressable>
       {pending ? (
         <>
-          <Text style={styles.headline}>Text us this code</Text>
-          <View style={styles.codeCard}>
-            <Text style={styles.code}>{pending.code}</Text>
-            <View style={styles.waiting}>
-              <ActivityIndicator color={colors.brand} size="small" />
-              <Text style={styles.waitingText}>Waiting for your text</Text>
+          <View style={styles.instructionBlock}>
+            <Text style={styles.label}>Text this to Keiki</Text>
+            <View style={styles.codeChip}>
+              <Text style={styles.codeChipText}>K-FERUEU verify {pending.code}</Text>
             </View>
+            <Text style={styles.toNumber}>to {KEIKI_NUMBER_DISPLAY}</Text>
+            <Text style={styles.fromNumber}>from {pending.phone}</Text>
+          </View>
+          <View style={styles.waiting}>
+            <ActivityIndicator color={colors.brand} size="small" />
+            <Text style={styles.waitingText}>Waiting for your text…</Text>
           </View>
         </>
       ) : (
         <>
-          <Text style={styles.headline}>{"Who's selling?"}</Text>
-          <Text style={styles.subhead}>Buyers see your first name. Your number is how we text you when something sells.</Text>
           <View style={styles.fields}>
+            <Text style={styles.fieldLabel}>{"What's your first name?"}</Text>
             <TextInput
               value={name}
               onChangeText={setName}
@@ -96,6 +133,10 @@ export default function SignIn() {
               style={styles.input}
               autoFocus
             />
+            <Text style={styles.subhead}>Buyers see your first name only.</Text>
+          </View>
+          <View style={styles.fields}>
+            <Text style={styles.fieldLabel}>Your phone number</Text>
             <TextInput
               value={phone}
               onChangeText={setPhone}
@@ -119,7 +160,7 @@ export default function SignIn() {
             </Pressable>
           )}
           <Pressable onPress={textKeiki} style={styles.cta} accessibilityRole="button">
-            <Text style={styles.ctaText}>Verify by text</Text>
+            <Text style={styles.ctaText}>Open Messages</Text>
           </Pressable>
         </>
       ) : (
@@ -140,15 +181,15 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.cream,
-    paddingTop: 56,
+    paddingTop: 24,
     paddingHorizontal: spacing.sidePad,
     paddingBottom: 34,
     gap: 16,
   },
   back: { alignSelf: "flex-start" },
   backText: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
-  headline: { fontFamily: fonts.display, fontSize: 34, lineHeight: 34, letterSpacing: -1, color: colors.ink },
-  subhead: { fontFamily: fonts.body, fontSize: 15, lineHeight: 20, color: colors.muted },
+  fieldLabel: { fontFamily: fonts.display, fontSize: 24, color: colors.ink },
+  subhead: { fontFamily: fonts.body, fontSize: 14, lineHeight: 18, color: colors.muted },
   fields: { gap: 10 },
   input: {
     height: 50,
@@ -161,8 +202,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.ink,
   },
-  codeCard: { backgroundColor: colors.white, borderRadius: 18, paddingVertical: 24, alignItems: "center", gap: 14 },
-  code: { fontFamily: fonts.display, fontSize: 56, letterSpacing: 10, color: colors.ink },
+  instructionBlock: { gap: 10, alignItems: "flex-start" },
+  label: { fontFamily: fonts.semibold, fontSize: 15, color: colors.muted },
+  codeChip: {
+    backgroundColor: colors.tag,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  codeChipText: { fontFamily: fonts.display, fontSize: 30, color: colors.ink },
+  toNumber: { fontFamily: fonts.display, fontSize: 26, color: colors.ink },
+  fromNumber: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
   waiting: { flexDirection: "row", alignItems: "center", gap: 8 },
   waitingText: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
   error: { fontFamily: fonts.medium, fontSize: 14, color: "#B3261E" },

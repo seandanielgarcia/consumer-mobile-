@@ -7,7 +7,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { getPickedPhotos } from "../../src/lib/pickedPhotos";
-import { useCurrentUser } from "../../src/lib/useCurrentUser";
+import { requireUser, SignInCancelled } from "../../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../../src/theme";
 
 type Draft = {
@@ -24,6 +24,19 @@ type Draft = {
   description: string;
   priceCents: number;
   aiGenerated: boolean;
+};
+
+type ChipField = "size" | "brand" | "condition" | "color";
+
+const CHIP_LABELS: Record<ChipField, string> = { size: "Size", brand: "Brand", condition: "Condition", color: "Color" };
+
+const chipFields = (d: Draft): ChipField[] =>
+  sizeRelevant(d) ? ["size", "brand", "condition", "color"] : ["brand", "condition", "color"];
+
+const chipLabel = (d: Draft, field: ChipField) => {
+  const value = d[field].trim();
+  if (!value) return `+ ${CHIP_LABELS[field].toLowerCase()}`;
+  return field === "size" ? `Size ${value}` : value;
 };
 
 const sizeRelevant = (d: Draft) => d.size.trim() !== "" || /cloth|shoe|apparel|wear/i.test(d.category);
@@ -62,7 +75,6 @@ const parseDollars = (text: string) => {
 };
 
 export default function SellerReview() {
-  const user = useCurrentUser();
   const generateUploadUrl = useMutation(api.items.generateUploadUrl);
   const describePhoto = useAction(api.ai.describePhoto);
   const openWithItems = useMutation(api.garages.openWithItems);
@@ -83,8 +95,8 @@ export default function SellerReview() {
     })),
   );
   const [focus, setFocus] = useState<number | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
+  const [editing, setEditing] = useState<Draft | null>(null);
+  const [editingChip, setEditingChip] = useState<ChipField | null>(null);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -136,21 +148,29 @@ export default function SellerReview() {
   const advance = (patch: Partial<Draft>) => {
     if (!current) return;
     update(current.i, patch);
-    setEditing(false);
-    setShowDetails(false);
+    setEditing(null);
+    setEditingChip(null);
+  };
+
+  const cancelEdit = () => {
+    if (current && editing) update(current.i, editing);
+    setEditing(null);
   };
 
   const openGarage = async () => {
-    if (!user) {
-      router.push({ pathname: "/signin", params: { next: "back" } });
+    setError(null);
+    let ownerId: Id<"users">;
+    try {
+      ownerId = await requireUser();
+    } catch (e) {
+      if (!(e instanceof SignInCancelled)) setError("Couldn't sign you in. Try again.");
       return;
     }
     setOpening(true);
-    setError(null);
     try {
       const { neighborhood, lat, lng } = await approximateLocation();
       const { garageId, itemIds, firstOpen } = await openWithItems({
-        ownerId: user.userId,
+        ownerId,
         neighborhood,
         lat,
         lng,
@@ -169,10 +189,10 @@ export default function SellerReview() {
       });
       router.replace({
         pathname: "/seller/open",
-        params: { garageId, picked: itemIds.slice(0, 3).join(","), first: firstOpen ? "1" : "0" },
+        params: { garageId, picked: itemIds.join(","), first: firstOpen ? "1" : "0" },
       });
     } catch (e) {
-      setError("Couldn't open your garage. Try again.");
+      setError("Couldn't open your yard. Try again.");
       setOpening(false);
     }
   };
@@ -216,7 +236,7 @@ export default function SellerReview() {
           {opening ? (
             <ActivityIndicator color={colors.cream} />
           ) : (
-            <Text style={styles.ctaText}>Open my garage ({approved.length} {approved.length === 1 ? "item" : "items"})</Text>
+            <Text style={styles.ctaText}>Open my yard ({approved.length} {approved.length === 1 ? "item" : "items"})</Text>
           )}
         </Pressable>
       </View>
@@ -240,7 +260,7 @@ export default function SellerReview() {
         </Text>
       </View>
       <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${(approved.length / Math.max(kept.length, 1)) * 100}%` }]} />
+        <View style={[styles.progressFill, { width: `${(position / Math.max(kept.length, 1)) * 100}%` }]} />
       </View>
       <ScrollView style={styles.flex} contentContainerStyle={styles.itemBody} keyboardShouldPersistTaps="handled">
         <View style={styles.photoFrame}>
@@ -275,29 +295,25 @@ export default function SellerReview() {
               autoFocus
             />
             <View style={styles.chips}>
-              {sizeRelevant(d) && (
+              {chipFields(d).map((field) => (
                 <TextInput
-                  value={d.size}
-                  onChangeText={(size) => update(i, { size })}
-                  placeholder="Size"
+                  key={field}
+                  value={d[field]}
+                  onChangeText={(value) => update(i, { [field]: value })}
+                  placeholder={CHIP_LABELS[field]}
                   placeholderTextColor={colors.muted}
                   style={[styles.chip, styles.chipInput]}
                 />
-              )}
-              <TextInput
-                value={d.condition}
-                onChangeText={(condition) => update(i, { condition })}
-                placeholder="Condition"
-                placeholderTextColor={colors.muted}
-                style={[styles.chip, styles.chipInput]}
-              />
+              ))}
             </View>
             <TextInput
               value={d.description}
               onChangeText={(description) => update(i, { description })}
-              placeholder="Details"
+              placeholder="Description"
               placeholderTextColor={colors.muted}
-              style={styles.fieldInput}
+              multiline
+              numberOfLines={3}
+              style={[styles.fieldInput, styles.descriptionInput]}
             />
           </View>
         ) : (
@@ -306,40 +322,44 @@ export default function SellerReview() {
               {d.title || "Add a title"}
             </Text>
             <View style={styles.chips}>
-              {sizeRelevant(d) && (
-                <Pressable onPress={() => setEditing(true)} style={[styles.chip, !d.size.trim() && styles.chipEmpty]}>
-                  <Text style={[styles.chipText, !d.size.trim() && styles.chipTextEmpty]}>
-                    {d.size.trim() ? `Size ${d.size.trim()}` : "+ size"}
-                  </Text>
-                </Pressable>
+              {chipFields(d).map((field) =>
+                editingChip === field ? (
+                  <TextInput
+                    key={field}
+                    value={d[field]}
+                    onChangeText={(value) => update(i, { [field]: value })}
+                    onBlur={() => setEditingChip(null)}
+                    onSubmitEditing={() => setEditingChip(null)}
+                    placeholder={CHIP_LABELS[field]}
+                    placeholderTextColor={colors.muted}
+                    returnKeyType="done"
+                    autoFocus
+                    style={[styles.chip, styles.chipInput]}
+                  />
+                ) : (
+                  <Pressable
+                    key={field}
+                    onPress={() => setEditingChip(field)}
+                    style={[styles.chip, !d[field].trim() && styles.chipEmpty]}
+                  >
+                    <Text style={[styles.chipText, !d[field].trim() && styles.chipTextEmpty]}>{chipLabel(d, field)}</Text>
+                  </Pressable>
+                ),
               )}
-              {d.condition.trim() !== "" && (
-                <Pressable onPress={() => setEditing(true)} style={styles.chip}>
-                  <Text style={styles.chipText}>{d.condition}</Text>
-                </Pressable>
-              )}
-              <Pressable onPress={() => setShowDetails((v) => !v)} hitSlop={8} style={styles.detailsToggle}>
-                <Text style={styles.detailsToggleText}>{showDetails ? "hide details" : "details"}</Text>
-              </Pressable>
             </View>
-            {showDetails && (
-              <Text style={styles.muted} numberOfLines={1}>
-                {d.description}
-              </Text>
-            )}
           </View>
         )}
       </ScrollView>
       <View style={styles.actions}>
         <View style={styles.actionRow}>
-          {!failed && (
+          {!failed && !editing && (
             <Pressable
-              onPress={() => setEditing((v) => !v)}
+              onPress={() => setEditing(d)}
               disabled={loading}
               style={[styles.secondary, loading && styles.ctaDisabled]}
               accessibilityRole="button"
             >
-              <Text style={styles.secondaryText}>{editing ? "Done" : "Edit"}</Text>
+              <Text style={styles.secondaryText}>Edit</Text>
             </Pressable>
           )}
           {!failed && (
@@ -353,9 +373,15 @@ export default function SellerReview() {
             </Pressable>
           )}
         </View>
-        <Pressable onPress={() => advance({ review: "removed" })} hitSlop={8} style={styles.skip}>
-          <Text style={styles.skipText}>skip / remove</Text>
-        </Pressable>
+        {editing ? (
+          <Pressable onPress={cancelEdit} hitSlop={8} style={styles.skip}>
+            <Text style={styles.skipText}>Cancel</Text>
+          </Pressable>
+        ) : (
+          <Pressable onPress={() => advance({ review: "removed" })} hitSlop={8} style={styles.skip}>
+            <Text style={styles.skipText}>skip / remove</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -395,6 +421,7 @@ const styles = StyleSheet.create({
     fontSize: 30,
     color: colors.ink,
   },
+  descriptionInput: { height: 76, paddingTop: 10, textAlignVertical: "top" },
   skeleton: { gap: 10 },
   skeletonBar: { height: 28, borderRadius: 8, backgroundColor: colors.line },
   fields: { gap: 10 },
@@ -416,8 +443,6 @@ const styles = StyleSheet.create({
   chipInput: { width: 120, borderWidth: 2, borderColor: colors.ink, fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
   chipText: { fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
   chipTextEmpty: { color: colors.muted },
-  detailsToggle: { minHeight: 34, justifyContent: "center", paddingHorizontal: 4 },
-  detailsToggleText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.brand, textDecorationLine: "underline" },
   muted: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
   actions: { gap: 6 },
   actionRow: { flexDirection: "row", gap: 10 },
