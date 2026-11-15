@@ -10,6 +10,7 @@ import { ItemCard } from "../../../src/buyer/ItemCard";
 import { PrimaryButton } from "../../../src/components/PrimaryButton";
 import { useBuyerLocation } from "../../../src/buyer/location";
 import { formatPlace } from "../../../src/lib/place";
+import { useHeaderBack } from "../../../src/lib/headerBack";
 import { useCurrentUser } from "../../../src/lib/useCurrentUser";
 import { colors, fonts, typeSize } from "../../../src/theme";
 
@@ -17,6 +18,7 @@ export default function BuyerGarage() {
   const { id, selected, notice: returnNotice } = useLocalSearchParams<{ id: string; selected?: string; notice?: string }>();
   const garageId = id as Id<"garages">;
   const location = useBuyerLocation();
+  useHeaderBack("Back", () => (router.canGoBack() ? router.back() : router.replace("/buyer")));
   const buyerId = useCurrentUser()?.userId;
   const [now, setNow] = useState(() => Math.floor(Date.now() / 30000) * 30000);
   useEffect(() => {
@@ -64,9 +66,9 @@ export default function BuyerGarage() {
   if (garage === null) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.cream, justifyContent: "center", alignItems: "center", padding: 20, gap: 16 }}>
-        <Text style={{ fontFamily: fonts.body, fontSize: typeSize.row, color: colors.muted }}>This yard is gone.</Text>
+        <Text style={{ ...fonts.body, fontSize: typeSize.row, color: colors.muted }}>This yard is gone.</Text>
         <Pressable onPress={() => router.dismissTo("/buyer")} hitSlop={12} style={{ minHeight: 44, justifyContent: "center" }}>
-          <Text style={{ fontFamily: fonts.semibold, fontSize: typeSize.row, color: colors.brand }}>Back to browsing</Text>
+          <Text style={{ ...fonts.semibold, fontSize: typeSize.row, color: colors.brand }}>Back to browsing</Text>
         </Pressable>
       </View>
     );
@@ -74,19 +76,16 @@ export default function BuyerGarage() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
-      <View style={{ backgroundColor: colors.brand, paddingTop: 56, paddingHorizontal: 20, paddingBottom: 22, gap: 14 }}>
-        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/buyer"))} hitSlop={12} style={{ alignSelf: "flex-start", minHeight: 24 }}>
-          <Text style={{ fontFamily: fonts.body, fontSize: typeSize.row, color: colors.cream }}>← Nearby</Text>
-        </Pressable>
+      <View style={{ backgroundColor: colors.brand, paddingTop: 4, paddingHorizontal: 20, paddingBottom: 22, gap: 14 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.tag, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: fonts.display, fontSize: 24, color: colors.ink }}>{garage?.ownerName.charAt(0) ?? ""}</Text>
+            <Text style={{ ...fonts.display, fontSize: 24, color: colors.ink }}>{garage?.ownerName.charAt(0) ?? ""}</Text>
           </View>
           <View style={{ flex: 1, gap: 2 }}>
-            <Text numberOfLines={1} style={{ fontFamily: fonts.display, fontSize: 30, letterSpacing: -1, color: colors.cream }}>
+            <Text numberOfLines={1} style={{ ...fonts.display, fontSize: 30, letterSpacing: -1, color: colors.cream }}>
               {garage ? `${garage.ownerName}'s yard` : " "}
             </Text>
-            <Text style={{ fontFamily: fonts.body, fontSize: 14, color: colors.cream }}>
+            <Text style={{ ...fonts.body, fontSize: 14, color: colors.cream }}>
               {garage ? `${formatPlace(garage)}${garage.distanceMi <= 10 ? ` · about ${garage.distanceMi} mi` : ""} · pickup only` : " "}
             </Text>
           </View>
@@ -95,7 +94,7 @@ export default function BuyerGarage() {
 
       {(notice ?? error) && (
         <View style={{ marginHorizontal: 20, marginTop: 16, padding: 12, borderRadius: 12, backgroundColor: colors.tag }}>
-          <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: colors.ink }}>{notice ?? error}</Text>
+          <Text style={{ ...fonts.medium, fontSize: 14, color: colors.ink }}>{notice ?? error}</Text>
         </View>
       )}
 
@@ -109,13 +108,13 @@ export default function BuyerGarage() {
               accessibilityRole="button"
               style={{ width: "100%", minHeight: 44, justifyContent: "center", alignItems: "center", borderRadius: 999, borderWidth: 2, borderColor: colors.ink, backgroundColor: allPicked ? colors.white : colors.tag }}
             >
-              <Text style={{ fontFamily: fonts.semibold, fontSize: typeSize.row, color: colors.ink }}>
+              <Text style={{ ...fonts.semibold, fontSize: typeSize.row, color: colors.ink }}>
                 {allPicked ? "Clear picks" : `Pick all ${garage.items.length} · ${formatPrice(everythingCents)}`}
               </Text>
             </Pressable>
           )}
           {garage.items.length === 0 && (
-            <Text style={{ fontFamily: fonts.body, fontSize: typeSize.row, color: colors.muted }}>Everything here is spoken for.</Text>
+            <Text style={{ ...fonts.body, fontSize: typeSize.row, color: colors.muted }}>Everything here is spoken for.</Text>
           )}
           {garage.items.map((item) => (
             <ItemCard key={item._id} item={item} width={cardWidth} selected={picked.includes(item._id)} onPress={() => toggle(item._id)} />

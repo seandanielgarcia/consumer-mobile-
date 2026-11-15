@@ -103,7 +103,7 @@ Build to match the mockups except where "Product decisions since the PRD" says o
 
 - 20px side padding, 56–60px top padding, buttons at least 44px tall and fully rounded, big CTAs 60px tall.
 - Colors: brand blue `#2340FF`, cream `#FFF6E5`, price-tag yellow `#FFE14D`, ink `#111111`, muted text `#5A5245`. Keep them in one theme module, not inline.
-- Type: headings in Bricolage Grotesque 800, body in Inter.
+- Type: SF Pro (system font) everywhere; titles 700, buttons 600, body 400. No custom fonts. (Hailey)
 - Items look like polaroids with yellow price stickers.
 - Don't show any AI label (no "Written by AI · tap to edit"): AI-written fields just appear filled in and editable.
 
