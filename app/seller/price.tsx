@@ -26,6 +26,19 @@ type Draft = {
   aiGenerated: boolean;
 };
 
+type ChipField = "size" | "brand" | "condition" | "color";
+
+const CHIP_LABELS: Record<ChipField, string> = { size: "Size", brand: "Brand", condition: "Condition", color: "Color" };
+
+const chipFields = (d: Draft): ChipField[] =>
+  sizeRelevant(d) ? ["size", "brand", "condition", "color"] : ["brand", "condition", "color"];
+
+const chipLabel = (d: Draft, field: ChipField) => {
+  const value = d[field].trim();
+  if (!value) return `+ ${CHIP_LABELS[field].toLowerCase()}`;
+  return field === "size" ? `Size ${value}` : value;
+};
+
 const sizeRelevant = (d: Draft) => d.size.trim() !== "" || /cloth|shoe|apparel|wear/i.test(d.category);
 
 const DEFAULT_LOCATION = { neighborhood: "Mission", lat: 37.76, lng: -122.42 };
@@ -84,7 +97,7 @@ export default function SellerReview() {
   );
   const [focus, setFocus] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
+  const [editingChip, setEditingChip] = useState<ChipField | null>(null);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -137,7 +150,7 @@ export default function SellerReview() {
     if (!current) return;
     update(current.i, patch);
     setEditing(false);
-    setShowDetails(false);
+    setEditingChip(null);
   };
 
   const openGarage = async () => {
@@ -275,27 +288,21 @@ export default function SellerReview() {
               autoFocus
             />
             <View style={styles.chips}>
-              {sizeRelevant(d) && (
+              {chipFields(d).map((field) => (
                 <TextInput
-                  value={d.size}
-                  onChangeText={(size) => update(i, { size })}
-                  placeholder="Size"
+                  key={field}
+                  value={d[field]}
+                  onChangeText={(value) => update(i, { [field]: value })}
+                  placeholder={CHIP_LABELS[field]}
                   placeholderTextColor={colors.muted}
                   style={[styles.chip, styles.chipInput]}
                 />
-              )}
-              <TextInput
-                value={d.condition}
-                onChangeText={(condition) => update(i, { condition })}
-                placeholder="Condition"
-                placeholderTextColor={colors.muted}
-                style={[styles.chip, styles.chipInput]}
-              />
+              ))}
             </View>
             <TextInput
               value={d.description}
               onChangeText={(description) => update(i, { description })}
-              placeholder="Details"
+              placeholder="Description"
               placeholderTextColor={colors.muted}
               style={styles.fieldInput}
             />
@@ -306,27 +313,31 @@ export default function SellerReview() {
               {d.title || "Add a title"}
             </Text>
             <View style={styles.chips}>
-              {sizeRelevant(d) && (
-                <Pressable onPress={() => setEditing(true)} style={[styles.chip, !d.size.trim() && styles.chipEmpty]}>
-                  <Text style={[styles.chipText, !d.size.trim() && styles.chipTextEmpty]}>
-                    {d.size.trim() ? `Size ${d.size.trim()}` : "+ size"}
-                  </Text>
-                </Pressable>
+              {chipFields(d).map((field) =>
+                editingChip === field ? (
+                  <TextInput
+                    key={field}
+                    value={d[field]}
+                    onChangeText={(value) => update(i, { [field]: value })}
+                    onBlur={() => setEditingChip(null)}
+                    onSubmitEditing={() => setEditingChip(null)}
+                    placeholder={CHIP_LABELS[field]}
+                    placeholderTextColor={colors.muted}
+                    returnKeyType="done"
+                    autoFocus
+                    style={[styles.chip, styles.chipInput]}
+                  />
+                ) : (
+                  <Pressable
+                    key={field}
+                    onPress={() => setEditingChip(field)}
+                    style={[styles.chip, !d[field].trim() && styles.chipEmpty]}
+                  >
+                    <Text style={[styles.chipText, !d[field].trim() && styles.chipTextEmpty]}>{chipLabel(d, field)}</Text>
+                  </Pressable>
+                ),
               )}
-              {d.condition.trim() !== "" && (
-                <Pressable onPress={() => setEditing(true)} style={styles.chip}>
-                  <Text style={styles.chipText}>{d.condition}</Text>
-                </Pressable>
-              )}
-              <Pressable onPress={() => setShowDetails((v) => !v)} hitSlop={8} style={styles.detailsToggle}>
-                <Text style={styles.detailsToggleText}>{showDetails ? "hide details" : "details"}</Text>
-              </Pressable>
             </View>
-            {showDetails && (
-              <Text style={styles.muted} numberOfLines={1}>
-                {d.description}
-              </Text>
-            )}
           </View>
         )}
       </ScrollView>
@@ -416,8 +427,6 @@ const styles = StyleSheet.create({
   chipInput: { width: 120, borderWidth: 2, borderColor: colors.ink, fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
   chipText: { fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
   chipTextEmpty: { color: colors.muted },
-  detailsToggle: { minHeight: 34, justifyContent: "center", paddingHorizontal: 4 },
-  detailsToggleText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.brand, textDecorationLine: "underline" },
   muted: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
   actions: { gap: 6 },
   actionRow: { flexDirection: "row", gap: 10 },
