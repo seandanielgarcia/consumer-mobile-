@@ -1,21 +1,20 @@
-import { useConvex, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { startCheckout } from "../../../src/buyer/checkout";
+import { useBuy } from "../../../src/buyer/useBuy";
 import { formatPrice, itemLabel } from "../../../src/buyer/format";
 import { useBuyerLocation } from "../../../src/buyer/location";
-import { requireUser, SignInCancelled, useCurrentUser } from "../../../src/lib/useCurrentUser";
+import { useCurrentUser } from "../../../src/lib/useCurrentUser";
 import { colors, fonts } from "../../../src/theme";
 
 export default function BuyerGarage() {
   const { id, selected } = useLocalSearchParams<{ id: string; selected?: string }>();
   const garageId = id as Id<"garages">;
   const location = useBuyerLocation();
-  const convex = useConvex();
   const buyerId = useCurrentUser()?.userId;
   const [now, setNow] = useState(() => Math.floor(Date.now() / 30000) * 30000);
   useEffect(() => {
@@ -25,9 +24,9 @@ export default function BuyerGarage() {
   const garage = useQuery(api.buyer.garage, location ? { garageId, lat: location.lat, lng: location.lng, buyerId, now } : "skip");
   const [picked, setPicked] = useState<Id<"items">[]>(selected ? [selected as Id<"items">] : []);
   const [notice, setNotice] = useState<string | null>(null);
-  const [buying, setBuying] = useState(false);
   const titles = useRef(new Map<string, string>());
-  const checkingOut = useRef(false);
+  const { buy: buyItems, buying, error, checkingOut } = useBuy(garageId);
+  const buy = () => buyItems(pickedItems.map((i) => i._id));
   const { width } = useWindowDimensions();
   const cardWidth = (width - 40 - 14) / 2;
 
@@ -50,28 +49,6 @@ export default function BuyerGarage() {
     setPicked((p) => (p.includes(itemId) ? p.filter((x) => x !== itemId) : [...p, itemId]));
   };
 
-  const buy = async () => {
-    let buyer: Id<"users">;
-    try {
-      buyer = await requireUser();
-    } catch (e) {
-      if (!(e instanceof SignInCancelled)) setNotice("Couldn't sign you in. Try again.");
-      return;
-    }
-    setBuying(true);
-    checkingOut.current = true;
-    try {
-      const { orderId, returned } = await startCheckout(convex, buyer, garageId, pickedItems.map((i) => i._id));
-      if (returned) {
-        router.replace({ pathname: "/buyer/paid", params: { orderId } });
-        return;
-      }
-    } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Checkout failed.");
-    }
-    checkingOut.current = false;
-    setBuying(false);
-  };
 
   if (garage === null) {
     return (
@@ -102,9 +79,9 @@ export default function BuyerGarage() {
         </View>
       </View>
 
-      {notice && (
+      {(notice ?? error) && (
         <View style={{ marginHorizontal: 20, marginTop: 16, padding: 12, borderRadius: 12, backgroundColor: colors.tag }}>
-          <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: colors.ink }}>{notice}</Text>
+          <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: colors.ink }}>{notice ?? error}</Text>
         </View>
       )}
 

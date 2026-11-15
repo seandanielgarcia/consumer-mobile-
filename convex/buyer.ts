@@ -63,6 +63,8 @@ export const search = query({
         _id: item._id,
         title: item.title,
         size: item.size,
+        condition: item.condition,
+        brand: item.brand,
         priceCents: item.priceCents,
         photoUrl: item.photoUrl,
         garageId: garage._id,
@@ -95,6 +97,42 @@ export const garage = query({
       items: items
         .filter((i) => i.status === "live" && !held.has(i._id))
         .map((i) => ({ _id: i._id, title: i.title, size: i.size, priceCents: i.priceCents, photoUrl: i.photoUrl })),
+    };
+  },
+});
+
+export const item = query({
+  args: { itemId: v.id("items"), lat: v.number(), lng: v.number() },
+  handler: async (ctx, { itemId, lat, lng }) => {
+    const item = await ctx.db.get(itemId);
+    if (!item || item.status !== "live") return null;
+    const garage = await ctx.db.get(item.garageId);
+    if (!garage) return null;
+    const owner = await ctx.db.get(garage.ownerId);
+    const liveCount = (
+      await ctx.db
+        .query("items")
+        .withIndex("by_garage", (q) => q.eq("garageId", garage._id))
+        .collect()
+    ).filter((i) => i.status === "live").length;
+    return {
+      _id: item._id,
+      title: item.title,
+      description: item.description,
+      photoUrl: item.photoUrl,
+      priceCents: item.priceCents,
+      size: item.size,
+      condition: item.condition,
+      brand: item.brand,
+      color: item.color,
+      category: item.category,
+      garage: {
+        _id: garage._id,
+        ownerName: owner?.name ?? "Someone",
+        avatarColor: owner?.avatarColor,
+        distanceMi: roughMiles(lat, lng, garage),
+        liveCount,
+      },
     };
   },
 });
