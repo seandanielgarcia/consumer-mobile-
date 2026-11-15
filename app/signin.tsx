@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery } from "convex/react";
 import * as Linking from "expo-linking";
 import { router, useLocalSearchParams } from "expo-router";
@@ -9,6 +10,10 @@ import { setCurrentUser } from "../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../src/theme";
 
 const KEIKI_NUMBER = "+17796251378";
+const KEIKI_NUMBER_DISPLAY = "+1 779-625-1378";
+const PENDING_KEY = "garage-sale/pending-verification";
+
+type Pending = { userId: Id<"users">; code: string };
 
 const normalizePhone = (input: string) => {
   const digits = input.replace(/\D/g, "");
@@ -23,15 +28,28 @@ export default function SignIn() {
   const devSkip = useMutation(api.users.devSkipVerification);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [pending, setPending] = useState<{ userId: Id<"users">; code: string } | null>(null);
+  const [pending, setPendingState] = useState<Pending | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const verified = useQuery(api.users.isVerified, pending ? { userId: pending.userId } : "skip");
   const normalized = normalizePhone(phone);
   const canContinue = name.trim() !== "" && normalized !== null && !saving;
 
+  const setPending = (next: Pending | null) => {
+    setPendingState(next);
+    if (next) AsyncStorage.setItem(PENDING_KEY, JSON.stringify(next)).catch(() => {});
+    else AsyncStorage.removeItem(PENDING_KEY).catch(() => {});
+  };
+
+  useEffect(() => {
+    AsyncStorage.getItem(PENDING_KEY)
+      .then((stored) => stored && setPendingState(JSON.parse(stored) as Pending))
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (!pending || !verified) return;
+    AsyncStorage.removeItem(PENDING_KEY).catch(() => {});
     setCurrentUser({ userId: pending.userId }).then(() =>
       next === "back" && router.canGoBack() ? router.back() : router.replace("/seller/price"),
     );
@@ -51,7 +69,7 @@ export default function SignIn() {
 
   const textKeiki = () => {
     if (!pending) return;
-    const body = encodeURIComponent(`hey keiki, verify me (K-FERUEU) code ${pending.code}`);
+    const body = encodeURIComponent(`K-FERUEU verify ${pending.code}`);
     Linking.openURL(`sms:${KEIKI_NUMBER}&body=${body}`);
   };
 
@@ -71,19 +89,18 @@ export default function SignIn() {
       </Pressable>
       {pending ? (
         <>
-          <Text style={styles.headline}>Text us this code</Text>
-          <View style={styles.codeCard}>
-            <Text style={styles.code}>{pending.code}</Text>
-            <View style={styles.waiting}>
-              <ActivityIndicator color={colors.brand} size="small" />
-              <Text style={styles.waitingText}>Waiting for your text</Text>
-            </View>
+          <Text style={styles.instruction}>
+            Text <Text style={styles.instructionStrong}>K-FERUEU verify {pending.code}</Text> to {KEIKI_NUMBER_DISPLAY}
+          </Text>
+          <View style={styles.waiting}>
+            <ActivityIndicator color={colors.brand} size="small" />
+            <Text style={styles.waitingText}>Waiting for your text…</Text>
           </View>
         </>
       ) : (
         <>
           <Text style={styles.headline}>{"Who's selling?"}</Text>
-          <Text style={styles.subhead}>Buyers see your first name. Your number is how we text you when something sells.</Text>
+          <Text style={styles.subhead}>Buyers see your first name only.</Text>
           <View style={styles.fields}>
             <TextInput
               value={name}
@@ -119,7 +136,7 @@ export default function SignIn() {
             </Pressable>
           )}
           <Pressable onPress={textKeiki} style={styles.cta} accessibilityRole="button">
-            <Text style={styles.ctaText}>Verify by text</Text>
+            <Text style={styles.ctaText}>Open Messages</Text>
           </Pressable>
         </>
       ) : (
@@ -161,8 +178,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.ink,
   },
-  codeCard: { backgroundColor: colors.white, borderRadius: 18, paddingVertical: 24, alignItems: "center", gap: 14 },
-  code: { fontFamily: fonts.display, fontSize: 56, letterSpacing: 10, color: colors.ink },
+  instruction: { fontFamily: fonts.display, fontSize: 34, lineHeight: 40, letterSpacing: -0.5, color: colors.ink },
+  instructionStrong: { backgroundColor: colors.tag },
   waiting: { flexDirection: "row", alignItems: "center", gap: 8 },
   waitingText: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
   error: { fontFamily: fonts.medium, fontSize: 14, color: "#B3261E" },

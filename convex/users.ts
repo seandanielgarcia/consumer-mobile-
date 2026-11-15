@@ -23,7 +23,15 @@ export const getOrCreateByPhone = mutation({
 export const startVerification = mutation({
   args: { name: v.string(), phone: v.string() },
   handler: async (ctx, { name, phone }) => {
-    const code = String(Math.floor(1000 + Math.random() * 9000));
+    let code = String(Math.floor(1000 + Math.random() * 9000));
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const holder = await ctx.db
+        .query("users")
+        .withIndex("by_verifyCode", (q) => q.eq("verifyCode", code))
+        .first();
+      if (!holder || holder.phone === phone || (holder.verifyCodeExpiresAt ?? 0) <= Date.now()) break;
+      code = String(Math.floor(1000 + Math.random() * 9000));
+    }
     const verification = { verifyCode: code, verifyCodeExpiresAt: Date.now() + CODE_TTL_MS };
     const existing = await ctx.db
       .query("users")
