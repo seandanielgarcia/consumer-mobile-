@@ -14,9 +14,9 @@ Revyl runs demo steps 1–4 from AGENTS.md on a real iPhone (390×844). Each tes
 
   Both numbers are in `DEMO_PHONES` on the deployment (as `+15555550101,+15555550102`), so `users:startVerification` marks them verified on the server in any build. Sign-in goes straight back to the screen that asked for it: no code screen, no **"Skip (dev)"**, no CLI step.
 - **Any other phone number** gets the real code flow (see "Sign-in with a non-demo number" below). A Release build has no **"Skip (dev)"** because it is gated on `__DEV__`. For a non-demo number either run Revyl against a dev/Debug build and tap **"Skip (dev)"**, or verify from the CLI with `npx convex run users:devSkipVerification '{"userId":"..."}'`, which needs `DEV_ALLOW_SKIP=true` on the deployment (it is set today).
-- **Seed data:** `scripts/seed.sh` so a search for "jeans" already returns the seed yards' items. Both devices must be within 2 mi of the Mission / Hayes Valley seed yards, or set the location to "Mission" through the Buyer's **"Change location"** sheet.
+- **Seed data:** `scripts/seed.sh` so a search for "jeans" already returns the seed yards' items. Both devices must be within 2 mi of the Mission / Hayes Valley seed yards, physically or with a simulated GPS location there. The Seller's yard is placed at the Seller's own GPS position, so changing only the Buyer's search location through **"Change location"** is not enough on devices outside San Francisco.
 - **Location permission:** not yet granted on either device, so the iOS prompt is part of the test.
-- **Photos:** the Seller camera roll has at least three photos of things to sell (anything sells, not just clothes). Include at least one pair of jeans so Test 2 can find it. Demo users and dev builds also see **"Use sample photos"** on the landing, which Revyl may use instead of the picker.
+- **Photos:** the Seller camera roll has at least three photos of things to sell (anything sells, not just clothes). Include at least one pair of jeans so Test 2 can find it. Demo users and dev builds also see **"Use sample photos"** on the landing; don't use it for Test 1, because it loads five bundled photos and the queue then reads **"Review 1 of 5"**.
 - **Whop:** sandbox (`WHOP_ENVIRONMENT=sandbox`) with the sandbox webhook registered at `https://fleet-gnat-219.convex.site/whop`.
 - **Keiki sold text:** only a seller phone that has really verified by texting Keiki can receive it. In the live demo the seller is Hailey's real number, verified by text, which is a precondition for Test 4 step 1. With the demo phones Keiki has never seen the number, returns 404, and sends nothing, so in Revyl runs Test 4 step 1 is **manual**, not failed.
 
@@ -29,12 +29,12 @@ Run `scripts/reset-demo.sh` (coming in PR #9) with `CONVEX_DEPLOY_KEY="$ConvexKe
 **Device:** Seller. **Timer:** start when the third photo is picked.
 
 1. Launch the app. Expect the two-path landing: wordmark **"yard sale"** (after #9/#10), tagline **"Share a photo and set a price, we'll take care of the rest"**, a polaroid stack with yellow price stickers, and two buttons **"Sell your stuff"** and **"Shop near you"**.
-2. Tap **"Sell your stuff"**. Expect the iOS photo picker. Pick three photos and confirm. (Or tap **"Use sample photos"** if shown.)
+2. Tap **"Sell your stuff"**. Expect the iOS photo picker. Pick three photos and confirm.
 3. Expect the review queue: **"← Back"**, the counter **"Review 1 of 3"**, a large photo and buttons **"Edit"**, **"Approve"** and **"skip / remove"**. While the AI runs, **"Approve"** shows a spinner and is disabled.
 4. Within **10 seconds** of step 2, the card shows a title, a price sticker, and chips for brand, condition and colour (plus **"Size …"** only for items where size applies). No AI label appears anywhere (no "Written by AI"). No card says **"Couldn't upload this one"**.
-5. Tap **"Edit"**. Expect editable fields with placeholders **"Title"**, **"Description"** and the **"Price"** field. Clear the price, type `25`, and leave edit mode. Expect the sticker to show **$25**. Tap **"Approve"**.
+5. Tap **"Edit"**. Expect editable fields with placeholders **"Title"** and **"Description"**, then tap **"Cancel"** to leave edit mode without changes. Tap the price sticker on the photo (accessibility label **"Price"**), clear it, and type `25`. Expect the sticker to show **$25**. Tap **"Approve"**.
 6. Expect **"Review 2 of 3"**. Tap **"Approve"**. Expect **"Review 3 of 3"**. Tap **"Approve"**.
-7. Expect the summary **"Ready to go"** listing the three items with their prices and an edit pencil each, and the button **"Open my yard (3 items)"**.
+7. Expect the summary **"Ready to go"** listing the three items with their prices (the first one at **$25**) and an edit pencil each, and the button **"Open my yard (3 items)"**.
 8. Tap **"Open my yard (3 items)"**. Expect sign-in: **"Cancel"**, **"What's your first name?"** (placeholder **"First name"**, sub-line **"Buyers see your first name only."**), **"Your phone number"** (placeholder **"Phone number"**) and **"Continue"**. Enter `Sam` and `(555) 555-0101`, tap **"Continue"**.
 9. Expect to return to **"Ready to go"** with no code screen (demo phone). Tap **"Open my yard (3 items)"** again if it did not continue on its own. If iOS asks for location, allow it.
 10. Expect Yard open: a line **"<neighborhood> · visible within about 2 mi"**, the headline **"Your yard is open."** (after #9/#10), the three items as polaroids with prices, and a one-line Keiki card **"More later? Text Keiki a pic and a price."** with **"Save Keiki to contacts"**.
@@ -65,8 +65,8 @@ Fail if: the new item needs a refresh; an item from a yard outside the selected 
 1. From the Near you results, tap one of Sam's new items. Expect the yard screen: **"← Nearby"**, **"Sam's yard"** (after #9/#10), **"<neighborhood> · about <N> mi from you · pickup only"**, that item already checked, a footer **"1 picked"** with its price, and a **"Buy"** button.
 2. Tap a second item from the same yard. Expect **"2 picked"** and a total equal to the sum of the two prices.
 3. Tap **"Buy"**. Because Buyer is signed out, expect sign-in. Enter `Maya B` and `(555) 555-0102`, tap **"Continue"**. Expect to return to the yard with both items still picked (no code screen). Tap **"Buy"** again if checkout didn't start on its own.
-4. Expect a spinner on **"Buy"**, then the iOS system alert **"<App> Wants to Use "sandbox.whop.com" to Sign In"**. Tap **"Continue"**.
-5. Expect the in-app browser on the Whop sandbox checkout. Its header shows the sandbox business name and the amount equals the app's total. No Whop-branded UI appears inside the app itself.
+4. Expect a spinner on **"Buy"**, then the in-app browser opening directly on the Whop sandbox checkout. The current build has no sign-in consent alert (checkout uses a plain in-app browser since `feeb17b`). Only on an older build that shows **"<App> Wants to Use "sandbox.whop.com" to Sign In"**, tap **"Continue"**; its absence is not a failure.
+5. On the Whop page, the header shows the sandbox business name and the amount equals the app's total. No Whop-branded UI appears inside the app itself.
 6. Pay with card `4242 4242 4242 4242`, expiry `12/34`, CVC `123`, and any US address.
 7. Expect the browser to close by itself and the Paid screen to show **"Confirming payment…"** briefly, then **"Paid $NN"** within about 10 s, both items listed with their prices, and the line **"Sam will text you to meet up."** (The current build still says **"Sam got a text. They'll message you to meet up."**; accept either until the copy change lands.)
 8. Tap **"Back to browsing"**. Expect Near you, and neither item is in the results any more.
