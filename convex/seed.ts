@@ -151,7 +151,7 @@ const SEED_PHONES = new Set(SEED.map((g) => g.phone));
 const SEED_TITLES = new Set(SEED.flatMap((g) => g.items.map((i) => i.title)));
 const KEEP_NAMES = new Set(["Sam", "Maya B"]);
 const TEST_TITLE = /^(QA|E2E|Zqlatency)|\(edited\)|bundle/i;
-const isFictional = (phone: string) => /^\+1\d{3}555/.test(phone);
+const isFictional = (phone: string) => /^\+1(555|\d{3}555)/.test(phone);
 
 export const devCleanup = internalMutation({
   args: { dryRun: v.boolean() },
