@@ -30,11 +30,11 @@ http.route({
         return new Response("OK", { status: 200 });
       }
       try {
-        const { unavailableItemIds } = await ctx.runMutation(internal.orders.markPaid, { orderId });
+        const { alreadyPaid, unavailableItemIds } = await ctx.runMutation(internal.orders.markPaid, { orderId });
         if (unavailableItemIds.length > 0) {
           console.warn(`Order ${orderId} paid with unavailable items ${unavailableItemIds.join(", ")}; seller must refund those lines in Whop`);
         }
-        // TODO: text the seller (sellerName, sellerPhone from markPaid) once Keiki outbound is wired up; name any unavailableItemIds and ask them to refund those lines manually in Whop.
+        if (!alreadyPaid) await ctx.scheduler.runAfter(0, internal.notify.notifySellerSold, { orderId, unavailableItemIds });
       } catch (error) {
         console.error(`Whop payment ${event.data.id} could not mark order ${orderId} paid: ${error}`);
       }
