@@ -2,6 +2,16 @@ import { v } from "convex/values";
 import { internalAction, internalMutation, type MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { roundCoord } from "./lib/location";
+import { STOCK, type StockPhoto } from "../src/lib/stock";
+
+const seedItems = (seller: StockPhoto["seller"]) =>
+  STOCK.filter((s) => s.use === "seed" && s.seller === seller).map(({ file, title, size, priceCents, description }) => ({
+    photo: file.replace(/\.jpg$/, ""),
+    title,
+    size,
+    priceCents,
+    description,
+  }));
 
 const SEED = [
   {
@@ -11,11 +21,7 @@ const SEED = [
     neighborhood: "Mission",
     lat: 37.7599,
     lng: -122.4148,
-    items: [
-      { photo: "levis-501", title: "Levi's 501 jeans", size: "28", priceCents: 3000, description: "Light wash straight leg Levi's 501 jeans, button fly, soft and broken in." },
-      { photo: "silk-top", title: "Silk cami top", size: "S", priceCents: 1500, description: "Ivory silk camisole with adjustable straps and a lace trim neckline." },
-      { photo: "field-jacket", title: "Field jacket", size: "M", priceCents: 4000, description: "Olive cotton military field jacket with four snap pockets and a drawcord waist." },
-    ],
+    items: seedItems("Hailey"),
   },
   {
     name: "Maya",
@@ -24,11 +30,7 @@ const SEED = [
     neighborhood: "Hayes Valley",
     lat: 37.7764,
     lng: -122.4242,
-    items: [
-      { photo: "black-skinny-jeans", title: "Black skinny jeans", size: "28", priceCents: 2200, description: "Washed black skinny jeans with a mid rise and plenty of stretch." },
-      { photo: "wide-leg-jeans", title: "Wide leg jeans", size: "27", priceCents: 2500, description: "Medium wash high waisted wide leg jeans, cropped at the ankle." },
-      { photo: "knit-sweater", title: "Cable knit sweater", size: "M", priceCents: 2800, description: "Chunky oatmeal wool cable knit sweater, cozy and warm." },
-    ],
+    items: seedItems("Maya"),
   },
   {
     name: "Jon",
@@ -37,12 +39,7 @@ const SEED = [
     neighborhood: "Dogpatch",
     lat: 37.7609,
     lng: -122.3876,
-    items: [
-      { photo: "mom-jeans", title: "Mom jeans", size: "28", priceCents: 1800, description: "Light blue vintage mom jeans with a paper bag waist and tie belt." },
-      { photo: "denim-jacket", title: "Denim trucker jacket", size: "L", priceCents: 3500, description: "Classic medium blue denim trucker jacket, nicely faded." },
-      { photo: "flannel-shirt", title: "Plaid flannel shirt", size: "L", priceCents: 2000, description: "Red and black buffalo plaid flannel button up shirt." },
-      { photo: "white-sneakers", title: "White leather sneakers", size: "10", priceCents: 3000, description: "White leather low top sneakers with a gum sole, lightly worn." },
-    ],
+    items: seedItems("Jon"),
   },
 ];
 

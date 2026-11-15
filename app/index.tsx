@@ -9,6 +9,7 @@ import type { Doc } from "../convex/_generated/dataModel";
 import { ItemEditFields, type ItemFields } from "../src/components/ItemEditFields";
 import { setPickedPhotos } from "../src/lib/pickedPhotos";
 import { loadSamplePhotos } from "../src/lib/samplePhotos";
+import { stockImages } from "../src/lib/stockImages";
 import { signOut, useCurrentUser } from "../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../src/theme";
 
@@ -68,7 +69,6 @@ export default function Home() {
 
 // Signed out, or signed in without a yard yet.
 function Landing({ user }: { user: { userId: Doc<"users">["_id"]; name?: string } | null }) {
-  const samples = useQuery(api.items.sampleLive) ?? [];
   const isDemoUser = useQuery(api.users.isDemoUser, user ? { userId: user.userId } : "skip");
   // Dev builds, demo numbers, and signed-out users (unless EXPO_PUBLIC_SHOW_SAMPLES=0).
   const showSamplePhotos = __DEV__ || isDemoUser === true || (!user && process.env.EXPO_PUBLIC_SHOW_SAMPLES !== "0");
@@ -82,9 +82,9 @@ function Landing({ user }: { user: { userId: Doc<"users">["_id"]; name?: string 
           Share a photo and set a price, we'll take care of the rest
         </Text>
         <View style={styles.stack}>
-          {samples.map((item, index) => (
-            <View key={item._id} style={[styles.polaroid, POLAROID_POSITIONS[index]]}>
-              <Image source={{ uri: item.photoUrl }} style={styles.polaroidPhoto} contentFit="cover" />
+          {stockImages("landing").map((item, index) => (
+            <View key={item.file} style={[styles.polaroid, POLAROID_POSITIONS[index]]}>
+              <Image source={item.image} style={styles.polaroidPhoto} contentFit="cover" />
               <View style={styles.sticker}>
                 <Text style={styles.stickerText}>${Math.round(item.priceCents / 100)}</Text>
               </View>
