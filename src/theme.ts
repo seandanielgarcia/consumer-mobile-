@@ -9,6 +9,7 @@ export const colors = {
   white: "#FFFFFF",
   surfaceMuted: "#F2F2F2",
   error: "#B3261E",
+  destructive: "#D93025",
 } as const;
 
 export const fonts = {

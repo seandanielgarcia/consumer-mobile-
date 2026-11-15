@@ -1,7 +1,7 @@
 import { useQuery } from "convex/react";
 import { router, usePathname } from "expo-router";
 import { useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
@@ -35,15 +35,20 @@ export function AppHeader() {
     if (user) return setOpen(true);
     requireUser("Sign in or create an account").catch(() => {});
   };
-  const goYard = () => {
+  const leave = (then: () => void) => {
     setOpen(false);
-    router.dismissTo("/");
+    if (!pathname.startsWith("/seller/price")) return then();
+    Alert.alert("Discard your photos?", undefined, [
+      { text: "Keep reviewing", style: "cancel" },
+      { text: "Discard", style: "destructive", onPress: then },
+    ]);
   };
-  const doSignOut = async () => {
-    setOpen(false);
-    await signOut();
-    router.dismissTo("/");
-  };
+  const goYard = () => leave(() => router.dismissTo("/"));
+  const doSignOut = () =>
+    leave(async () => {
+      await signOut();
+      router.dismissTo("/");
+    });
 
   return (
     <View style={[styles.bar, { paddingTop: insets.top, backgroundColor: onBrand ? colors.brand : colors.cream }]}>
@@ -120,5 +125,5 @@ const styles = StyleSheet.create({
   chevron: { fontSize: 22, color: colors.muted },
   flex: { flex: 1 },
   signOut: { alignSelf: "center", minHeight: 44, justifyContent: "center" },
-  signOutText: { ...fonts.semibold, fontSize: 17, color: "#D93025" },
+  signOutText: { ...fonts.semibold, fontSize: 17, color: colors.destructive },
 });

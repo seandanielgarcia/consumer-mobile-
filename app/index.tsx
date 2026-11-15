@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  buttonText: { ...fonts.display, fontSize: 24, color: colors.ink },
+  buttonText: { ...fonts.semibold, fontSize: 24, color: colors.ink },
 
   // Yard
   yard: { flex: 1, backgroundColor: colors.cream, paddingTop: 4, paddingHorizontal: spacing.sidePad, paddingBottom: 34, gap: 8 },
