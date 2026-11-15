@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 
@@ -48,7 +48,13 @@ export const createPending = mutation({
       const item = await ctx.db.get(id);
       if (!item) throw new Error("An item no longer exists");
       if (item.garageId !== garageId) throw new Error("All items must come from one garage");
-      if (item.status !== "live") throw new Error(`${item.title} is no longer available`);
+      if (item.status !== "live") {
+        throw new ConvexError({
+          code: "ITEM_UNAVAILABLE",
+          itemId: id,
+          message: `${item.title} is no longer available`,
+        });
+      }
       if (held.has(id)) throw new Error(`Someone else is checking out ${item.title} right now`);
       totalCents += item.priceCents;
     }

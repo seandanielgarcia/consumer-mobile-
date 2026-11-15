@@ -74,7 +74,7 @@ export default function BuyerPaid() {
         )}
       </ScrollView>
       <View style={{ paddingHorizontal: 16, paddingBottom: 34 }}>
-        <PrimaryButton label="Keep shopping" onPress={() => router.dismissTo("/buyer")} />
+        <PrimaryButton label="Back to browsing" onPress={() => router.dismissTo("/buyer")} />
       </View>
     </View>
   );
