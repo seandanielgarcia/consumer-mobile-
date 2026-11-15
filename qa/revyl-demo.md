@@ -64,7 +64,7 @@ Fail if: the Paid screen stays on **"Paying…"** for more than 15 s (webhook no
 2. Open the app. On the seller home card **"Your garage"**, the two sold items are no longer listed as live.
 3. In the Convex dashboard, the `orders` row is `paid` with `whopCheckoutId` set, and both `items` rows are `reserved`.
 
-Fail if: either item is still `live`; the order is `paid` but an item is not `reserved`; the text arrives but names the wrong items.
+Fail if: either item is still `live`; the order is `paid` but a still-available item is not `reserved`; the text arrives but names the wrong items.
 
 ## Test 5 (negative): two buyers can't pay for the same item
 
@@ -72,7 +72,8 @@ Fail if: either item is still `live`; the order is `paid` but an item is not `re
 
 1. Buyer A taps **"Buy"** and completes payment.
 2. On Buyer B, without touching anything, expect the notice **"<Item title> just got picked up by someone else, so we took it out of your picks."** and the item removed from the selection.
-3. If Buyer B had already opened Whop before A paid, completing B's payment must not reserve the item twice. Expect B's order to end `cancelled` (or a refund per Sean's webhook handling) and the item to stay `reserved` to A.
+3. If Buyer B had already opened Whop before A paid, completing B's payment must not reserve the item twice. Per the SEA-3 E decision (Sean, 2026-11-15, posted on PR #2): B's order still ends `paid`, the item stays `reserved` to A, and the seller's text for B's order names the item as already taken with an instruction to refund that line manually in Whop. No automatic refund in MVP.
+4. In the Convex dashboard, the item has exactly one `reserved` status and appears in both orders' `itemIds`. Fail if the item flips to a second buyer or the seller text for B omits the taken item.
 
 ## Not covered
 
