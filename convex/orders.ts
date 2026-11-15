@@ -4,8 +4,8 @@ import type { Id } from "./_generated/dataModel";
 
 export const HOLD_MS = 10 * 60 * 1000;
 
-export async function heldItemIds(ctx: QueryCtx, garageId: Id<"garages">, exceptBuyerId?: Id<"users">) {
-  const since = Date.now() - HOLD_MS;
+export async function heldItemIds(ctx: QueryCtx, garageId: Id<"garages">, exceptBuyerId?: Id<"users">, now = Date.now()) {
+  const since = now - HOLD_MS;
   const pending = await ctx.db
     .query("orders")
     .withIndex("by_garage", (q) => q.eq("garageId", garageId))

@@ -15,7 +15,14 @@ export default function BuyerGarage() {
   const garageId = id as Id<"garages">;
   const location = useBuyerLocation();
   const convex = useConvex();
-  const garage = useQuery(api.buyer.garage, location ? { garageId, lat: location.lat, lng: location.lng } : "skip");
+  // TODO(SEA-3 F): sign-in is undecided; the buyer is the dev user from EXPO_PUBLIC_DEV_USER_ID, same as the seller screens.
+  const buyerId = process.env.EXPO_PUBLIC_DEV_USER_ID as Id<"users"> | undefined;
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 30000) * 30000);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Math.floor(Date.now() / 30000) * 30000), 30000);
+    return () => clearInterval(timer);
+  }, []);
+  const garage = useQuery(api.buyer.garage, location ? { garageId, lat: location.lat, lng: location.lng, buyerId, now } : "skip");
   const [picked, setPicked] = useState<Id<"items">[]>(selected ? [selected as Id<"items">] : []);
   const [notice, setNotice] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
@@ -45,8 +52,6 @@ export default function BuyerGarage() {
   const buy = async () => {
     setBuying(true);
     try {
-      // TODO(SEA-3 F): sign-in is undecided; the buyer is the dev user from EXPO_PUBLIC_DEV_USER_ID, same as the seller screens.
-      const buyerId = process.env.EXPO_PUBLIC_DEV_USER_ID as Id<"users"> | undefined;
       if (!buyerId) throw new Error("Set EXPO_PUBLIC_DEV_USER_ID to check out.");
       const orderId = await startCheckout(convex, buyerId, garageId, pickedItems.map((i) => i._id));
       router.replace({ pathname: "/buyer/paid", params: { orderId } });

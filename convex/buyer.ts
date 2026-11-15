@@ -66,12 +66,12 @@ export const search = query({
 });
 
 export const garage = query({
-  args: { garageId: v.id("garages"), lat: v.number(), lng: v.number(), buyerId: v.optional(v.id("users")) },
-  handler: async (ctx, { garageId, lat, lng, buyerId }) => {
+  args: { garageId: v.id("garages"), lat: v.number(), lng: v.number(), buyerId: v.optional(v.id("users")), now: v.optional(v.number()) },
+  handler: async (ctx, { garageId, lat, lng, buyerId, now }) => {
     const garage = await ctx.db.get(garageId);
     if (!garage) return null;
     const owner = await ctx.db.get(garage.ownerId);
-    const held = await heldItemIds(ctx, garageId, buyerId);
+    const held = await heldItemIds(ctx, garageId, buyerId, now);
     const items = await ctx.db
       .query("items")
       .withIndex("by_garage", (q) => q.eq("garageId", garageId))
