@@ -246,10 +246,10 @@ const styles = StyleSheet.create({
   fromNumber: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
   waiting: { flexDirection: "row", alignItems: "center", gap: 8 },
   waitingText: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
-  error: { fontFamily: fonts.medium, fontSize: 14, color: "#B3261E" },
+  error: { fontFamily: fonts.medium, fontSize: 14, color: colors.error },
   spacer: { flex: 1 },
   accessory: {
-    backgroundColor: "#F2F2F2",
+    backgroundColor: colors.surfaceMuted,
     borderTopWidth: 1,
     borderTopColor: colors.hairline,
     alignItems: "flex-end",
