@@ -70,7 +70,7 @@ export function registerShareRoutes(http: HttpRouter) {
         )
         .join("");
       const body = `<header><h1>${escape(title)}</h1><p>${escape(description)}</p></header><div class="grid">${cards}</div>`;
-      return new Response(page(title, description, yard.items[0]?.photoUrl, body, `garagesale://buyer/garage/${yard.garageId}`), { headers });
+      return new Response(page(title, description, yard.items[0]?.photoUrl, body, `${process.env.APP_LINK_BASE ?? "garagesale://"}buyer/garage/${yard.garageId}`), { headers });
     }),
   });
 }

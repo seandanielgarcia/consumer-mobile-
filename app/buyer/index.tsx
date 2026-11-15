@@ -6,6 +6,7 @@ import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
 import { ItemCard } from "../../src/buyer/ItemCard";
 import { locateMe, locatePlace, useBuyerLocation } from "../../src/buyer/location";
+import { startSelling } from "../../src/lib/sell";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors, fonts, type, typeSize } from "../../src/theme";
 
@@ -134,6 +135,8 @@ export default function BuyerNearYou() {
     return () => clearInterval(timer);
   }, []);
   const buyerId = useCurrentUser()?.userId;
+  const myYard = useQuery(api.garages.mine, buyerId ? { ownerId: buyerId } : "skip");
+  const isDemoUser = useQuery(api.users.isDemoUser, buyerId ? { userId: buyerId } : "skip");
   const { width } = useWindowDimensions();
   const cardWidth = (width - 32 - 12) / 2;
 
@@ -148,6 +151,19 @@ export default function BuyerNearYou() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.cream }} contentContainerStyle={{ paddingTop: 56, paddingHorizontal: 16, paddingBottom: 40, gap: 12 }} keyboardShouldPersistTaps="handled">
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <Pressable onPress={() => router.dismissTo("/")} hitSlop={12} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
+          <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted }}>← Home</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => (myYard ? router.dismissTo("/") : startSelling(__DEV__ || isDemoUser === true))}
+          hitSlop={12}
+          accessibilityRole="button"
+          style={{ minHeight: 44, justifyContent: "center" }}
+        >
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: colors.ink }}>{myYard ? "Your yard" : "Sell"}</Text>
+        </Pressable>
+      </View>
       <Text style={{ fontFamily: fonts.display, fontSize: typeSize.title, letterSpacing: -0.5, color: colors.ink }}>Near you</Text>
 
       <View style={{ height: 44, borderRadius: 12, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14 }}>

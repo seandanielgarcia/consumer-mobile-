@@ -49,11 +49,14 @@ http.route({
   path: "/whop/return",
   method: "GET",
   handler: httpAction(async (_ctx, request) => {
-    const orderId = new URL(request.url).searchParams.get("orderId") ?? "";
-    return new Response(null, {
-      status: 302,
-      headers: { Location: `garagesale://buyer/paid?orderId=${encodeURIComponent(orderId)}` },
-    });
+    const params = new URL(request.url).searchParams;
+    const orderId = params.get("orderId") ?? "";
+    const returnUrl = params.get("returnUrl") ?? "";
+    const target = new URL(
+      returnUrl.startsWith("exp://") || returnUrl.startsWith("garagesale://") ? returnUrl : "garagesale://buyer/paid",
+    );
+    target.searchParams.set("orderId", orderId);
+    return new Response(null, { status: 302, headers: { Location: target.toString() } });
   }),
 });
 
