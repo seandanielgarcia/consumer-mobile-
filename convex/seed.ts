@@ -131,7 +131,11 @@ export const demoOrder = internalMutation({
         .query("items")
         .withIndex("by_garage", (q) => q.eq("garageId", garage._id))
         .collect()
-    ).slice(0, 2);
+    )
+      .filter((i) => i.status === "live")
+      .slice(0, 2);
+    if (items.length === 0) throw new Error("No live items left in Hailey's garage");
+    for (const i of items) await ctx.db.patch(i._id, { status: "reserved" });
     return await ctx.db.insert("orders", {
       buyerId: buyer._id,
       garageId: garage._id,

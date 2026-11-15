@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { haversineMiles, roundCoord } from "./lib/location";
+import { heldItemIds } from "./orders";
 
 const MAX_RADIUS_MILES = 10;
 
@@ -21,11 +22,11 @@ export const search = query({
         ctx.db
           .query("items")
           .withSearchIndex("search_title", (s) => s.search("title", term).eq("status", "live"))
-          .take(50),
+          .take(200),
         ctx.db
           .query("items")
           .withSearchIndex("search_description", (s) => s.search("description", term).eq("status", "live"))
-          .take(50),
+          .take(200),
       ]);
       const seen = new Set<Id<"items">>();
       items = [...byTitle, ...byDescription].filter((i) => !seen.has(i._id) && seen.add(i._id));
@@ -60,16 +61,17 @@ export const search = query({
         distanceMi,
       });
     }
-    return results;
+    return results.sort((a, b) => a.distanceMi - b.distanceMi);
   },
 });
 
 export const garage = query({
-  args: { garageId: v.id("garages"), lat: v.number(), lng: v.number() },
-  handler: async (ctx, { garageId, lat, lng }) => {
+  args: { garageId: v.id("garages"), lat: v.number(), lng: v.number(), buyerId: v.optional(v.id("users")) },
+  handler: async (ctx, { garageId, lat, lng, buyerId }) => {
     const garage = await ctx.db.get(garageId);
     if (!garage) return null;
     const owner = await ctx.db.get(garage.ownerId);
+    const held = await heldItemIds(ctx, garageId, buyerId);
     const items = await ctx.db
       .query("items")
       .withIndex("by_garage", (q) => q.eq("garageId", garageId))
@@ -81,7 +83,7 @@ export const garage = query({
       neighborhood: garage.neighborhood,
       distanceMi: roughMiles(lat, lng, garage),
       items: items
-        .filter((i) => i.status === "live")
+        .filter((i) => i.status === "live" && !held.has(i._id))
         .map((i) => ({ _id: i._id, title: i.title, size: i.size, priceCents: i.priceCents, photoUrl: i.photoUrl })),
     };
   },

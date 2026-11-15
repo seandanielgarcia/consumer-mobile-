@@ -36,4 +36,16 @@ http.route({
   }),
 });
 
+http.route({
+  path: "/whop/return",
+  method: "GET",
+  handler: httpAction(async (_ctx, request) => {
+    const orderId = new URL(request.url).searchParams.get("orderId") ?? "";
+    return new Response(null, {
+      status: 302,
+      headers: { Location: `garagesale://buyer/paid?orderId=${encodeURIComponent(orderId)}` },
+    });
+  }),
+});
+
 export default http;

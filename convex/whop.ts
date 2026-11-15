@@ -59,7 +59,7 @@ export const createOrderCheckout = action({
         force_create_new_plan: true,
       },
       metadata: { orderId },
-      redirect_url: `garagesale://buyer/paid?orderId=${orderId}`,
+      redirect_url: `${process.env.CONVEX_SITE_URL}/whop/return?orderId=${orderId}`,
     });
     if (!checkout.purchase_url) throw new Error("Whop returned no purchase_url");
     await ctx.runMutation(internal.whop.setOrderCheckout, { orderId, whopCheckoutId: checkout.id });
