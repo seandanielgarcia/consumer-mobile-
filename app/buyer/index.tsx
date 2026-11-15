@@ -1,12 +1,13 @@
 import { useQuery } from "convex/react";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
 import { formatPrice, itemLabel } from "../../src/buyer/format";
 import { locateMe, locatePlace, useBuyerLocation } from "../../src/buyer/location";
+import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors, fonts } from "../../src/theme";
 
 function Pill({ label, active, onPress }: { label: string; active: boolean; onPress?: () => void }) {
@@ -88,7 +89,7 @@ function LocationSheet({ visible, onClose }: { visible: boolean; onClose: () => 
           </View>
           {busy && <ActivityIndicator color={colors.ink} />}
           {error && <Text style={{ fontFamily: fonts.body, fontSize: 14, color: colors.muted }}>{error}</Text>}
-          <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted }}>We only use a rough area (about 1 km). What you type stays on this phone.</Text>
+          <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted }}>Only a rough area (about 1 km) is used.</Text>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -103,10 +104,16 @@ export default function BuyerNearYou() {
   const [under30, setUnder30] = useState(false);
   const [radiusMiles, setRadiusMiles] = useState(2);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 30000) * 30000);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Math.floor(Date.now() / 30000) * 30000), 30000);
+    return () => clearInterval(timer);
+  }, []);
+  const buyerId = useCurrentUser()?.userId;
   const { width } = useWindowDimensions();
   const cardWidth = (width - 32 - 12) / 2;
 
-  const results = useQuery(api.buyer.search, location ? { q, lat: location.lat, lng: location.lng, radiusMiles } : "skip");
+  const results = useQuery(api.buyer.search, location ? { q, lat: location.lat, lng: location.lng, radiusMiles, buyerId, now } : "skip");
   const sizes = useMemo(
     () => [...new Set((results ?? []).flatMap((r) => (r.size ? [r.size] : [])))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
     [results],
@@ -174,7 +181,7 @@ export default function BuyerNearYou() {
         <ActivityIndicator color={colors.ink} style={{ marginTop: 40 }} />
       ) : shown.length === 0 ? (
         <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted, textAlign: "center", marginTop: 40 }}>
-          {q.trim() ? `Nothing matching "${q.trim()}" within ${radiusMiles} mi yet.` : `No garages open within ${radiusMiles} mi yet.`}
+          {q.trim() ? `Nothing matching "${q.trim()}" within ${radiusMiles} mi yet.` : `No yards open within ${radiusMiles} mi yet.`}
         </Text>
       ) : (
         <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16 }}>
@@ -194,7 +201,7 @@ export default function BuyerNearYou() {
                 {itemLabel(item)}
               </Text>
               <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted }}>
-                {item.ownerName}'s garage · {item.distanceMi} mi
+                {item.ownerName}'s yard · {item.distanceMi} mi
               </Text>
             </Pressable>
           ))}

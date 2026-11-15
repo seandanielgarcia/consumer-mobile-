@@ -8,6 +8,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { startCheckout } from "../../../src/buyer/checkout";
 import { formatPrice, itemLabel } from "../../../src/buyer/format";
 import { useBuyerLocation } from "../../../src/buyer/location";
+import { requireUser, SignInCancelled, useCurrentUser } from "../../../src/lib/useCurrentUser";
 import { colors, fonts } from "../../../src/theme";
 
 export default function BuyerGarage() {
@@ -15,8 +16,7 @@ export default function BuyerGarage() {
   const garageId = id as Id<"garages">;
   const location = useBuyerLocation();
   const convex = useConvex();
-  // TODO(SEA-3 F): sign-in is undecided; the buyer is the dev user from EXPO_PUBLIC_DEV_USER_ID, same as the seller screens.
-  const buyerId = process.env.EXPO_PUBLIC_DEV_USER_ID as Id<"users"> | undefined;
+  const buyerId = useCurrentUser()?.userId;
   const [now, setNow] = useState(() => Math.floor(Date.now() / 30000) * 30000);
   useEffect(() => {
     const timer = setInterval(() => setNow(Math.floor(Date.now() / 30000) * 30000), 30000);
@@ -50,10 +50,16 @@ export default function BuyerGarage() {
   };
 
   const buy = async () => {
+    let buyer: Id<"users">;
+    try {
+      buyer = await requireUser();
+    } catch (e) {
+      if (!(e instanceof SignInCancelled)) setNotice("Couldn't sign you in. Try again.");
+      return;
+    }
     setBuying(true);
     try {
-      if (!buyerId) throw new Error("Set EXPO_PUBLIC_DEV_USER_ID to check out.");
-      const orderId = await startCheckout(convex, buyerId, garageId, pickedItems.map((i) => i._id));
+      const orderId = await startCheckout(convex, buyer, garageId, pickedItems.map((i) => i._id));
       router.replace({ pathname: "/buyer/paid", params: { orderId } });
     } catch (e) {
       setNotice(e instanceof Error ? e.message : "Checkout failed.");
@@ -65,7 +71,7 @@ export default function BuyerGarage() {
   if (garage === null) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.cream, justifyContent: "center", alignItems: "center", padding: 20 }}>
-        <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted }}>This garage is gone.</Text>
+        <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted }}>This yard is gone.</Text>
       </View>
     );
   }
@@ -82,7 +88,7 @@ export default function BuyerGarage() {
           </View>
           <View style={{ flex: 1, gap: 2 }}>
             <Text numberOfLines={1} style={{ fontFamily: fonts.display, fontSize: 30, letterSpacing: -1, color: colors.cream }}>
-              {garage ? `${garage.ownerName}'s garage` : " "}
+              {garage ? `${garage.ownerName}'s yard` : " "}
             </Text>
             <Text style={{ fontFamily: fonts.body, fontSize: 14, color: colors.cream }}>
               {garage ? `${garage.neighborhood} · about ${garage.distanceMi} mi from you · pickup only` : " "}
