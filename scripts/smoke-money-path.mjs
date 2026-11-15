@@ -10,8 +10,6 @@ const deployment = "https://fleet-gnat-219.convex.cloud";
 const timeoutMs = 60_000;
 const start = performance.now();
 let orderId;
-let attempted = false;
-let pollingDeadline;
 
 function elapsed(since) {
   return `${((performance.now() - since) / 1000).toFixed(1)}s`;
@@ -25,23 +23,33 @@ function deployedClient() {
   const key = process.env.CONVEX_DEPLOY_KEY;
   if (!key) throw new Error("Set CONVEX_DEPLOY_KEY for fleet-gnat-219 before running.");
   const client = new ConvexHttpClient(url.origin, {
-    fetch: (input, init) => {
-      const remaining = pollingDeadline === undefined ? 20_000 : pollingDeadline - performance.now();
-      if (remaining <= 0) throw new Error("Payment confirmation timed out.");
-      return fetch(input, { ...init, signal: AbortSignal.timeout(Math.ceil(remaining)) });
-    },
+    fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(20_000) }),
   });
   client.setAdminAuth(key);
   return client;
+}
+
+async function getPublicOrder(id, remainingMs) {
+  const response = await fetch(`${deployment}/api/query`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ path: "orders:getOrder", args: { orderId: id }, format: "json" }),
+    signal: AbortSignal.timeout(Math.ceil(remainingMs)),
+  });
+  if (!response.ok) throw new Error(`Public order query failed (HTTP ${response.status}).`);
+  const result = await response.json();
+  if (result.status !== "success") {
+    throw new Error(result.errorMessage ?? "Public order query failed.");
+  }
+  return result.value;
 }
 
 async function smoke() {
   const client = deployedClient();
   const suffixes = new Set();
   while (suffixes.size < 2) suffixes.add(String(randomInt(10_000)).padStart(4, "0"));
-  const [sellerPhone, buyerPhone] = [...suffixes].map((suffix) => `+1555999${suffix}`);
+  const [sellerPhone, buyerPhone] = [...suffixes].map((suffix) => `+1555888${suffix}`);
 
-  attempted = true;
   const [sellerId, buyerId] = await Promise.all([
     client.mutation(api.users.getOrCreateByPhone, { name: "Smoke Seller", phone: sellerPhone }),
     client.mutation(api.users.getOrCreateByPhone, { name: "Smoke Buyer", phone: buyerPhone }),
@@ -90,9 +98,10 @@ async function smoke() {
   }
 
   const pollStart = performance.now();
-  pollingDeadline = pollStart + timeoutMs;
-  while (performance.now() < pollingDeadline) {
-    const status = await client.query(api.orders.getOrder, { orderId });
+  const pollingDeadline = pollStart + timeoutMs;
+  let remaining = pollingDeadline - performance.now();
+  while (remaining > 0) {
+    const status = await getPublicOrder(orderId, remaining);
     if (status?.status === "paid") {
       console.log(`PASS: order ${orderId} is paid (${elapsed(pollStart)} polling, ${elapsed(start)} total).`);
       return;
@@ -100,8 +109,9 @@ async function smoke() {
     if (status === null || status.status === "cancelled") {
       throw new Error(`Order status is ${status?.status ?? "missing"}.`);
     }
-    const remaining = pollingDeadline - performance.now();
+    remaining = pollingDeadline - performance.now();
     if (remaining > 0) await delay(Math.min(1_000, remaining));
+    remaining = pollingDeadline - performance.now();
   }
   throw new Error("Order did not become paid within 60 seconds.");
 }
@@ -112,5 +122,5 @@ try {
   console.error(`FAIL after ${elapsed(start)}${orderId ? ` (order ${orderId})` : ""}: ${error.message}`);
   process.exitCode = 1;
 } finally {
-  if (attempted) console.log("Cleanup once PR #9 lands: npx convex run seed:resetDemo");
+  if (orderId) console.log(`Order ID for manual cleanup in Convex: ${orderId}`);
 }
