@@ -89,9 +89,14 @@ export default function SignIn() {
       </Pressable>
       {pending ? (
         <>
-          <Text style={styles.instruction}>
-            Text from {pending.phone}: <Text style={styles.instructionStrong}>K-FERUEU verify {pending.code}</Text> → {KEIKI_NUMBER_DISPLAY}
-          </Text>
+          <View style={styles.instructionBlock}>
+            <Text style={styles.label}>Text this to Keiki</Text>
+            <View style={styles.codeChip}>
+              <Text style={styles.codeChipText}>K-FERUEU verify {pending.code}</Text>
+            </View>
+            <Text style={styles.toNumber}>to {KEIKI_NUMBER_DISPLAY}</Text>
+            <Text style={styles.fromNumber}>from {pending.phone}</Text>
+          </View>
           <View style={styles.waiting}>
             <ActivityIndicator color={colors.brand} size="small" />
             <Text style={styles.waitingText}>Waiting for your text…</Text>
@@ -178,8 +183,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.ink,
   },
-  instruction: { fontFamily: fonts.display, fontSize: 34, lineHeight: 40, letterSpacing: -0.5, color: colors.ink },
-  instructionStrong: { backgroundColor: colors.tag },
+  instructionBlock: { gap: 10, alignItems: "flex-start" },
+  label: { fontFamily: fonts.semibold, fontSize: 15, color: colors.muted },
+  codeChip: {
+    backgroundColor: colors.tag,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  codeChipText: { fontFamily: fonts.display, fontSize: 30, color: colors.ink },
+  toNumber: { fontFamily: fonts.display, fontSize: 26, color: colors.ink },
+  fromNumber: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
   waiting: { flexDirection: "row", alignItems: "center", gap: 8 },
   waitingText: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
   error: { fontFamily: fonts.medium, fontSize: 14, color: "#B3261E" },
