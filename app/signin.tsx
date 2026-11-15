@@ -122,7 +122,7 @@ export default function SignIn() {
           </View>
         </InputAccessoryView>
       )}
-      <Pressable onPress={() => (pending ? setPending(null) : router.back())} hitSlop={12} style={styles.back}>
+      <Pressable onPress={() => (pending ? setPending(null) : router.canGoBack() ? router.back() : router.replace("/"))} hitSlop={12} style={styles.back}>
         <Text style={styles.backText}>{pending ? "← Back" : "Cancel"}</Text>
       </Pressable>
       {pending ? (
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     paddingBottom: 34,
     gap: 16,
   },
-  back: { alignSelf: "flex-start" },
+  back: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center" },
   backText: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
   headline: { ...type.title, color: colors.ink },
   fieldLabel: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
