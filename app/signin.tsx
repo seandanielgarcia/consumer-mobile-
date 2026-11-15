@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "convex/react";
 import * as Linking from "expo-linking";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { api } from "../convex/_generated/api";
@@ -18,6 +18,7 @@ const normalizePhone = (input: string) => {
 };
 
 export default function SignIn() {
+  const { next } = useLocalSearchParams<{ next?: string }>();
   const startVerification = useMutation(api.users.startVerification);
   const devSkip = useMutation(api.users.devSkipVerification);
   const [name, setName] = useState("");
@@ -31,8 +32,10 @@ export default function SignIn() {
 
   useEffect(() => {
     if (!pending || !verified) return;
-    setCurrentUser({ userId: pending.userId }).then(() => router.replace("/seller/price"));
-  }, [pending, verified]);
+    setCurrentUser({ userId: pending.userId }).then(() =>
+      next === "back" && router.canGoBack() ? router.back() : router.replace("/seller/price"),
+    );
+  }, [pending, verified, next]);
 
   const submit = async () => {
     if (!normalized) return;

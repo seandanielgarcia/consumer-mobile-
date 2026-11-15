@@ -23,7 +23,7 @@ export default function SellerHome() {
     });
     if (result.canceled || result.assets.length === 0) return;
     setPickedPhotos(result.assets.map((asset) => asset.uri));
-    router.push(user ? "/seller/price" : "/signin");
+    router.push("/seller/price");
   };
 
   return (
