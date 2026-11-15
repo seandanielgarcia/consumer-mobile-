@@ -38,7 +38,11 @@ export const openWithItems = mutation({
       v.object({
         storageId: v.id("_storage"),
         title: v.string(),
-        size: v.string(),
+        category: v.optional(v.string()),
+        size: v.optional(v.string()),
+        brand: v.optional(v.string()),
+        condition: v.optional(v.string()),
+        color: v.optional(v.string()),
         description: v.string(),
         priceCents: v.number(),
         aiGenerated: v.boolean(),
@@ -54,11 +58,12 @@ export const openWithItems = mutation({
       .first();
     const garageId = existing?._id ?? (await ctx.db.insert("garages", { ownerId, ...location }));
     if (existing) await ctx.db.patch(existing._id, location);
+    const itemIds = [];
     for (const item of items) {
       const photoUrl = await ctx.storage.getUrl(item.storageId);
       if (!photoUrl) throw new Error("Photo upload missing");
-      await ctx.db.insert("items", { ...item, garageId, photoUrl, status: "live" });
+      itemIds.push(await ctx.db.insert("items", { ...item, garageId, photoUrl, status: "live" }));
     }
-    return { garageId, firstOpen: !existing };
+    return { garageId, itemIds, firstOpen: !existing };
   },
 });

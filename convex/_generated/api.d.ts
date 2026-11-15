@@ -16,7 +16,6 @@ import type * as keiki from "../keiki.js";
 import type * as keikiHttp from "../keikiHttp.js";
 import type * as lib_location from "../lib/location.js";
 import type * as users from "../users.js";
-import type * as whop from "../whop.js";
 
 import type {
   ApiFromModules,
@@ -33,7 +32,6 @@ declare const fullApi: ApiFromModules<{
   keikiHttp: typeof keikiHttp;
   "lib/location": typeof lib_location;
   users: typeof users;
-  whop: typeof whop;
 }>;
 
 /**

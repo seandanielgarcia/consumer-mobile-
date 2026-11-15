@@ -1,7 +1,6 @@
 import type { Whop } from "@whop/sdk";
 import { unwrapWebhook } from "@whop/sdk/helpers";
 import { httpRouter } from "convex/server";
-import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
 import { registerKeikiRoutes } from "./keikiHttp";
 
@@ -22,10 +21,7 @@ http.route({
     } catch {
       return new Response("Invalid webhook signature", { status: 401 });
     }
-    const userId = event.data.metadata?.userId;
-    if (event.type === "payment.succeeded" && typeof userId === "string") {
-      await ctx.runMutation(internal.users.setPremium, { userId });
-    }
+    console.log("whop webhook", event.type, event.data.id);
     return new Response("OK", { status: 200 });
   }),
 });

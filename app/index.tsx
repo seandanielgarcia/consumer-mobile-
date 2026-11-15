@@ -57,11 +57,10 @@ export default function SellerHome() {
           <Text style={styles.dropTitle}>Add photos in bulk</Text>
           <Text style={styles.dropSub}>Pick 5, 20, 50 at once from your camera roll</Text>
         </Pressable>
-        {/* TODO(SEA-3 B): whether Home adds a small "Just one item" link under the drop zone is undecided. */}
         <View style={styles.aiStrip}>
           <SparkleIcon size={22} color={colors.tag} />
           <Text style={styles.aiStripText}>
-            AI writes the title, size and description. <Text style={styles.aiStripStrong}>You just set prices.</Text>
+            Share a photo and set a price, <Text style={styles.aiStripStrong}>we'll take care of the rest.</Text>
           </Text>
         </View>
       </View>
