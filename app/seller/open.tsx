@@ -7,6 +7,7 @@ import { api } from "../../convex/_generated/api";
 import type { Doc, Id } from "../../convex/_generated/dataModel";
 import { ChatIcon } from "../../src/components/icons";
 import { textKeiki } from "../../src/lib/keiki";
+import { shareYard } from "../../src/lib/shareYard";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../../src/theme";
 
@@ -128,6 +129,9 @@ export default function SellerOpen() {
           </Pressable>
         </View>
       )}
+      <Pressable style={styles.sharePill} accessibilityRole="button" onPress={() => shareYard(garageId, user?.name)}>
+        <Text style={styles.sharePillText}>Share my yard with a friend</Text>
+      </Pressable>
       <Pressable style={styles.donePill} accessibilityRole="button" onPress={() => router.dismissTo("/")}>
         <Text style={styles.donePillText}>Done</Text>
       </Pressable>
@@ -213,6 +217,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   secondaryPillText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.ink },
+  sharePill: {
+    height: spacing.cta,
+    borderRadius: spacing.radius,
+    borderWidth: 2,
+    borderColor: colors.cream,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sharePillText: { fontFamily: fonts.semibold, fontSize: 18, color: colors.cream },
   donePill: {
     height: spacing.cta,
     borderRadius: spacing.radius,

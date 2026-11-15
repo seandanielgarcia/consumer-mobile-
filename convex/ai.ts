@@ -7,7 +7,7 @@ const PROMPT = `You write listings for a neighborhood garage sale app. People se
 Look at the photo of one item and return JSON:
 - title: short item name a buyer would search for, at most 4 words, with brand if visible (e.g. "Levi's 501 jeans", "IKEA floor lamp").
 - category: one or two plain words (e.g. "Clothing", "Shoes", "Furniture", "Books", "Kitchen", "Toys", "Electronics", "Decor").
-- size: the size only when it is visible or the item is normally sized (clothing, shoes); otherwise null.
+- size: for clothing and shoes, always give a size: the size on a visible tag, or else your best guess from how the item looks. Use letter sizes for tops, dresses and outerwear (XS, S, M, L, XL), waist x length for jeans and trousers when guessable (e.g. "32x30"), otherwise a letter size, and US sizes for shoes (e.g. "9"). For anything that isn't clothing or shoes, null.
 - brand: the brand only when visible or obvious; otherwise null.
 - condition: one of "New", "Like new", "Good", "Fair".
 - color: the main color in one or two words.
