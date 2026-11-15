@@ -9,6 +9,7 @@ import type { Doc } from "../convex/_generated/dataModel";
 import { ItemEditFields, type ItemFields } from "../src/components/ItemEditFields";
 import { setPickedPhotos } from "../src/lib/pickedPhotos";
 import { loadSamplePhotos } from "../src/lib/samplePhotos";
+import { formatPlace } from "../src/lib/place";
 import { stockImages } from "../src/lib/stockImages";
 import { signOut, useCurrentUser } from "../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../src/theme";
@@ -221,7 +222,7 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
         </View>
       </View>
       <Text style={styles.yardHeadline}>Your yard{counts ? ` · ${counts}` : ""}</Text>
-      <Text style={styles.yardMeta}>{garage.neighborhood} · visible to buyers nearby</Text>
+      <Text style={styles.yardMeta}>{formatPlace(garage)}</Text>
       {error && !editing && <Text style={styles.error}>{error}</Text>}
       <FlatList
         data={items}

@@ -19,6 +19,7 @@ const SEED = [
     phone: "+15550100001",
     avatarColor: "#FFE14D",
     neighborhood: "Mission",
+    city: "San Francisco",
     lat: 37.7599,
     lng: -122.4148,
     items: seedItems("Hailey"),
@@ -28,6 +29,7 @@ const SEED = [
     phone: "+15550100002",
     avatarColor: "#7EE0B5",
     neighborhood: "Hayes Valley",
+    city: "San Francisco",
     lat: 37.7764,
     lng: -122.4242,
     items: seedItems("Maya"),
@@ -37,6 +39,7 @@ const SEED = [
     phone: "+15550100003",
     avatarColor: "#FF8FB1",
     neighborhood: "Dogpatch",
+    city: "San Francisco",
     lat: 37.7609,
     lng: -122.3876,
     items: seedItems("Jon"),
@@ -72,10 +75,12 @@ export const run = internalMutation({
         (await ctx.db.insert("garages", {
           ownerId,
           neighborhood: g.neighborhood,
+          city: g.city,
           approxLat: roundCoord(g.lat),
           approxLng: roundCoord(g.lng),
           isOpen: true,
         }));
+      if (garage && !garage.city) await ctx.db.patch(garage._id, { city: g.city });
       const existing = await ctx.db
         .query("items")
         .withIndex("by_garage", (q) => q.eq("garageId", garageId))

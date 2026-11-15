@@ -66,7 +66,7 @@ const visibleFields = (d: Draft): Field[] =>
 const blockerOf = (d: Draft) =>
   !d.condition.trim() ? "condition" : !d.title.trim() ? "title" : d.priceCents <= 0 ? "price" : null;
 
-const DEFAULT_LOCATION = { neighborhood: "Mission", lat: 37.76, lng: -122.42 };
+const DEFAULT_LOCATION = { neighborhood: "Mission", city: "San Francisco", lat: 37.76, lng: -122.42 };
 
 const withTimeout = <T,>(promise: Promise<T>, ms: number) =>
   Promise.race([promise, new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
@@ -83,7 +83,8 @@ async function approximateLocation() {
     const { latitude, longitude } = position.coords;
     const [place] = await withTimeout(Location.reverseGeocodeAsync({ latitude, longitude }), 3000).catch(() => null) ?? [];
     return {
-      neighborhood: place?.district ?? place?.subregion ?? "Nearby",
+      neighborhood: place?.district ?? place?.subregion ?? place?.city ?? "Nearby",
+      city: place?.city ?? undefined,
       lat: Math.round(latitude * 100) / 100,
       lng: Math.round(longitude * 100) / 100,
     };
@@ -224,10 +225,11 @@ export default function SellerReview() {
   const openFor = async (ownerId: Id<"users">) => {
     setOpening(true);
     try {
-      const { neighborhood, lat, lng } = await (location.current ?? approximateLocation());
+      const { neighborhood, city, lat, lng } = await (location.current ?? approximateLocation());
       const { garageId, itemIds, firstOpen } = await openWithItems({
         ownerId,
         neighborhood,
+        city,
         lat,
         lng,
         items: approved.map((d) => ({

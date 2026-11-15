@@ -9,6 +9,7 @@ import { formatPrice } from "../../../src/buyer/format";
 import { ItemCard } from "../../../src/buyer/ItemCard";
 import { PrimaryButton } from "../../../src/components/PrimaryButton";
 import { useBuyerLocation } from "../../../src/buyer/location";
+import { formatPlace } from "../../../src/lib/place";
 import { useCurrentUser } from "../../../src/lib/useCurrentUser";
 import { colors, fonts, typeSize } from "../../../src/theme";
 
@@ -79,7 +80,7 @@ export default function BuyerGarage() {
               {garage ? `${garage.ownerName}'s yard` : " "}
             </Text>
             <Text style={{ fontFamily: fonts.body, fontSize: 14, color: colors.cream }}>
-              {garage ? `${garage.neighborhood} · about ${garage.distanceMi} mi from you · pickup only` : " "}
+              {garage ? `${formatPlace(garage)} · about ${garage.distanceMi} mi · pickup only` : " "}
             </Text>
           </View>
         </View>

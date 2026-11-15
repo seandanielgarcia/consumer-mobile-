@@ -1,6 +1,7 @@
 import { Image } from "expo-image";
 import { Pressable, Text, View } from "react-native";
 import { colors, fonts, type, typeSize } from "../theme";
+import { formatPlace } from "../lib/place";
 import { detailLine, formatPrice } from "./format";
 
 export type CardItem = {
@@ -12,6 +13,8 @@ export type CardItem = {
   brand?: string;
   distanceMi?: number;
   ownerName?: string;
+  neighborhood?: string;
+  city?: string;
 };
 
 export function ItemCard({ item, width, onPress, selected }: { item: CardItem; width: number; onPress: () => void; selected?: boolean }) {
@@ -46,7 +49,10 @@ export function ItemCard({ item, width, onPress, selected }: { item: CardItem; w
       )}
       {(item.ownerName || item.distanceMi !== undefined) && (
         <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted }}>
-          {detailLine([item.ownerName && `${item.ownerName}'s yard`, item.distanceMi !== undefined ? `${item.distanceMi} mi` : undefined])}
+          {detailLine([
+            item.neighborhood ? formatPlace({ neighborhood: item.neighborhood, city: item.city }) : item.ownerName && `${item.ownerName}'s yard`,
+            item.distanceMi !== undefined ? `about ${item.distanceMi} mi` : undefined,
+          ])}
         </Text>
       )}
     </Pressable>

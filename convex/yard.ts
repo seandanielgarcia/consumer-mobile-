@@ -3,6 +3,7 @@ import { internalAction, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { isDemoPhone } from "./users";
+import { formatPlace } from "../src/lib/place";
 
 export function yardLink(garageId: Id<"garages">) {
   return `${process.env.CONVEX_SITE_URL}/y/${garageId}`;
@@ -23,7 +24,7 @@ export const yardPage = internalQuery({
     return {
       garageId: garage._id,
       firstName: owner?.name.trim().split(/\s+/)[0] || "Someone",
-      neighborhood: garage.neighborhood,
+      neighborhood: formatPlace(garage),
       isOpen: garage.isOpen,
       items: items
         .filter((item) => item.status === "live")
