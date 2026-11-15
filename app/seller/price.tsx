@@ -96,7 +96,7 @@ export default function SellerReview() {
     })),
   );
   const [focus, setFocus] = useState<number | null>(null);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState<Draft | null>(null);
   const [editingChip, setEditingChip] = useState<ChipField | null>(null);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -149,8 +149,13 @@ export default function SellerReview() {
   const advance = (patch: Partial<Draft>) => {
     if (!current) return;
     update(current.i, patch);
-    setEditing(false);
+    setEditing(null);
     setEditingChip(null);
+  };
+
+  const cancelEdit = () => {
+    if (current && editing) update(current.i, editing);
+    setEditing(null);
   };
 
   const openGarage = async () => {
@@ -304,7 +309,9 @@ export default function SellerReview() {
               onChangeText={(description) => update(i, { description })}
               placeholder="Description"
               placeholderTextColor={colors.muted}
-              style={styles.fieldInput}
+              multiline
+              numberOfLines={3}
+              style={[styles.fieldInput, styles.descriptionInput]}
             />
           </View>
         ) : (
@@ -343,14 +350,14 @@ export default function SellerReview() {
       </ScrollView>
       <View style={styles.actions}>
         <View style={styles.actionRow}>
-          {!failed && (
+          {!failed && !editing && (
             <Pressable
-              onPress={() => setEditing((v) => !v)}
+              onPress={() => setEditing(d)}
               disabled={loading}
               style={[styles.secondary, loading && styles.ctaDisabled]}
               accessibilityRole="button"
             >
-              <Text style={styles.secondaryText}>{editing ? "Done" : "Edit"}</Text>
+              <Text style={styles.secondaryText}>Edit</Text>
             </Pressable>
           )}
           {!failed && (
@@ -364,9 +371,15 @@ export default function SellerReview() {
             </Pressable>
           )}
         </View>
-        <Pressable onPress={() => advance({ review: "removed" })} hitSlop={8} style={styles.skip}>
-          <Text style={styles.skipText}>skip / remove</Text>
-        </Pressable>
+        {editing ? (
+          <Pressable onPress={cancelEdit} hitSlop={8} style={styles.skip}>
+            <Text style={styles.skipText}>Cancel</Text>
+          </Pressable>
+        ) : (
+          <Pressable onPress={() => advance({ review: "removed" })} hitSlop={8} style={styles.skip}>
+            <Text style={styles.skipText}>skip / remove</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -406,6 +419,7 @@ const styles = StyleSheet.create({
     fontSize: 30,
     color: colors.ink,
   },
+  descriptionInput: { height: 76, paddingTop: 10, textAlignVertical: "top" },
   skeleton: { gap: 10 },
   skeletonBar: { height: 28, borderRadius: 8, backgroundColor: colors.line },
   fields: { gap: 10 },
