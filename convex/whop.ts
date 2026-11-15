@@ -34,8 +34,8 @@ export const setOrderCheckout = internalMutation({
 });
 
 export const createOrderCheckout = action({
-  args: { orderId: v.id("orders") },
-  handler: async (ctx, { orderId }): Promise<{ purchaseUrl: string }> => {
+  args: { orderId: v.id("orders"), returnUrl: v.optional(v.string()) },
+  handler: async (ctx, { orderId, returnUrl }): Promise<{ purchaseUrl: string }> => {
     const { totalCents, buyerFirstName } = await ctx.runQuery(internal.whop.pendingOrder, { orderId });
     const checkout = await whopClient().checkoutConfigurations.create({
       variant: {
@@ -48,7 +48,7 @@ export const createOrderCheckout = action({
       },
       payment_method_configuration: { enabled: ["card", "apple_pay"], disabled: [], include_platform_defaults: false },
       metadata: { orderId },
-      redirect_url: `${process.env.CONVEX_SITE_URL}/whop/return?orderId=${orderId}`,
+      redirect_url: `${process.env.CONVEX_SITE_URL}/whop/return?orderId=${orderId}${returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : ""}`,
     });
     if (!checkout.purchase_url) throw new Error("Whop returned no purchase_url");
     await ctx.runMutation(internal.whop.setOrderCheckout, { orderId, whopCheckoutId: checkout.id });
