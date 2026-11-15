@@ -15,6 +15,8 @@ export default function BuyerPaid() {
     return <ActivityIndicator color={colors.ink} style={{ flex: 1, backgroundColor: colors.cream }} />;
   }
 
+  const firstName = order?.sellerName.trim().split(/\s+/, 1)[0] ?? "";
+  const sellerName = /^\p{L}[\p{L}\p{M}ʼ’'.-]*$/u.test(firstName) ? firstName : "The seller";
   const paid = order?.status === "paid" || order?.status === "picked_up";
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
@@ -40,7 +42,7 @@ export default function BuyerPaid() {
         ))}
         {order && paid && (
           <Text style={{ fontFamily: fonts.body, fontSize: 17, lineHeight: 24, color: colors.ink }}>
-            {order.sellerName} got a text. They'll message you to meet up.
+            {sellerName} got a text. They'll message you to meet up.
           </Text>
         )}
       </ScrollView>
@@ -49,7 +51,7 @@ export default function BuyerPaid() {
           onPress={() => router.replace("/buyer")}
           style={{ height: 60, borderRadius: 30, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" }}
         >
-          <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: colors.cream }}>Back to browsing</Text>
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 18, color: colors.cream }}>Back to browsing</Text>
         </Pressable>
       </View>
     </View>

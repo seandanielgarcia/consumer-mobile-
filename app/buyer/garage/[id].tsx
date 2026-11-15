@@ -100,7 +100,7 @@ export default function BuyerGarage() {
   if (garage === null) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.cream, justifyContent: "center", alignItems: "center", padding: 20 }}>
-        <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted }}>This garage is gone.</Text>
+        <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted }}>This yard is gone.</Text>
       </View>
     );
   }
@@ -117,7 +117,7 @@ export default function BuyerGarage() {
           </View>
           <View style={{ flex: 1, gap: 2 }}>
             <Text numberOfLines={1} style={{ fontFamily: fonts.display, fontSize: 30, letterSpacing: -1, color: colors.cream }}>
-              {garage ? `${garage.ownerName}'s garage` : " "}
+              {garage ? `${garage.ownerName}'s yard` : " "}
             </Text>
             <Text style={{ fontFamily: fonts.body, fontSize: 14, color: colors.cream }}>
               {garage ? `${garage.neighborhood} · about ${garage.distanceMi} mi from you · pickup only` : " "}
@@ -135,7 +135,7 @@ export default function BuyerGarage() {
       {garage === undefined ? (
         <ActivityIndicator color={colors.ink} style={{ marginTop: 40 }} />
       ) : (
-        <ScrollView contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", columnGap: 14, rowGap: 18, padding: 20 }}>
+        <ScrollView contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", columnGap: 14, rowGap: 18, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 20 }}>
           {garage.items.length === 0 && (
             <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted }}>Everything here is spoken for.</Text>
           )}
@@ -154,7 +154,7 @@ export default function BuyerGarage() {
                   paddingBottom: 12,
                   gap: 8,
                   transform: [{ rotate: index % 2 === 0 ? "-2deg" : "2deg" }],
-                  shadowColor: "#E2D6BF",
+                  shadowColor: colors.frameEdge,
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 1,
                   shadowRadius: 0,
@@ -192,7 +192,7 @@ export default function BuyerGarage() {
         </ScrollView>
       )}
 
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingTop: 14, paddingHorizontal: 20, paddingBottom: 34, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: "#E2D6BF" }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingTop: 14, paddingHorizontal: 20, paddingBottom: 34, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.frameEdge }}>
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: fonts.body, fontSize: 14, color: colors.muted }}>{pickedItems.length} picked</Text>
           <Text style={{ fontFamily: fonts.display, fontSize: 26, color: colors.ink }}>{formatPrice(total)}</Text>

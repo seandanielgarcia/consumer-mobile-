@@ -8,7 +8,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { formatPrice, itemLabel } from "../../src/buyer/format";
 import { locateMe, locatePlace, useBuyerLocation } from "../../src/buyer/location";
-import { colors, fonts } from "../../src/theme";
+import { colors, fonts, spacing } from "../../src/theme";
 
 function Pill({ label, active, onPress }: { label: string; active: boolean; onPress?: () => void }) {
   return (
@@ -82,7 +82,7 @@ function LocationSheet({ visible, onClose }: { visible: boolean; onClose: () => 
             <Pressable
               disabled={busy || !place.trim()}
               onPress={() => run(() => locatePlace(place.trim()))}
-              style={{ height: 38, paddingHorizontal: 16, borderRadius: 19, backgroundColor: colors.brand, justifyContent: "center", opacity: place.trim() ? 1 : 0.4 }}
+              style={{ minHeight: spacing.minButton, paddingHorizontal: 16, borderRadius: spacing.radius, backgroundColor: colors.brand, justifyContent: "center", opacity: place.trim() ? 1 : 0.4 }}
             >
               <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: colors.cream }}>Go</Text>
             </Pressable>
@@ -181,7 +181,7 @@ export default function BuyerNearYou() {
         <ActivityIndicator color={colors.ink} style={{ marginTop: 40 }} />
       ) : shown.length === 0 ? (
         <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted, textAlign: "center", marginTop: 40 }}>
-          {q.trim() ? `Nothing matching "${q.trim()}" within ${radiusMiles} mi yet.` : `No garages open within ${radiusMiles} mi yet.`}
+          {q.trim() ? `Nothing matching "${q.trim()}" within ${radiusMiles} mi yet.` : `No yards open within ${radiusMiles} mi yet.`}
         </Text>
       ) : (
         <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16 }}>
@@ -201,7 +201,7 @@ export default function BuyerNearYou() {
                 {itemLabel(item)}
               </Text>
               <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted }}>
-                {item.ownerName}'s garage · {item.distanceMi} mi
+                {item.ownerName}'s yard · {item.distanceMi} mi
               </Text>
             </Pressable>
           ))}
