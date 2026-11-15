@@ -42,7 +42,7 @@ export default function BuyerItem() {
         <View>
           <Image source={{ uri: item.photoUrl }} style={{ width: "100%", aspectRatio: 4 / 5, backgroundColor: colors.line }} contentFit="cover" />
           <Pressable
-            onPress={() => (router.canGoBack() ? router.back() : router.replace("/buyer"))}
+            onPress={() => router.dismissTo("/buyer")}
             hitSlop={12}
             style={{ position: "absolute", top: 56, left: 16, height: 36, paddingHorizontal: 14, borderRadius: 18, backgroundColor: "rgba(255,246,229,0.92)", justifyContent: "center" }}
           >
