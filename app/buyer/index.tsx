@@ -181,7 +181,7 @@ export default function BuyerNearYou() {
         <ActivityIndicator color={colors.ink} style={{ marginTop: 40 }} />
       ) : shown.length === 0 ? (
         <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted, textAlign: "center", marginTop: 40 }}>
-          {q.trim() ? `Nothing matching "${q.trim()}" within ${radiusMiles} mi yet.` : `No garages open within ${radiusMiles} mi yet.`}
+          {q.trim() ? `Nothing matching "${q.trim()}" within ${radiusMiles} mi yet.` : `No yards open within ${radiusMiles} mi yet.`}
         </Text>
       ) : (
         <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16 }}>
@@ -201,7 +201,7 @@ export default function BuyerNearYou() {
                 {itemLabel(item)}
               </Text>
               <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted }}>
-                {item.ownerName}'s garage · {item.distanceMi} mi
+                {item.ownerName}'s yard · {item.distanceMi} mi
               </Text>
             </Pressable>
           ))}

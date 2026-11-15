@@ -71,7 +71,7 @@ export default function BuyerGarage() {
   if (garage === null) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.cream, justifyContent: "center", alignItems: "center", padding: 20 }}>
-        <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted }}>This garage is gone.</Text>
+        <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted }}>This yard is gone.</Text>
       </View>
     );
   }
@@ -88,7 +88,7 @@ export default function BuyerGarage() {
           </View>
           <View style={{ flex: 1, gap: 2 }}>
             <Text numberOfLines={1} style={{ fontFamily: fonts.display, fontSize: 30, letterSpacing: -1, color: colors.cream }}>
-              {garage ? `${garage.ownerName}'s garage` : " "}
+              {garage ? `${garage.ownerName}'s yard` : " "}
             </Text>
             <Text style={{ fontFamily: fonts.body, fontSize: 14, color: colors.cream }}>
               {garage ? `${garage.neighborhood} · about ${garage.distanceMi} mi from you · pickup only` : " "}
