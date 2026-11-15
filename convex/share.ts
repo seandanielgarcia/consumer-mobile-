@@ -66,7 +66,7 @@ export function registerShareRoutes(http: HttpRouter) {
       const cards = yard.items
         .map(
           (i) =>
-            `<div class="card"><img src="${escape(i.photoUrl)}" alt=""><div class="price">$${Math.round(i.priceCents / 100)}</div><div class="title">${escape(i.title)}</div></div>`,
+            `<div class="card"><img src="${escape(i.photoUrl)}" alt=""><div class="price">$${(i.priceCents / 100).toFixed(i.priceCents % 100 ? 2 : 0)}</div><div class="title">${escape(i.title)}</div></div>`,
         )
         .join("");
       const body = `<header><h1>${escape(title)}</h1><p>${escape(description)}</p></header><div class="grid">${cards}</div>`;
