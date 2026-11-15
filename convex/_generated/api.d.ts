@@ -10,6 +10,7 @@
 
 import type * as buyer from "../buyer.js";
 import type * as lib_location from "../lib/location.js";
+import type * as orders from "../orders.js";
 import type * as seed from "../seed.js";
 
 import type {
@@ -21,6 +22,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   buyer: typeof buyer;
   "lib/location": typeof lib_location;
+  orders: typeof orders;
   seed: typeof seed;
 }>;
 

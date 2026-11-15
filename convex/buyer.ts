@@ -85,22 +85,3 @@ export const garage = query({
     };
   },
 });
-
-export const order = query({
-  args: { orderId: v.id("orders") },
-  handler: async (ctx, { orderId }) => {
-    const order = await ctx.db.get(orderId);
-    if (!order) return null;
-    const garage = await ctx.db.get(order.garageId);
-    const seller = garage && (await ctx.db.get(garage.ownerId));
-    const items = await Promise.all(order.itemIds.map((id) => ctx.db.get(id)));
-    return {
-      status: order.status,
-      totalCents: order.totalCents,
-      sellerName: seller?.name ?? "The seller",
-      items: items
-        .filter((i) => i !== null)
-        .map((i) => ({ _id: i._id, title: i.title, size: i.size, priceCents: i.priceCents, photoUrl: i.photoUrl })),
-    };
-  },
-});

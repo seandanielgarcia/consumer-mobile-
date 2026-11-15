@@ -9,7 +9,7 @@ import { colors, fonts } from "../../src/theme";
 
 export default function BuyerPaid() {
   const { orderId } = useLocalSearchParams<{ orderId?: string }>();
-  const order = useQuery(api.buyer.order, orderId ? { orderId: orderId as Id<"orders"> } : "skip");
+  const order = useQuery(api.orders.getOrder, orderId ? { orderId: orderId as Id<"orders"> } : "skip");
 
   if (order === undefined && orderId) {
     return <ActivityIndicator color={colors.ink} style={{ flex: 1, backgroundColor: colors.cream }} />;

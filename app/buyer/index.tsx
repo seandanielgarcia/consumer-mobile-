@@ -120,9 +120,8 @@ export default function BuyerNearYou() {
               <Text numberOfLines={1} style={{ fontFamily: fonts.semibold, fontSize: 15, color: colors.ink }}>
                 {itemLabel(item)}
               </Text>
-              {/* TODO(SEA-3 C): second half of the badge, distance ("· 1 mi") vs neighborhood ("· Hayes Valley"). */}
               <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted }}>
-                {item.ownerName}'s garage
+                {item.ownerName}'s garage · {item.distanceMi} mi
               </Text>
             </Pressable>
           ))}

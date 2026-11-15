@@ -104,6 +104,11 @@ export const demoOrder = internalMutation({
   args: { removeOrderId: v.optional(v.id("orders")) },
   handler: async (ctx, { removeOrderId }) => {
     if (removeOrderId) {
+      const order = await ctx.db.get(removeOrderId);
+      for (const id of order?.itemIds ?? []) {
+        const item = await ctx.db.get(id);
+        if (item?.status === "reserved") await ctx.db.patch(id, { status: "live" });
+      }
       await ctx.db.delete(removeOrderId);
       return null;
     }
