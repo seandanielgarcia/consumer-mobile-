@@ -40,7 +40,7 @@ export default function BuyerPaid() {
         ))}
         {order && paid && (
           <Text style={{ fontFamily: fonts.body, fontSize: 17, lineHeight: 24, color: colors.ink }}>
-            {order.sellerName} got a text. They'll message you to meet up.
+            {order.sellerName} will text you to meet up.
           </Text>
         )}
       </ScrollView>
