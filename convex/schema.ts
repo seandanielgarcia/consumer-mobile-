@@ -6,6 +6,10 @@ export default defineSchema({
     name: v.string(),
     phone: v.string(),
     avatarColor: v.string(),
+    isPremium: v.optional(v.boolean()),
+    verified: v.optional(v.boolean()),
+    verifyCode: v.optional(v.string()),
+    verifyCodeExpiresAt: v.optional(v.number()),
   }).index("by_phone", ["phone"]),
 
   garages: defineTable({
