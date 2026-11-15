@@ -1,7 +1,6 @@
 import { httpAction, type ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { HttpRouter } from "convex/server";
-import { renderYardPage } from "./yard";
 
 type Json = Record<string, unknown>;
 
@@ -78,14 +77,11 @@ export function registerKeikiRoutes(http: HttpRouter) {
   http.route({
     pathPrefix: "/y/",
     method: "GET",
-    handler: httpAction(async (ctx, request) => {
-      const garageId = new URL(request.url).pathname.slice("/y/".length);
-      const yard = /^[a-z0-9]{10,64}$/.test(garageId) ? await ctx.runQuery(internal.yard.yardPage, { garageId }) : null;
-      if (!yard) return new Response("Not found", { status: 404 });
-      return new Response(renderYardPage(yard, process.env.APP_LINK_BASE ?? "garagesale://"), {
-        status: 200,
-        headers: { "Content-Type": "text/html; charset=utf-8" },
-      });
+    handler: httpAction(async (_ctx, request) => {
+      const url = new URL(request.url);
+      const garageId = url.pathname.slice("/y/".length);
+      if (!/^[a-z0-9]{10,64}$/.test(garageId)) return new Response("Not found", { status: 404 });
+      return new Response(null, { status: 301, headers: { Location: `${url.origin}/yard/${garageId}` } });
     }),
   });
 
