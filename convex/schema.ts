@@ -6,6 +6,7 @@ export default defineSchema({
     name: v.string(),
     phone: v.string(),
     avatarColor: v.string(),
+    premium: v.optional(v.boolean()),
   }).index("by_phone", ["phone"]),
 
   garages: defineTable({
