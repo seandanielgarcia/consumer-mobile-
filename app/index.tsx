@@ -3,15 +3,16 @@ import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useState } from "react";
-import { ActionSheetIOS, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "../convex/_generated/api";
 import type { Doc } from "../convex/_generated/dataModel";
-import { ItemEditFields, type ItemFields } from "../src/components/ItemEditFields";
+import { EditItemSheet, type EditableItem } from "../src/components/EditItemSheet";
 import { setPickedPhotos } from "../src/lib/pickedPhotos";
 import { loadSamplePhotos } from "../src/lib/samplePhotos";
 import { formatPlace } from "../src/lib/place";
 import { stockImages } from "../src/lib/stockImages";
-import { signOut, useCurrentUser } from "../src/lib/useCurrentUser";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useCurrentUser } from "../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../src/theme";
 
 const POLAROID_POSITIONS = [
@@ -45,21 +46,7 @@ async function pickSamplePhotos() {
   router.push("/seller/price");
 }
 
-function addMore() {
-  ActionSheetIOS.showActionSheetWithOptions(
-    { title: "Add more", options: ["Photo library", "Camera", "Cancel"], cancelButtonIndex: 2 },
-    (index) => {
-      if (index === 0) pickFromLibrary();
-      if (index === 1) pickFromCamera();
-    },
-  );
-}
 
-const dollars = (cents: number) => (cents > 0 ? `$${Math.round(cents / 100)}` : "$");
-const parseDollars = (text: string) => {
-  const value = parseInt(text.replace(/\D/g, ""), 10);
-  return Number.isNaN(value) ? 0 : value * 100;
-};
 
 export default function Home() {
   const user = useCurrentUser();
@@ -106,14 +93,6 @@ function Landing({ user }: { user: { userId: Doc<"users">["_id"]; name?: string 
               <Text style={[styles.sessionText, styles.signOut]}>Use sample photos</Text>
             </Pressable>
           )}
-          {user && (
-            <View style={styles.session}>
-              <Text style={styles.sessionText}>{user.name ? `Hi ${user.name}` : "Signed in"} · </Text>
-              <Pressable onPress={signOut} hitSlop={8} style={styles.linkButton} accessibilityRole="button">
-                <Text style={[styles.sessionText, styles.signOut]}>Sign out</Text>
-              </Pressable>
-            </View>
-          )}
         </View>
       </View>
     </View>
@@ -121,7 +100,7 @@ function Landing({ user }: { user: { userId: Doc<"users">["_id"]; name?: string 
 }
 
 type Item = Doc<"items">;
-type EditState = ItemFields & { priceCents: number };
+type EditState = EditableItem;
 
 const toFields = (item: Item): EditState => ({
   title: item.title,
@@ -137,6 +116,7 @@ const toFields = (item: Item): EditState => ({
 // Signed-in seller with a yard: Home is the yard.
 function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: string }; garage: Doc<"garages"> }) {
   const items = useQuery(api.items.byGarage, { garageId: garage._id }) ?? [];
+  const insets = useSafeAreaInsets();
   const setStatus = useMutation(api.items.setStatus);
   const updateItem = useMutation(api.items.update);
   const removeItem = useMutation(api.items.remove);
@@ -191,14 +171,8 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
   const remove = async () => {
     if (!editing) return;
     const item = editing;
-    ActionSheetIOS.showActionSheetWithOptions(
-      { title: `Remove ${item.title}?`, options: ["Remove", "Cancel"], cancelButtonIndex: 1, destructiveButtonIndex: 0 },
-      async (index) => {
-        if (index !== 0) return;
-        const ok = await run(() => removeItem({ itemId: item._id, ownerId: user.userId }));
-        if (ok) closeEdit();
-      },
-    );
+    const ok = await run(() => removeItem({ itemId: item._id, ownerId: user.userId }));
+    if (ok) closeEdit();
   };
 
   // "Your yard · N live · N reserved · N sold" (zero counts other than live are omitted)
@@ -209,17 +183,11 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
     .join(" · ");
 
   return (
-    <View style={styles.yard}>
+    <View style={[styles.yard, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 8 }]}>
       <View style={styles.yardHeader}>
         <Pressable onPress={() => router.dismissTo("/")} accessibilityRole="link" accessibilityLabel="Home">
           <Text style={styles.yardWordmark}>yardsale</Text>
         </Pressable>
-        <View style={styles.session}>
-          <Text style={styles.yardSessionText}>{user.name ? `Hi ${user.name}` : "Signed in"} · </Text>
-          <Pressable onPress={signOut} hitSlop={8} accessibilityRole="button" style={styles.signOutButton}>
-            <Text style={[styles.yardSessionText, styles.signOut]}>Sign out</Text>
-          </Pressable>
-        </View>
       </View>
       <Text style={styles.yardHeadline}>Your yard{counts ? ` · ${counts}` : ""}</Text>
       <Text style={styles.yardMeta}>{formatPlace(garage)}</Text>
@@ -236,54 +204,30 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
         )}
       />
       <View style={styles.bottomBar}>
-        <Pressable style={styles.cta} onPress={addMore} accessibilityRole="button">
-          <Text style={styles.ctaText}>Add more</Text>
-        </Pressable>
         <Pressable style={styles.shopPill} onPress={() => router.push("/buyer")} accessibilityRole="button">
           <Text style={styles.shopPillText}>Shop near you</Text>
         </Pressable>
+        <Pressable style={styles.cta} onPress={pickFromLibrary} accessibilityRole="button">
+          <Text style={styles.ctaText}>Add items</Text>
+        </Pressable>
+        <Pressable onPress={pickFromCamera} hitSlop={8} style={styles.takePhoto} accessibilityRole="button">
+          <Text style={styles.takePhotoText}>Take photo</Text>
+        </Pressable>
       </View>
 
-      <Modal visible={!!editing} animationType="slide" presentationStyle="pageSheet" onRequestClose={closeEdit}>
-        {editing && draft && (
-          <View style={styles.sheet}>
-            <ScrollView contentContainerStyle={styles.sheetBody} keyboardShouldPersistTaps="handled">
-              <View style={styles.sheetHeader}>
-                <Image source={{ uri: editing.photoUrl }} style={styles.sheetPhoto} contentFit="cover" />
-                <View style={styles.priceSticker}>
-                  <TextInput
-                    accessibilityLabel="Price"
-                    value={dollars(draft.priceCents)}
-                    onChangeText={(text) => setDraft({ ...draft, priceCents: parseDollars(text) })}
-                    keyboardType="number-pad"
-                    style={styles.priceInput}
-                  />
-                </View>
-              </View>
-              <ItemEditFields value={draft} onChange={(patch) => setDraft({ ...draft, ...patch })} autoFocus={false} />
-              {error && <Text style={styles.error}>{error}</Text>}
-            </ScrollView>
-            <View style={styles.sheetActions}>
-              <View style={styles.sheetActionRow}>
-                <Pressable onPress={remove} disabled={busy} style={[styles.secondary, busy && styles.disabled]} accessibilityRole="button">
-                  <Text style={styles.secondaryText}>Remove</Text>
-                </Pressable>
-                <Pressable
-                  onPress={save}
-                  disabled={busy || !draft.title.trim() || draft.priceCents <= 0}
-                  style={[styles.cta, styles.flex, (busy || !draft.title.trim() || draft.priceCents <= 0) && styles.disabled]}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.ctaText}>Save</Text>
-                </Pressable>
-              </View>
-              <Pressable onPress={closeEdit} style={styles.cancel} accessibilityRole="button">
-                <Text style={styles.cancelText}>Cancel</Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-      </Modal>
+      {editing && draft && (
+        <EditItemSheet
+          visible
+          photo={editing.photoUrl}
+          value={draft}
+          onChange={(patch) => setDraft({ ...draft, ...patch })}
+          busy={busy}
+          error={error}
+          onSave={save}
+          onRemove={remove}
+          onClose={closeEdit}
+        />
+      )}
     </View>
   );
 }
@@ -305,13 +249,12 @@ function YardCard({
     <View style={styles.card}>
       <Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel={`Edit ${item.title}`} style={styles.cardBody}>
         <Image source={{ uri: item.photoUrl }} style={styles.cardPhoto} contentFit="cover" />
-        <View style={[styles.cardSticker, reserved && styles.stickerReserved, sold && styles.stickerSold]}>
-          <Text style={[styles.stickerText, (reserved || sold) && styles.stickerTextInverse]}>
-            {reserved ? "Reserved" : sold ? "Sold" : `$${Math.round(item.priceCents / 100)}`}
-          </Text>
-        </View>
+        <Text style={styles.cardPrice}>${Math.round(item.priceCents / 100)}</Text>
         <Text style={styles.cardTitle} numberOfLines={1}>
           {item.title}
+        </Text>
+        <Text style={[styles.cardMeta, reserved && styles.cardReserved]} numberOfLines={1}>
+          {reserved ? "Reserved" : sold ? "Sold" : [item.size, item.condition].filter(Boolean).join(" · ") || " "}
         </Text>
       </Pressable>
       {(reserved || sold) && (
@@ -375,7 +318,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.cream,
   },
-  session: { flexDirection: "row", justifyContent: "center", alignItems: "center", minHeight: spacing.minButton },
   sessionText: { fontFamily: fonts.body, fontSize: 14, color: colors.cream },
   signOut: { fontFamily: fonts.semibold },
   tagline: { fontFamily: fonts.body, fontSize: 17, lineHeight: 23, color: colors.cream },
@@ -392,38 +334,17 @@ const styles = StyleSheet.create({
   yard: { flex: 1, backgroundColor: colors.cream, paddingTop: spacing.topPadMin, paddingHorizontal: spacing.sidePad, paddingBottom: 34, gap: 8 },
   yardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   yardWordmark: { fontFamily: fonts.display, fontSize: 20, letterSpacing: -0.5, color: colors.brand },
-  yardSessionText: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
-  signOutButton: {
-    minHeight: spacing.minButton,
-    justifyContent: "center",
-    paddingHorizontal: 16,
-    borderRadius: spacing.radius,
-    borderWidth: 2,
-    borderColor: colors.muted,
-  },
   yardHeadline: { fontFamily: fonts.display, fontSize: 30, lineHeight: 34, letterSpacing: -1, color: colors.ink },
   yardMeta: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
   grid: { paddingTop: 8, paddingBottom: 12, gap: 14 },
   gridRow: { gap: 14 },
   card: { flex: 1, gap: 6 },
-  cardBody: { minHeight: spacing.minButton, backgroundColor: colors.white, padding: 8, paddingBottom: 10, gap: 8 },
-  cardPhoto: { width: "100%", aspectRatio: 0.85, backgroundColor: colors.line },
-  cardSticker: {
-    position: "absolute",
-    left: 2,
-    top: 2,
-    paddingHorizontal: 8,
-    height: 28,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: colors.ink,
-    backgroundColor: colors.tag,
-    justifyContent: "center",
-  },
-  stickerReserved: { backgroundColor: colors.ink },
-  stickerSold: { backgroundColor: colors.muted },
-  stickerTextInverse: { color: colors.cream },
-  cardTitle: { fontFamily: fonts.semibold, fontSize: 14, color: colors.ink },
+  cardBody: { gap: 2 },
+  cardPhoto: { width: "100%", aspectRatio: 1, borderRadius: 16, backgroundColor: colors.hairline, marginBottom: 6 },
+  cardPrice: { fontFamily: fonts.display, fontSize: 17, lineHeight: 22, color: colors.ink },
+  cardTitle: { fontFamily: fonts.body, fontSize: 15, lineHeight: 20, color: colors.ink },
+  cardMeta: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted },
+  cardReserved: { color: colors.brand },
   cardActions: { flexDirection: "row", gap: 6 },
   cardAction: {
     flex: 1,
@@ -435,69 +356,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   cardActionText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.ink },
-  bottomBar: { flexDirection: "row", alignItems: "center", gap: 12, paddingTop: 8 },
+  bottomBar: { gap: 12, paddingTop: 8 },
   cta: {
-    flex: 1,
-    height: spacing.cta,
+    height: 56,
     borderRadius: spacing.radius,
     backgroundColor: colors.brand,
     alignItems: "center",
     justifyContent: "center",
   },
-  ctaText: { fontFamily: fonts.semibold, fontSize: 18, color: colors.cream },
+  ctaText: { fontFamily: fonts.semibold, fontSize: 17, color: colors.white },
+  takePhoto: { alignSelf: "center", minHeight: spacing.minButton, justifyContent: "center", marginTop: -4 },
+  takePhotoText: { fontFamily: fonts.medium, fontSize: 16, color: colors.brand },
   shopPill: {
-    height: spacing.cta,
-    paddingHorizontal: 20,
+    height: 56,
     borderRadius: spacing.radius,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: colors.ink,
     alignItems: "center",
     justifyContent: "center",
   },
-  shopPillText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.ink },
+  shopPillText: { fontFamily: fonts.semibold, fontSize: 17, color: colors.ink },
   error: { fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
 
   // Edit sheet
-  sheet: { flex: 1, backgroundColor: colors.cream, paddingHorizontal: spacing.sidePad, paddingTop: 20, paddingBottom: 34, gap: 12 },
-  sheetBody: { gap: 16 },
-  sheetHeader: { backgroundColor: colors.white, padding: 10, paddingBottom: 14 },
-  sheetPhoto: { width: "100%", aspectRatio: 1, backgroundColor: colors.line },
-  priceSticker: { position: "absolute", left: 18, bottom: 22 },
-  priceInput: {
-    width: 110,
-    height: spacing.cta,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: colors.ink,
-    backgroundColor: colors.tag,
-    textAlign: "center",
-    fontFamily: fonts.display,
-    fontSize: 30,
-    color: colors.ink,
-  },
-  sheetActions: { gap: 6 },
-  sheetActionRow: { flexDirection: "row", gap: 10 },
-  flex: { flex: 1 },
-  secondary: {
-    height: spacing.cta,
-    paddingHorizontal: 24,
-    borderRadius: spacing.radius,
-    borderWidth: 2,
-    borderColor: colors.ink,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  secondaryText: { fontFamily: fonts.semibold, fontSize: 18, color: colors.ink },
-  disabled: { opacity: 0.5 },
-  cancel: {
-    alignSelf: "center",
-    minHeight: spacing.minButton,
-    justifyContent: "center",
-    paddingHorizontal: 20,
-    borderRadius: spacing.radius,
-    borderWidth: 2,
-    borderColor: colors.muted,
-  },
-  cancelText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.muted },
 });
