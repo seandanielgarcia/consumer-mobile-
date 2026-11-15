@@ -263,7 +263,7 @@ export default function SellerReview() {
                         {d.title}
                       </Text>
                       <Text style={styles.summaryMeta} numberOfLines={1}>
-                        {[d.condition, d.size, d.brand].map((v) => v.trim()).filter(Boolean).join(" · ")}
+                        {[d.condition.trim(), d.size.trim() && `Size ${d.size.trim()}`, d.brand.trim()].filter(Boolean).join(" · ")}
                       </Text>
                     </View>
                     <Text style={styles.summaryPrice}>{dollars(d.priceCents)}</Text>
