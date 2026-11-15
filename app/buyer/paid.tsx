@@ -26,8 +26,9 @@ export default function BuyerPaid() {
               ? `Paid ${formatPrice(order.totalCents)}`
               : order.status === "cancelled"
                 ? "Order cancelled"
-                : `Paying ${formatPrice(order.totalCents)}…`}
+                : "Confirming payment…"}
         </Text>
+        {order?.status === "pending" && <ActivityIndicator color={colors.ink} style={{ alignSelf: "flex-start" }} />}
         {order?.items.map((item) => (
           <View key={item._id} style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: colors.white, borderRadius: 18, padding: 10 }}>
             <Image source={{ uri: item.photoUrl }} style={{ width: 56, height: 68, borderRadius: 10, backgroundColor: colors.line }} contentFit="cover" />
