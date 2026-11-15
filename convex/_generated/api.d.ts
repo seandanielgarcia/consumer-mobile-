@@ -18,6 +18,7 @@ import type * as keikiHttp from "../keikiHttp.js";
 import type * as lib_location from "../lib/location.js";
 import type * as orders from "../orders.js";
 import type * as seed from "../seed.js";
+import type * as share from "../share.js";
 import type * as users from "../users.js";
 import type * as whop from "../whop.js";
 
@@ -38,6 +39,7 @@ declare const fullApi: ApiFromModules<{
   "lib/location": typeof lib_location;
   orders: typeof orders;
   seed: typeof seed;
+  share: typeof share;
   users: typeof users;
   whop: typeof whop;
 }>;

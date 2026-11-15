@@ -4,10 +4,12 @@ import { httpRouter } from "convex/server";
 import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
 import { registerKeikiRoutes } from "./keikiHttp";
+import { registerShareRoutes } from "./share";
 
 const http = httpRouter();
 
 registerKeikiRoutes(http);
+registerShareRoutes(http);
 
 http.route({
   path: "/whop",

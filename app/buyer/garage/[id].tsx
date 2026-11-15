@@ -45,6 +45,13 @@ export default function BuyerGarage() {
   const pickedItems = garage?.items.filter((i) => picked.includes(i._id)) ?? [];
   const total = pickedItems.reduce((sum, i) => sum + i.priceCents, 0);
 
+  const allPicked = !!garage && garage.items.length > 0 && pickedItems.length === garage.items.length;
+  const everythingCents = garage?.items.reduce((sum, i) => sum + i.priceCents, 0) ?? 0;
+  const pickAll = () => {
+    setNotice(null);
+    setPicked(allPicked ? [] : (garage?.items.map((i) => i._id) ?? []));
+  };
+
   const toggle = (itemId: Id<"items">) => {
     setNotice(null);
     setPicked((p) => (p.includes(itemId) ? p.filter((x) => x !== itemId) : [...p, itemId]));
@@ -74,7 +81,7 @@ export default function BuyerGarage() {
               {garage ? `${garage.ownerName}'s yard` : " "}
             </Text>
             <Text style={{ fontFamily: fonts.body, fontSize: 14, color: colors.cream }}>
-              {garage ? `${garage.neighborhood} · about ${garage.distanceMi} mi from you · pickup only` : " "}
+              {garage ? `${garage.neighborhood}${garage.distanceMi <= 10 ? ` · about ${garage.distanceMi} mi from you` : ""} · pickup only` : " "}
             </Text>
           </View>
         </View>
@@ -90,6 +97,17 @@ export default function BuyerGarage() {
         <ActivityIndicator color={colors.ink} style={{ marginTop: 40 }} />
       ) : (
         <ScrollView contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16, padding: 16 }}>
+          {garage.items.length > 1 && (
+            <Pressable
+              onPress={pickAll}
+              accessibilityRole="button"
+              style={{ width: "100%", minHeight: 44, justifyContent: "center", alignItems: "center", borderRadius: 999, borderWidth: 2, borderColor: colors.ink, backgroundColor: allPicked ? colors.white : colors.tag }}
+            >
+              <Text style={{ fontFamily: fonts.semibold, fontSize: typeSize.row, color: colors.ink }}>
+                {allPicked ? "Clear picks" : `Pick all ${garage.items.length} · ${formatPrice(everythingCents)}`}
+              </Text>
+            </Pressable>
+          )}
           {garage.items.length === 0 && (
             <Text style={{ fontFamily: fonts.body, fontSize: typeSize.row, color: colors.muted }}>Everything here is spoken for.</Text>
           )}
