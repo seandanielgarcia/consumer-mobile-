@@ -5,6 +5,7 @@ export const colors = {
   ink: "#111111",
   muted: "#5A5245",
   line: "#CFC3AA",
+  hairline: "#EDE6D6",
   white: "#FFFFFF",
 } as const;
 
@@ -25,5 +26,23 @@ export const spacing = {
   radius: 999,
 } as const;
 
-export const theme = { colors, fonts, spacing };
+export const type = {
+  display: { fontFamily: fonts.display, fontSize: 34, lineHeight: 36, letterSpacing: -1 },
+  title: { fontFamily: fonts.display, fontSize: 22, lineHeight: 28 },
+  body: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21 },
+  label: { fontFamily: fonts.body, fontSize: 15 },
+  caption: { fontFamily: fonts.body, fontSize: 13 },
+} as const;
+
+export const primaryButton = {
+  height: 56,
+  borderRadius: spacing.radius,
+  backgroundColor: colors.brand,
+  alignItems: "center",
+  justifyContent: "center",
+} as const;
+
+export const primaryButtonText = { fontFamily: fonts.display, fontSize: 18, color: colors.white } as const;
+
+export const theme = { colors, fonts, spacing, type };
 export default theme;

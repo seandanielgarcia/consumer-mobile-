@@ -3,12 +3,27 @@ import { Image } from "expo-image";
 import * as Location from "expo-location";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  InputAccessoryView,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { getPickedPhotos } from "../../src/lib/pickedPhotos";
 import { requireUser, SignInCancelled, useCurrentUser } from "../../src/lib/useCurrentUser";
-import { colors, fonts, spacing } from "../../src/theme";
+import { colors, fonts, primaryButton, primaryButtonText, spacing, type } from "../../src/theme";
+
+type Field = "condition" | "size" | "brand" | "color" | "category";
 
 type Draft = {
   uri: string;
@@ -24,22 +39,29 @@ type Draft = {
   description: string;
   priceCents: number;
   aiGenerated: boolean;
+  touched: Field[];
 };
 
-type ChipField = "size" | "brand" | "condition" | "color";
+const FIELD_LABELS: Record<Field, string> = {
+  condition: "Condition",
+  size: "Size",
+  brand: "Brand",
+  color: "Color",
+  category: "Category",
+};
 
-const CHIP_LABELS: Record<ChipField, string> = { size: "Size", brand: "Brand", condition: "Condition", color: "Color" };
-
-const chipFields = (d: Draft): ChipField[] =>
-  sizeRelevant(d) ? ["size", "brand", "condition", "color"] : ["brand", "condition", "color"];
-
-const chipLabel = (d: Draft, field: ChipField) => {
-  const value = d[field].trim();
-  if (!value) return `+ ${CHIP_LABELS[field].toLowerCase()}`;
-  return field === "size" ? `Size ${value}` : value;
+const FIELD_OPTIONS: Partial<Record<Field, string[]>> = {
+  condition: ["New", "Like new", "Good", "Fair", "For parts"],
+  color: ["Black", "White", "Gray", "Blue", "Red", "Green", "Brown", "Beige", "Pink", "Multi"],
+  category: ["Clothing", "Shoes", "Bags", "Home", "Electronics", "Toys", "Books", "Other"],
 };
 
 const sizeRelevant = (d: Draft) => d.size.trim() !== "" || /cloth|shoe|apparel|wear/i.test(d.category);
+
+const visibleFields = (d: Draft): Field[] =>
+  sizeRelevant(d) ? ["condition", "size", "brand", "color", "category"] : ["condition", "brand", "color", "category"];
+
+const PRICE_ACCESSORY = "price-done";
 
 const DEFAULT_LOCATION = { neighborhood: "Mission", lat: 37.76, lng: -122.42 };
 
@@ -67,7 +89,7 @@ async function approximateLocation() {
   }
 }
 
-const dollars = (cents: number) => (cents > 0 ? `$${Math.round(cents / 100)}` : "$");
+const dollars = (cents: number) => (cents > 0 ? `$${Math.round(cents / 100)}` : "");
 
 const parseDollars = (text: string) => {
   const value = parseInt(text.replace(/\D/g, ""), 10);
@@ -92,11 +114,14 @@ export default function SellerReview() {
       description: "",
       priceCents: 0,
       aiGenerated: false,
+      touched: [],
     })),
   );
-  const [focus, setFocus] = useState<number | null>(null);
-  const [editing, setEditing] = useState<Draft | null>(null);
-  const [editingChip, setEditingChip] = useState<ChipField | null>(null);
+  const [order, setOrder] = useState<number[]>(() => getPickedPhotos().map((_, index) => index));
+  const [sheet, setSheet] = useState<Field | "description" | null>(null);
+  const [sheetText, setSheetText] = useState("");
+  const [expanded, setExpanded] = useState(false);
+  const [undo, setUndo] = useState<number | null>(null);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const user = useCurrentUser();
@@ -142,27 +167,17 @@ export default function SellerReview() {
     });
   }, []);
 
+  useEffect(() => {
+    if (undo === null) return;
+    const timer = setTimeout(() => setUndo(null), 3000);
+    return () => clearTimeout(timer);
+  }, [undo]);
+
   const kept = drafts.filter((d) => d.review !== "removed");
   const approved = kept.filter((d) => d.review === "approved");
-  const pending = drafts.map((d, i) => ({ d, i })).filter(({ d }) => d.review === "pending");
-  const focused = pending.find(({ i }) => i === focus && drafts[i].status !== "loading");
-  const current = focused ?? pending.find(({ d }) => d.status !== "loading") ?? pending[0];
+  const currentIndex = order.find((index) => drafts[index].review === "pending");
 
-  useEffect(() => {
-    if (current && current.d.status !== "loading" && current.i !== focus) setFocus(current.i);
-  }, [current?.i, current?.d.status, focus]);
-
-  const advance = (patch: Partial<Draft>) => {
-    if (!current) return;
-    update(current.i, patch);
-    setEditing(null);
-    setEditingChip(null);
-  };
-
-  const cancelEdit = () => {
-    if (current && editing) update(current.i, editing);
-    setEditing(null);
-  };
+  useEffect(() => setExpanded(false), [currentIndex]);
 
   const openGarage = () => {
     setError(null);
@@ -206,15 +221,15 @@ export default function SellerReview() {
         pathname: "/seller/open",
         params: { garageId, picked: itemIds.join(","), first: firstOpen ? "1" : "0" },
       });
-    } catch (e) {
+    } catch {
       setError("Couldn't open your yard. Try again.");
       setOpening(false);
     }
   };
 
-  if (!current) {
+  if (currentIndex === undefined) {
     return (
-      <View style={styles.screen}>
+      <View style={styles.summaryScreen}>
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
@@ -245,165 +260,275 @@ export default function SellerReview() {
         <Pressable
           onPress={openGarage}
           disabled={approved.length === 0 || opening}
-          style={[styles.cta, (approved.length === 0 || opening) && styles.ctaDisabled]}
+          style={[styles.approve, (approved.length === 0 || opening) && styles.disabled]}
           accessibilityRole="button"
         >
           {opening ? (
-            <ActivityIndicator color={colors.cream} />
+            <ActivityIndicator color={colors.white} />
           ) : (
-            <Text style={styles.ctaText}>Open my yard ({approved.length} {approved.length === 1 ? "item" : "items"})</Text>
+            <Text style={styles.approveText}>
+              Open my yard ({approved.length} {approved.length === 1 ? "item" : "items"})
+            </Text>
           )}
         </Pressable>
       </View>
     );
   }
 
-  const { d, i } = current;
-  const position = approved.length + 1;
+  const i = currentIndex;
+  const d = drafts[i];
   const loading = d.status === "loading";
   const failed = d.status === "failed";
-  const canApprove = d.status === "ready" && d.title.trim() !== "" && d.priceCents > 0;
+  const fields = visibleFields(d);
+  const aiMarked = (field: Field) => d.aiGenerated && d[field].trim() !== "" && !d.touched.includes(field);
+  const anyAi = d.aiGenerated && fields.some(aiMarked);
+  const blocker = !d.condition.trim() ? "condition" : !d.title.trim() ? "title" : d.priceCents <= 0 ? "price" : null;
+  const canApprove = d.status === "ready" && !blocker;
+
+  const setField = (field: Field, value: string) =>
+    update(i, { [field]: value, touched: d.touched.includes(field) ? d.touched : [...d.touched, field] });
+
+  const openSheet = (field: Field | "description") => {
+    Keyboard.dismiss();
+    setSheetText(field === "description" ? d.description : field === "brand" && !d.brand ? "" : d[field]);
+    setSheet(field);
+  };
+
+  const closeSheet = (value?: string) => {
+    if (sheet && value !== undefined) {
+      if (sheet === "description") update(i, { description: value });
+      else setField(sheet, value);
+    }
+    setSheet(null);
+  };
+
+  const approve = () => {
+    Keyboard.dismiss();
+    update(i, { review: "approved" });
+    setUndo(i);
+  };
+
+  const skip = () => {
+    Keyboard.dismiss();
+    setOrder((prev) => [...prev.filter((index) => index !== i), i]);
+  };
+
+  const remove = () => {
+    Keyboard.dismiss();
+    update(i, { review: "removed" });
+  };
+
+  const undoApprove = () => {
+    if (undo === null) return;
+    update(undo, { review: "pending" });
+    setOrder((prev) => [undo, ...prev.filter((index) => index !== undo)]);
+    setUndo(null);
+  };
+
+  const sheetOptions = sheet && sheet !== "description" ? FIELD_OPTIONS[sheet] : undefined;
+  const sheetChoices =
+    sheetOptions && d[sheet as Field] && !sheetOptions.includes(d[sheet as Field])
+      ? [d[sheet as Field], ...sheetOptions]
+      : sheetOptions;
 
   return (
-    <View style={styles.screen}>
-      <View style={styles.headerRow}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Text style={styles.backText}>← Back</Text>
-        </Pressable>
+    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <View style={styles.topBar}>
         <Text style={styles.counter}>
-          Review {position} of {kept.length}
+          {approved.length + 1} of {kept.length}
         </Text>
+        <Pressable onPress={skip} hitSlop={12} accessibilityRole="button">
+          <Text style={styles.skip}>Skip</Text>
+        </Pressable>
       </View>
       <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${(position / Math.max(kept.length, 1)) * 100}%` }]} />
+        <View style={[styles.progressFill, { width: `${((approved.length + 1) / Math.max(kept.length, 1)) * 100}%` }]} />
       </View>
-      <ScrollView style={styles.flex} contentContainerStyle={styles.itemBody} keyboardShouldPersistTaps="handled">
-        <View style={styles.photoFrame}>
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.body}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
+        <Pressable onPress={Keyboard.dismiss} accessible={false}>
           <Image key={d.uri} source={{ uri: d.uri }} style={styles.photo} contentFit="cover" transition={0} />
-          {!loading && !failed && (
-            <View style={styles.sticker}>
-              <TextInput
-                accessibilityLabel="Price"
-                value={dollars(d.priceCents)}
-                onChangeText={(text) => update(i, { priceCents: parseDollars(text) })}
-                keyboardType="number-pad"
-                style={styles.priceInput}
-              />
-            </View>
-          )}
-        </View>
-        {loading ? (
-          <View style={styles.skeleton}>
-            <View style={[styles.skeletonBar, { width: "70%" }]} />
-            <View style={[styles.skeletonBar, { width: "40%", height: 24 }]} />
-          </View>
-        ) : failed ? (
+        </Pressable>
+        {failed ? (
           <Text style={styles.title}>Couldn't upload this one</Text>
-        ) : editing ? (
-          <View style={styles.fields}>
+        ) : loading ? (
+          <View style={styles.skeleton}>
+            <View style={[styles.skeletonBar, { width: "75%" }]} />
+            <View style={[styles.skeletonBar, { width: 96, height: 48, borderRadius: 10 }]} />
+            <View style={[styles.skeletonBar, { height: 196, borderRadius: 16 }]} />
+          </View>
+        ) : (
+          <>
+            {anyAi && (
+              <Text style={styles.caveat}>
+                <Text style={styles.spark}>✦ </Text>Filled in from your photo. Tap any row to fix.
+              </Text>
+            )}
             <TextInput
               value={d.title}
               onChangeText={(title) => update(i, { title })}
-              placeholder="Title"
-              placeholderTextColor={colors.muted}
-              style={styles.fieldInput}
-              autoFocus
-            />
-            <View style={styles.chips}>
-              {chipFields(d).map((field) => (
-                <TextInput
-                  key={field}
-                  value={d[field]}
-                  onChangeText={(value) => update(i, { [field]: value })}
-                  placeholder={CHIP_LABELS[field]}
-                  placeholderTextColor={colors.muted}
-                  style={[styles.chip, styles.chipInput]}
-                />
-              ))}
-            </View>
-            <TextInput
-              value={d.description}
-              onChangeText={(description) => update(i, { description })}
-              placeholder="Description"
+              placeholder="Add a title"
               placeholderTextColor={colors.muted}
               multiline
-              numberOfLines={3}
-              style={[styles.fieldInput, styles.descriptionInput]}
+              blurOnSubmit
+              returnKeyType="done"
+              maxLength={80}
+              numberOfLines={d.title.length > 26 ? 2 : 1}
+              style={styles.title}
+              accessibilityLabel="Title"
             />
-          </View>
-        ) : (
-          <View style={styles.fields}>
-            <Text style={styles.title} numberOfLines={1}>
-              {d.title || "Add a title"}
-            </Text>
-            <View style={styles.chips}>
-              {chipFields(d).map((field) =>
-                editingChip === field ? (
-                  <TextInput
-                    key={field}
-                    value={d[field]}
-                    onChangeText={(value) => update(i, { [field]: value })}
-                    onBlur={() => setEditingChip(null)}
-                    onSubmitEditing={() => setEditingChip(null)}
-                    placeholder={CHIP_LABELS[field]}
-                    placeholderTextColor={colors.muted}
-                    returnKeyType="done"
-                    autoFocus
-                    style={[styles.chip, styles.chipInput]}
-                  />
-                ) : (
+            <View style={[styles.pricePill, d.priceCents <= 0 && styles.pricePillEmpty]}>
+              <TextInput
+                accessibilityLabel="Price"
+                value={d.priceCents > 0 ? dollars(d.priceCents) : ""}
+                onChangeText={(text) => update(i, { priceCents: parseDollars(text) })}
+                placeholder="Add price"
+                placeholderTextColor={colors.ink}
+                keyboardType="number-pad"
+                returnKeyType="done"
+                inputAccessoryViewID={PRICE_ACCESSORY}
+                style={[
+                  styles.priceInput,
+                  d.priceCents <= 0 ? styles.priceInputEmpty : { width: 24 + dollars(d.priceCents).length * 18 },
+                ]}
+              />
+            </View>
+            <View style={styles.details}>
+              {fields.map((field, index) => {
+                const value = d[field].trim();
+                const required = field === "condition" && !value;
+                return (
                   <Pressable
                     key={field}
-                    onPress={() => setEditingChip(field)}
-                    style={[styles.chip, !d[field].trim() && styles.chipEmpty]}
+                    onPress={() => openSheet(field)}
+                    style={[styles.row, index > 0 && styles.rowDivider]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${FIELD_LABELS[field]}: ${value || (required ? "required" : "add")}`}
                   >
-                    <Text style={[styles.chipText, !d[field].trim() && styles.chipTextEmpty]}>{chipLabel(d, field)}</Text>
+                    <View style={styles.rowLabelWrap}>
+                      {required && <View style={styles.requiredDot} />}
+                      <Text style={styles.rowLabel}>{FIELD_LABELS[field]}</Text>
+                    </View>
+                    <Text style={value || field === "brand" ? styles.rowValue : styles.rowAdd} numberOfLines={1}>
+                      {aiMarked(field) && <Text style={styles.spark}>✦ </Text>}
+                      {value || (field === "brand" && d.aiGenerated ? "No brand" : required ? "Required" : "Add")}
+                    </Text>
+                    <Text style={styles.chevron}>›</Text>
                   </Pressable>
-                ),
-              )}
+                );
+              })}
             </View>
-          </View>
+            <Pressable onPress={() => openSheet("description")} accessibilityRole="button" style={styles.description}>
+              <Text style={styles.descriptionLabel}>Description</Text>
+              {d.description ? (
+                <>
+                  <Text style={styles.descriptionBody} numberOfLines={expanded ? undefined : 2}>
+                    {d.description}
+                  </Text>
+                  {!expanded && d.description.length > 80 && (
+                    <Pressable onPress={() => setExpanded(true)} hitSlop={8}>
+                      <Text style={styles.more}>more</Text>
+                    </Pressable>
+                  )}
+                </>
+              ) : (
+                <Text style={styles.rowAdd}>Add</Text>
+              )}
+            </Pressable>
+          </>
         )}
       </ScrollView>
-      <View style={styles.actions}>
-        <View style={styles.actionRow}>
-          {!failed && !editing && (
-            <Pressable
-              onPress={() => setEditing(d)}
-              disabled={loading}
-              style={[styles.secondary, loading && styles.ctaDisabled]}
-              accessibilityRole="button"
-            >
-              <Text style={styles.secondaryText}>Edit</Text>
+      <View style={styles.bottomBar}>
+        {undo !== null && (
+          <View style={styles.toast}>
+            <Text style={styles.toastText}>Approved</Text>
+            <Pressable onPress={undoApprove} hitSlop={10} accessibilityRole="button">
+              <Text style={styles.toastUndo}>Undo</Text>
             </Pressable>
-          )}
-          {!failed && (
-            <Pressable
-              onPress={() => advance({ review: "approved" })}
-              disabled={!canApprove}
-              style={[styles.cta, styles.flex, !canApprove && styles.ctaDisabled]}
-              accessibilityRole="button"
-            >
-              {loading ? <ActivityIndicator color={colors.cream} /> : <Text style={styles.ctaText}>Approve</Text>}
-            </Pressable>
-          )}
-        </View>
-        {editing ? (
-          <Pressable onPress={cancelEdit} hitSlop={8} style={styles.skip}>
-            <Text style={styles.skipText}>Cancel</Text>
-          </Pressable>
-        ) : (
-          <Pressable onPress={() => advance({ review: "removed" })} hitSlop={8} style={styles.skip}>
-            <Text style={styles.skipText}>skip / remove</Text>
+          </View>
+        )}
+        <Pressable onPress={remove} hitSlop={8} style={styles.remove} accessibilityRole="button">
+          <Text style={styles.removeText}>Remove item</Text>
+        </Pressable>
+        {!failed && (
+          <Pressable
+            onPress={approve}
+            disabled={!canApprove}
+            style={[styles.approve, !canApprove && styles.disabled]}
+            accessibilityRole="button"
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              <Text style={styles.approveText}>
+                {blocker ? `Add ${blocker} to approve` : `Approve · ${dollars(d.priceCents)}`}
+              </Text>
+            )}
           </Pressable>
         )}
       </View>
-    </View>
+      {Platform.OS === "ios" && (
+        <InputAccessoryView nativeID={PRICE_ACCESSORY}>
+          <View style={styles.accessory}>
+            <Pressable onPress={Keyboard.dismiss} hitSlop={10}>
+              <Text style={styles.accessoryDone}>Done</Text>
+            </Pressable>
+          </View>
+        </InputAccessoryView>
+      )}
+      <Modal visible={sheet !== null} transparent animationType="slide" onRequestClose={() => closeSheet()}>
+        <Pressable style={styles.scrim} onPress={() => closeSheet()} />
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
+          <View style={styles.sheet}>
+            <Text style={styles.sheetTitle}>{sheet === "description" ? "Description" : sheet ? FIELD_LABELS[sheet] : ""}</Text>
+            {sheetChoices ? (
+              sheetChoices.map((option) => (
+                <Pressable key={option} onPress={() => closeSheet(option)} style={styles.sheetOption}>
+                  <Text style={styles.sheetOptionText}>{option}</Text>
+                  {sheet && sheet !== "description" && d[sheet] === option && <Text style={styles.check}>✓</Text>}
+                </Pressable>
+              ))
+            ) : (
+              <>
+                <TextInput
+                  value={sheetText}
+                  onChangeText={setSheetText}
+                  placeholder={sheet === "brand" ? "Brand" : sheet === "size" ? "Size, like M or 32x30" : "Description"}
+                  placeholderTextColor={colors.muted}
+                  multiline={sheet === "description"}
+                  autoFocus
+                  returnKeyType="done"
+                  blurOnSubmit
+                  onSubmitEditing={() => closeSheet(sheetText.trim())}
+                  style={[styles.sheetInput, sheet === "description" && styles.sheetInputTall]}
+                />
+                {sheet === "brand" && (
+                  <Pressable onPress={() => closeSheet("")} style={styles.sheetOption}>
+                    <Text style={styles.sheetOptionText}>No brand</Text>
+                  </Pressable>
+                )}
+                <Pressable onPress={() => closeSheet(sheetText.trim())} style={styles.approve} accessibilityRole="button">
+                  <Text style={styles.approveText}>Save</Text>
+                </Pressable>
+              </>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+    </KeyboardAvoidingView>
   );
 }
 
+const HAIRLINE = colors.hairline;
+const MUTED = colors.muted;
+
 const styles = StyleSheet.create({
-  screen: {
+  screen: { flex: 1, backgroundColor: colors.cream, paddingTop: 56 },
+  summaryScreen: {
     flex: 1,
     backgroundColor: colors.cream,
     paddingTop: 56,
@@ -414,35 +539,108 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   back: { alignSelf: "flex-start" },
   backText: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  counter: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
-  progressTrack: { height: 6, borderRadius: 3, backgroundColor: colors.line, overflow: "hidden" },
-  progressFill: { height: 6, backgroundColor: colors.brand },
   headline: { fontFamily: fonts.display, fontSize: 34, lineHeight: 34, letterSpacing: -1, color: colors.ink },
-  itemBody: { gap: 16, paddingTop: 4 },
-  photoFrame: { backgroundColor: colors.white, padding: 10, paddingBottom: 14 },
-  photo: { width: "100%", aspectRatio: 1, backgroundColor: colors.line },
-  sticker: { position: "absolute", left: 18, bottom: 22 },
-  priceInput: {
-    width: 110,
-    height: 60,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: colors.ink,
-    backgroundColor: colors.tag,
-    textAlign: "center",
-    fontFamily: fonts.display,
-    fontSize: 30,
-    color: colors.ink,
-  },
-  descriptionInput: { height: 76, paddingTop: 10, textAlignVertical: "top" },
-  skeleton: { gap: 10 },
-  skeletonBar: { height: 28, borderRadius: 8, backgroundColor: colors.line },
-  fields: { gap: 10 },
-  title: { fontFamily: fonts.display, fontSize: 26, color: colors.ink },
-  fieldInput: {
+  topBar: {
     height: 44,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  counter: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
+  skip: { fontFamily: fonts.medium, fontSize: 15, color: colors.brand },
+  progressTrack: { height: 4, marginHorizontal: 16, borderRadius: 2, backgroundColor: HAIRLINE, overflow: "hidden" },
+  progressFill: { height: 4, backgroundColor: colors.brand },
+  body: { padding: 16, gap: 12, paddingBottom: 24 },
+  photo: { width: "100%", aspectRatio: 4 / 3, borderRadius: 16, backgroundColor: HAIRLINE },
+  caveat: { fontFamily: fonts.body, fontSize: 13, color: MUTED },
+  spark: { color: colors.brand, fontSize: 12 },
+  title: { ...type.title, color: colors.ink, padding: 0, maxHeight: 60 },
+  pricePill: {
+    alignSelf: "flex-start",
+    backgroundColor: colors.tag,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  pricePillEmpty: { backgroundColor: "transparent", borderWidth: 1.5, borderStyle: "dashed", borderColor: colors.ink },
+  priceInput: { fontFamily: fonts.display, fontSize: 32, lineHeight: 36, color: colors.ink, padding: 0, minWidth: 60 },
+  priceInputEmpty: { fontSize: 20, lineHeight: 28, width: 110 },
+  details: { backgroundColor: colors.white, borderRadius: 16, paddingHorizontal: 16 },
+  row: { height: 48, flexDirection: "row", alignItems: "center", gap: 8 },
+  rowDivider: { borderTopWidth: 1, borderTopColor: HAIRLINE },
+  rowLabelWrap: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1 },
+  requiredDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.brand },
+  rowLabel: { fontFamily: fonts.body, fontSize: 15, color: MUTED },
+  rowValue: { fontFamily: fonts.medium, fontSize: 15, color: colors.ink, maxWidth: "60%" },
+  rowAdd: { fontFamily: fonts.medium, fontSize: 15, color: colors.brand },
+  chevron: { fontSize: 20, color: MUTED, width: 16, textAlign: "center" },
+  description: { gap: 4 },
+  descriptionLabel: { fontFamily: fonts.body, fontSize: 13, color: MUTED },
+  descriptionBody: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21, color: colors.ink },
+  more: { fontFamily: fonts.medium, fontSize: 15, color: colors.brand },
+  skeleton: { gap: 12 },
+  skeletonBar: { height: 28, borderRadius: 8, backgroundColor: HAIRLINE },
+  bottomBar: {
+    backgroundColor: colors.white,
+    borderTopWidth: 1,
+    borderTopColor: HAIRLINE,
+    paddingHorizontal: 16,
+    paddingTop: 6,
+    paddingBottom: 34,
+    gap: 4,
+  },
+  toast: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    top: -56,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: colors.ink,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  toastText: { fontFamily: fonts.medium, fontSize: 15, color: colors.white },
+  toastUndo: { fontFamily: fonts.semibold, fontSize: 15, color: colors.tag },
+  remove: { alignSelf: "center", minHeight: 36, justifyContent: "center" },
+  removeText: { fontFamily: fonts.body, fontSize: 14, color: MUTED },
+  approve: primaryButton,
+  disabled: { opacity: 0.4 },
+  approveText: primaryButtonText,
+  accessory: {
+    backgroundColor: "#F2F2F2",
+    borderTopWidth: 1,
+    borderTopColor: HAIRLINE,
+    alignItems: "flex-end",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  accessoryDone: { fontFamily: fonts.semibold, fontSize: 16, color: colors.brand },
+  scrim: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)" },
+  sheet: {
+    backgroundColor: colors.cream,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 16,
+    paddingBottom: 34,
+    gap: 4,
+  },
+  sheetTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.ink, marginBottom: 8 },
+  sheetOption: {
+    height: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: HAIRLINE,
+  },
+  sheetOptionText: { fontFamily: fonts.body, fontSize: 16, color: colors.ink },
+  check: { fontSize: 16, color: colors.brand },
+  sheetInput: {
+    height: 48,
     borderRadius: 12,
     borderWidth: 2,
     borderColor: colors.ink,
@@ -451,28 +649,10 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 16,
     color: colors.ink,
+    marginBottom: 8,
   },
-  chips: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
-  chip: { height: 34, paddingHorizontal: 14, borderRadius: 999, backgroundColor: colors.white, justifyContent: "center" },
-  chipEmpty: { backgroundColor: "transparent", borderWidth: 1, borderStyle: "dashed", borderColor: colors.muted },
-  chipInput: { width: 120, borderWidth: 2, borderColor: colors.ink, fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
-  chipText: { fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
-  chipTextEmpty: { color: colors.muted },
+  sheetInputTall: { height: 120, paddingTop: 10, textAlignVertical: "top" },
   muted: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
-  actions: { gap: 6 },
-  actionRow: { flexDirection: "row", gap: 10 },
-  secondary: {
-    height: spacing.cta,
-    paddingHorizontal: 24,
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: colors.ink,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  secondaryText: { fontFamily: fonts.semibold, fontSize: 18, color: colors.ink },
-  skip: { alignSelf: "center", minHeight: 36, justifyContent: "center" },
-  skipText: { fontFamily: fonts.body, fontSize: 14, color: colors.muted, textDecorationLine: "underline" },
   summaryList: { gap: 10 },
   summaryRow: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: colors.white, borderRadius: 14, padding: 8 },
   thumb: { width: 48, height: 48, borderRadius: 8, backgroundColor: colors.line },
@@ -481,13 +661,4 @@ const styles = StyleSheet.create({
   editIcon: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
   editIconText: { fontSize: 18, color: colors.muted },
   error: { fontFamily: fonts.medium, fontSize: 14, color: "#B3261E", textAlign: "center" },
-  cta: {
-    height: spacing.cta,
-    borderRadius: 30,
-    backgroundColor: colors.brand,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  ctaDisabled: { opacity: 0.5 },
-  ctaText: { fontFamily: fonts.semibold, fontSize: 18, color: colors.cream },
 });
