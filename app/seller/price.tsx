@@ -5,7 +5,6 @@ import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  InputAccessoryView,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -60,8 +59,6 @@ const sizeRelevant = (d: Draft) => d.size.trim() !== "" || /cloth|shoe|apparel|w
 
 const visibleFields = (d: Draft): Field[] =>
   sizeRelevant(d) ? ["condition", "size", "brand", "color", "category"] : ["condition", "brand", "color", "category"];
-
-const PRICE_ACCESSORY = "price-done";
 
 const DEFAULT_LOCATION = { neighborhood: "Mission", lat: 37.76, lng: -122.42 };
 
@@ -122,6 +119,9 @@ export default function SellerReview() {
   const [sheetText, setSheetText] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [undo, setUndo] = useState<number | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [keyboardUp, setKeyboardUp] = useState(false);
+  const priceFresh = useRef(false);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const user = useCurrentUser();
@@ -168,6 +168,19 @@ export default function SellerReview() {
   }, []);
 
   useEffect(() => {
+    const show = Keyboard.addListener(Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow", () =>
+      setKeyboardUp(true),
+    );
+    const hide = Keyboard.addListener(Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide", () =>
+      setKeyboardUp(false),
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
+  useEffect(() => {
     if (undo === null) return;
     const timer = setTimeout(() => setUndo(null), 3000);
     return () => clearTimeout(timer);
@@ -175,7 +188,10 @@ export default function SellerReview() {
 
   const kept = drafts.filter((d) => d.review !== "removed");
   const approved = kept.filter((d) => d.review === "approved");
-  const currentIndex = order.find((index) => drafts[index].review === "pending");
+  const currentIndex =
+    editingIndex !== null && drafts[editingIndex].review === "pending"
+      ? editingIndex
+      : order.find((index) => drafts[index].review === "pending");
 
   useEffect(() => setExpanded(false), [currentIndex]);
 
@@ -229,7 +245,8 @@ export default function SellerReview() {
 
   const reopen = (index: number) => {
     update(index, { review: "pending" });
-    setOrder((prev) => [index, ...prev.filter((other) => other !== index)]);
+    setUndo(null);
+    setEditingIndex(index);
   };
 
   if (currentIndex === undefined) {
@@ -242,7 +259,7 @@ export default function SellerReview() {
         <Text style={styles.subline}>
           {approved.length} {approved.length === 1 ? "item" : "items"} · {dollars(approved.reduce((sum, d) => sum + d.priceCents, 0)) || "$0"}
         </Text>
-        <ScrollView style={styles.flex} contentContainerStyle={styles.summaryContent}>
+        <ScrollView style={styles.flex} contentContainerStyle={styles.summaryContent} keyboardShouldPersistTaps="handled">
           {approved.length === 0 ? (
             <Text style={styles.muted}>Nothing approved yet</Text>
           ) : (
@@ -318,10 +335,13 @@ export default function SellerReview() {
     setSheet(null);
   };
 
+  const editing = editingIndex === i;
+
   const approve = () => {
     Keyboard.dismiss();
     update(i, { review: "approved" });
-    setUndo(i);
+    if (editing) setEditingIndex(null);
+    else setUndo(i);
   };
 
   const skip = () => {
@@ -332,6 +352,7 @@ export default function SellerReview() {
   const remove = () => {
     Keyboard.dismiss();
     update(i, { review: "removed" });
+    if (editing) setEditingIndex(null);
   };
 
   const undoApprove = () => {
@@ -350,16 +371,24 @@ export default function SellerReview() {
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={styles.topBar}>
-        <Text style={styles.counter}>
-          {approved.length + 1} of {kept.length}
-        </Text>
-        <Pressable onPress={skip} hitSlop={12} accessibilityRole="button">
-          <Text style={styles.skip}>Skip</Text>
-        </Pressable>
+        <Text style={styles.counter}>{editing ? "Edit item" : `${approved.length + 1} of ${kept.length}`}</Text>
+        {editing ? (
+          <Pressable onPress={approve} disabled={!canApprove} hitSlop={12} accessibilityRole="button">
+            <Text style={[styles.skip, !canApprove && styles.disabled]}>Done</Text>
+          </Pressable>
+        ) : (
+          <Pressable onPress={skip} hitSlop={12} accessibilityRole="button">
+            <Text style={styles.skip}>Skip</Text>
+          </Pressable>
+        )}
       </View>
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${((approved.length + 1) / Math.max(kept.length, 1)) * 100}%` }]} />
-      </View>
+      {!editing && (
+        <View style={styles.progressTrack}>
+          <View
+            style={[styles.progressFill, { width: `${((approved.length + 1) / Math.max(kept.length, 1)) * 100}%` }]}
+          />
+        </View>
+      )}
       <ScrollView
         style={styles.flex}
         contentContainerStyle={styles.body}
@@ -401,12 +430,23 @@ export default function SellerReview() {
               <TextInput
                 accessibilityLabel="Price"
                 value={d.priceCents > 0 ? dollars(d.priceCents) : ""}
-                onChangeText={(text) => update(i, { priceCents: parseDollars(text) })}
+                selectTextOnFocus
+                onFocus={() => {
+                  priceFresh.current = true;
+                }}
+                onChangeText={(text) => {
+                  const previous = dollars(d.priceCents);
+                  const typed =
+                    priceFresh.current && previous && text.startsWith(previous) && text.length > previous.length
+                      ? text.slice(previous.length)
+                      : text;
+                  priceFresh.current = false;
+                  update(i, { priceCents: parseDollars(typed) });
+                }}
                 placeholder="Add price"
                 placeholderTextColor={colors.ink}
                 keyboardType="number-pad"
                 returnKeyType="done"
-                inputAccessoryViewID={PRICE_ACCESSORY}
                 style={[
                   styles.priceInput,
                   d.priceCents <= 0 ? styles.priceInputEmpty : { width: 24 + dollars(d.priceCents).length * 18 },
@@ -459,6 +499,11 @@ export default function SellerReview() {
         )}
       </ScrollView>
       <View style={styles.bottomBar}>
+        {keyboardUp && (
+          <Pressable onPress={Keyboard.dismiss} hitSlop={10} style={styles.keyboardDone} accessibilityRole="button">
+            <Text style={styles.accessoryDone}>Done</Text>
+          </Pressable>
+        )}
         {undo !== null && (
           <View style={styles.toast}>
             <Text style={styles.toastText}>Approved</Text>
@@ -481,21 +526,14 @@ export default function SellerReview() {
               <ActivityIndicator color={colors.white} />
             ) : (
               <Text style={styles.approveText}>
-                {blocker ? `Add ${blocker} to approve` : `Approve · ${dollars(d.priceCents)}`}
+                {blocker
+                  ? `Add ${blocker} to ${editing ? "save" : "approve"}`
+                  : `${editing ? "Save" : "Approve"} · ${dollars(d.priceCents)}`}
               </Text>
             )}
           </Pressable>
         )}
       </View>
-      {Platform.OS === "ios" && (
-        <InputAccessoryView nativeID={PRICE_ACCESSORY}>
-          <View style={styles.accessory}>
-            <Pressable onPress={Keyboard.dismiss} hitSlop={10}>
-              <Text style={styles.accessoryDone}>Done</Text>
-            </Pressable>
-          </View>
-        </InputAccessoryView>
-      )}
       <Modal visible={sheet !== null} transparent animationType="slide" onRequestClose={() => closeSheet()}>
         <Pressable style={styles.scrim} onPress={() => closeSheet()} />
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -626,14 +664,7 @@ const styles = StyleSheet.create({
   approve: primaryButton,
   disabled: { opacity: 0.4 },
   approveText: primaryButtonText,
-  accessory: {
-    backgroundColor: "#F2F2F2",
-    borderTopWidth: 1,
-    borderTopColor: HAIRLINE,
-    alignItems: "flex-end",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
+  keyboardDone: { alignSelf: "flex-end", minHeight: 32, justifyContent: "center" },
   accessoryDone: { fontFamily: fonts.semibold, fontSize: 16, color: colors.brand },
   scrim: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)" },
   sheet: {
