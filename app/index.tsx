@@ -5,7 +5,7 @@ import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "../convex/_generated/api";
 import { setPickedPhotos } from "../src/lib/pickedPhotos";
-import { useCurrentUser } from "../src/lib/useCurrentUser";
+import { signOut, useCurrentUser } from "../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../src/theme";
 
 const POLAROID_POSITIONS = [
@@ -64,6 +64,14 @@ export default function Landing() {
             <Text style={styles.garageRowText}>→</Text>
           </Pressable>
         )}
+        {user && (
+          <View style={styles.session}>
+            <Text style={styles.sessionText}>{user.name ? `Hi ${user.name}` : "Signed in"} · </Text>
+            <Pressable onPress={signOut} hitSlop={8} accessibilityRole="button">
+              <Text style={[styles.sessionText, styles.signOut]}>Sign out</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -104,6 +112,9 @@ const styles = StyleSheet.create({
     minHeight: spacing.minButton,
     paddingHorizontal: 4,
   },
+  session: { flexDirection: "row", justifyContent: "center", alignItems: "center", minHeight: 44 },
+  sessionText: { fontFamily: fonts.body, fontSize: 14, color: colors.cream },
+  signOut: { textDecorationLine: "underline" },
   garageRowText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.cream },
   tagline: { fontFamily: fonts.body, fontSize: 17, lineHeight: 23, color: colors.cream },
   button: {
