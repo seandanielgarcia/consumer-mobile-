@@ -1,13 +1,15 @@
 import { useQuery } from "convex/react";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, TextInput, TextStyle, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
 import { ItemCard } from "../../src/buyer/ItemCard";
 import { locateMe, locatePlace, useBuyerLocation } from "../../src/buyer/location";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
-import { colors, fonts, type } from "../../src/theme";
+import { colors, fonts, type, typeSize } from "../../src/theme";
+
+const noOutline = { outlineStyle: "none" } as unknown as TextStyle;
 
 function Pill({ label, active, onPress }: { label: string; active: boolean; onPress?: () => void }) {
   return (
@@ -25,7 +27,7 @@ function Pill({ label, active, onPress }: { label: string; active: boolean; onPr
         borderColor: active ? colors.ink : colors.line,
       }}
     >
-      <Text style={{ fontSize: 13, fontFamily: active ? fonts.semibold : fonts.body, color: active ? colors.cream : colors.ink }}>
+      <Text style={{ fontSize: typeSize.meta, fontFamily: active ? fonts.semibold : fonts.body, color: active ? colors.cream : colors.ink }}>
         {label}
       </Text>
     </Pressable>
@@ -78,7 +80,7 @@ function LocationSheet({
                 accessibilityState={{ selected: radiusMiles === r }}
                 style={{ flex: 1, height: 38, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: radiusMiles === r ? colors.ink : "transparent" }}
               >
-                <Text style={{ fontFamily: fonts.semibold, fontSize: type.label.fontSize, color: radiusMiles === r ? colors.cream : colors.ink }}>{r} mi</Text>
+                <Text style={{ fontFamily: fonts.semibold, fontSize: type.row.fontSize, color: radiusMiles === r ? colors.cream : colors.ink }}>{r} mi</Text>
               </Pressable>
             ))}
           </View>
@@ -99,7 +101,7 @@ function LocationSheet({
               autoCorrect={false}
               returnKeyType="search"
               onSubmitEditing={() => place.trim() && run(() => locatePlace(place.trim()))}
-              style={{ flex: 1, fontSize: 16, fontFamily: fonts.body, color: colors.ink }}
+              style={[{ flex: 1, fontSize: 16, fontFamily: fonts.body, color: colors.ink }, noOutline]}
             />
             <Pressable
               disabled={busy || !place.trim()}
@@ -111,7 +113,7 @@ function LocationSheet({
           </View>
           {busy && <ActivityIndicator color={colors.ink} />}
           {error && <Text style={{ fontFamily: fonts.body, fontSize: 14, color: colors.muted }}>{error}</Text>}
-          <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted }}>Only a rough area (about 1 km) is used.</Text>
+          <Text style={{ fontFamily: fonts.body, fontSize: typeSize.meta, color: colors.muted }}>Only a rough area (about 1 km) is used.</Text>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -146,7 +148,7 @@ export default function BuyerNearYou() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.cream }} contentContainerStyle={{ paddingTop: 56, paddingHorizontal: 16, paddingBottom: 40, gap: 12 }} keyboardShouldPersistTaps="handled">
-      <Text style={{ fontFamily: fonts.display, fontSize: 28, letterSpacing: -0.5, color: colors.ink }}>Near you</Text>
+      <Text style={{ fontFamily: fonts.display, fontSize: typeSize.title, letterSpacing: -0.5, color: colors.ink }}>Near you</Text>
 
       <View style={{ height: 44, borderRadius: 12, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14 }}>
         <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.ink} strokeWidth={2}>
@@ -161,7 +163,7 @@ export default function BuyerNearYou() {
           accessibilityLabel="Search items"
           autoCorrect={false}
           returnKeyType="search"
-          style={{ flex: 1, fontSize: type.label.fontSize, fontFamily: fonts.body, color: colors.ink }}
+          style={[{ flex: 1, fontSize: type.row.fontSize, fontFamily: fonts.body, color: colors.ink }, noOutline]}
         />
       </View>
 
@@ -172,7 +174,7 @@ export default function BuyerNearYou() {
       </ScrollView>
       {sizeOpen && (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {sizes.length === 0 && <Text style={{ fontFamily: fonts.body, fontSize: type.caption.fontSize, color: colors.muted }}>No sizes in these results</Text>}
+          {sizes.length === 0 && <Text style={{ fontFamily: fonts.body, fontSize: type.meta.fontSize, color: colors.muted }}>No sizes in these results</Text>}
           {sizes.map((s) => (
             <Pill
               key={s}
@@ -190,12 +192,12 @@ export default function BuyerNearYou() {
       {results === undefined ? (
         <ActivityIndicator color={colors.ink} style={{ marginTop: 40 }} />
       ) : shown.length === 0 ? (
-        <Text style={{ fontFamily: fonts.body, fontSize: type.label.fontSize, color: colors.muted, textAlign: "center", marginTop: 40 }}>
+        <Text style={{ fontFamily: fonts.body, fontSize: type.row.fontSize, color: colors.muted, textAlign: "center", marginTop: 40 }}>
           {q.trim() ? `Nothing matching "${q.trim()}" within ${radiusMiles} mi yet.` : `Nothing within ${radiusMiles} mi yet.`}
         </Text>
       ) : (
         <>
-          <Text style={{ fontFamily: fonts.body, fontSize: type.caption.fontSize, color: colors.muted }}>
+          <Text style={{ fontFamily: fonts.body, fontSize: type.meta.fontSize, color: colors.muted }}>
             {shown.length} {shown.length === 1 ? "item" : "items"}
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16 }}>

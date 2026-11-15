@@ -15,7 +15,7 @@ export function useBuy(garageId: Id<"garages">) {
     setError(null);
     let buyer: Id<"users">;
     try {
-      buyer = await requireUser();
+      buyer = await requireUser("Sign in to buy");
     } catch (e) {
       if (!(e instanceof SignInCancelled)) setError("Couldn't sign you in. Try again.");
       return;

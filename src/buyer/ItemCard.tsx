@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { Pressable, Text, View } from "react-native";
-import { colors, fonts, type } from "../theme";
+import { colors, fonts, type, typeSize } from "../theme";
 import { detailLine, formatPrice } from "./format";
 
 export type CardItem = {
@@ -34,12 +34,12 @@ export function ItemCard({ item, width, onPress, selected }: { item: CardItem; w
           </View>
         )}
       </View>
-      <Text style={{ fontFamily: fonts.display, fontSize: 18, color: colors.ink }}>{formatPrice(item.priceCents)}</Text>
+      <Text style={{ fontFamily: fonts.display, fontSize: typeSize.listPrice, color: colors.ink }}>{formatPrice(item.priceCents)}</Text>
       <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 14, color: colors.ink }}>
         {item.title}
       </Text>
       <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted }}>
-        {detailLine([item.condition, item.size, item.brand, item.distanceMi !== undefined ? `${item.distanceMi} mi` : undefined])}
+        {detailLine([item.condition, item.size && `Size ${item.size}`, item.brand, item.distanceMi !== undefined ? `${item.distanceMi} mi` : undefined])}
       </Text>
     </Pressable>
   );
