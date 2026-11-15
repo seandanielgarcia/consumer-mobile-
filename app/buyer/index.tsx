@@ -5,9 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
 import { formatPrice, itemLabel } from "../../src/buyer/format";
 import { locateMe, locatePlace, useBuyerLocation } from "../../src/buyer/location";
+import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors, fonts } from "../../src/theme";
 
 function Pill({ label, active, onPress }: { label: string; active: boolean; onPress?: () => void }) {
@@ -109,7 +109,7 @@ export default function BuyerNearYou() {
     const timer = setInterval(() => setNow(Math.floor(Date.now() / 30000) * 30000), 30000);
     return () => clearInterval(timer);
   }, []);
-  const buyerId = process.env.EXPO_PUBLIC_DEV_USER_ID as Id<"users"> | undefined;
+  const buyerId = useCurrentUser()?.userId;
   const { width } = useWindowDimensions();
   const cardWidth = (width - 32 - 12) / 2;
 
