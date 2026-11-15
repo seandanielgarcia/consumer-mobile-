@@ -3,6 +3,7 @@ import { mutation, query } from "./_generated/server";
 
 const AVATAR_COLORS = ["#FFE14D", "#7EE0B5", "#FF8FB1", "#9DB4D6"];
 const CODE_TTL_MS = 10 * 60 * 1000;
+const RESEND_INTERVAL_MS = 60 * 1000;
 
 const isDemoPhone = (phone: string) => {
   const allowlist: string = process.env.DEMO_PHONES ?? "";
@@ -38,8 +39,8 @@ export const startVerification = mutation({
         .unique();
       const cleared = { verified: true, verifyCode: undefined, verifyCodeExpiresAt: undefined };
       if (demo) {
-        await ctx.db.patch(demo._id, { name, ...cleared });
-        return { userId: demo._id, code: null, verified: true };
+        await ctx.db.patch(demo._id, { ...(demo.verified ? {} : { name }), ...cleared });
+        return { userId: demo._id, code: null, verified: true, name: demo.verified ? demo.name : name };
       }
       const userId = await ctx.db.insert("users", {
         phone,
@@ -47,7 +48,19 @@ export const startVerification = mutation({
         avatarColor: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
         verified: true,
       });
-      return { userId, code: null, verified: true };
+      return { userId, code: null, verified: true, name };
+    }
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_phone", (q) => q.eq("phone", phone))
+      .unique();
+    const keptName = existing?.verified ? existing.name : name;
+    if (
+      existing?.verifyCode &&
+      existing.verifyCodeExpiresAt &&
+      existing.verifyCodeExpiresAt - CODE_TTL_MS + RESEND_INTERVAL_MS > Date.now()
+    ) {
+      return { userId: existing._id, code: existing.verifyCode, verified: false, name: keptName };
     }
     let code = String(Math.floor(1000 + Math.random() * 9000));
     for (let attempt = 0; attempt < 20; attempt++) {
@@ -59,13 +72,9 @@ export const startVerification = mutation({
       code = String(Math.floor(1000 + Math.random() * 9000));
     }
     const verification = { verifyCode: code, verifyCodeExpiresAt: Date.now() + CODE_TTL_MS };
-    const existing = await ctx.db
-      .query("users")
-      .withIndex("by_phone", (q) => q.eq("phone", phone))
-      .unique();
     if (existing) {
-      await ctx.db.patch(existing._id, { name, verified: false, ...verification });
-      return { userId: existing._id, code, verified: false };
+      await ctx.db.patch(existing._id, existing.verified ? verification : { name, verified: false, ...verification });
+      return { userId: existing._id, code, verified: false, name: keptName };
     }
     const userId = await ctx.db.insert("users", {
       phone,
@@ -74,13 +83,16 @@ export const startVerification = mutation({
       verified: false,
       ...verification,
     });
-    return { userId, code, verified: false };
+    return { userId, code, verified: false, name };
   },
 });
 
 export const isVerified = query({
   args: { userId: v.id("users") },
-  handler: async (ctx, { userId }) => (await ctx.db.get(userId))?.verified === true,
+  handler: async (ctx, { userId }) => {
+    const user = await ctx.db.get(userId);
+    return user?.verified === true && !user.verifyCode;
+  },
 });
 
 export const isDemoUser = query({

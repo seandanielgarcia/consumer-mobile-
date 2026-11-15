@@ -88,8 +88,8 @@ export default function SignIn() {
     try {
       const firstName = name.trim();
       const result = await startVerification({ phone: normalized, name: firstName });
-      if (result.verified) finish(result.userId, firstName);
-      else setPending({ userId: result.userId, code: result.code ?? "", phone: phone.trim(), name: firstName, startedAt: Date.now() });
+      if (result.verified) finish(result.userId, result.name);
+      else setPending({ userId: result.userId, code: result.code ?? "", phone: phone.trim(), name: result.name, startedAt: Date.now() });
     } catch {
       setError("Couldn't save that. Try again.");
     }
@@ -144,11 +144,11 @@ export default function SignIn() {
         <>
           <Text style={styles.headline}>{reason ?? "Sign in to continue"}</Text>
           <View style={styles.fields}>
-            <Text style={styles.fieldLabel}>{"What's your first name?"}</Text>
+            <Text style={styles.fieldLabel}>First name</Text>
             <TextInput
               value={name}
               onChangeText={setName}
-              placeholder="First name"
+              placeholder="Hailey"
               placeholderTextColor={colors.muted}
               autoCapitalize="words"
               autoComplete="given-name"
@@ -159,7 +159,7 @@ export default function SignIn() {
             />
           </View>
           <View style={styles.fields}>
-            <Text style={styles.fieldLabel}>Your phone number</Text>
+            <Text style={styles.fieldLabel}>Phone number</Text>
             <TextInput
               value={phone}
               onChangeText={(text) => {
