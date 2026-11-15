@@ -38,7 +38,7 @@ export const createOrderCheckout = action({
     const { totalCents } = await ctx.runQuery(internal.whop.pendingOrder, { orderId });
     const checkout = await whopClient().checkoutConfigurations.create({
       variant: {
-        title: "Garage Sale order",
+        title: "yard sale order",
         billing_type: "one_time",
         initial_price: totalCents / 100,
         currency: "usd",
@@ -87,7 +87,7 @@ export const notifySellerSold = internalAction({
     const unavailable = details.items.filter((i) => unavailableItemIds.includes(i._id)).map((i) => i.title);
     const titles = details.items.map((i) => i.title).join(", ");
     const text =
-      `Payment received: ${details.buyerName} bought ${titles} for $${(details.totalCents / 100).toFixed(2)} from this seller's garage. ` +
+      `Payment received: ${details.buyerName} bought ${titles} for $${(details.totalCents / 100).toFixed(2)} from this seller's yard. ` +
       `Tell them it sold and that the buyer will text to arrange pickup.` +
       (unavailable.length > 0
         ? ` These items were no longer available when the payment arrived: ${unavailable.join(", ")}. Tell them to refund those lines manually in Whop.`
