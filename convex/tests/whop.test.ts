@@ -59,6 +59,47 @@ async function pendingOrderFixture() {
   return { t, orderId, firstId, secondId, snapshot };
 }
 
+describe("checkout money path", () => {
+  it("creates a sandbox checkout and reflects signed payment in the public order", async () => {
+    vi.stubEnv("WHOP_API_KEY", "fixture-whop-key");
+    vi.stubEnv("WHOP_ENVIRONMENT", "sandbox");
+    vi.stubEnv("CONVEX_SITE_URL", "https://yard.example.test");
+    const sandboxCheckout = "https://sandbox.whop.com/checkout/fixture";
+    const createCheckoutFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init);
+      const url = new URL(request.url);
+      expect(url.hostname).toBe("sandbox-api.whop.com");
+      expect(url.pathname).toMatch(/checkout_configurations$/);
+      expect(request.method).toBe("POST");
+      expect(await request.json()).toMatchObject({
+        metadata: { orderId },
+        variant: { initial_price: 13.5, currency: "usd" },
+      });
+      return Response.json({ id: "ch_fixture", purchase_url: sandboxCheckout });
+    });
+    const { t, orderId, firstId, secondId } = await pendingOrderFixture();
+    vi.stubGlobal("fetch", createCheckoutFetch);
+    const { purchaseUrl } = await t.action(api.whop.createOrderCheckout, { orderId });
+    expect(purchaseUrl).toMatch(/^https:\/\/sandbox\.whop\.com\/checkout\/fixture\?/);
+    expect(createCheckoutFetch).toHaveBeenCalledTimes(1);
+    expect(await t.run(({ db }) => db.get(orderId)))
+      .toMatchObject({ status: "pending", whopCheckoutId: "ch_fixture" });
+
+    vi.stubGlobal("fetch", notifyFetch);
+    expect((await t.fetch("/whop", await signedPayment(orderId))).status).toBe(200);
+    const statuses = await t.run(async ({ db }) =>
+      Promise.all([orderId, firstId, secondId].map(async (id) => (await db.get(id))?.status)));
+    expect(statuses).toEqual(["paid", "reserved", "reserved"]);
+    expect(await t.query(api.orders.getOrder, { orderId })).toMatchObject({
+      status: "paid",
+      totalCents: 1350,
+      items: [{ _id: firstId }, { _id: secondId }],
+    });
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    expect(notifyFetch).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("POST /whop", () => {
   it.each(["bad", "missing"] as const)("rejects a %s signature with 401", async (kind) => {
     const { t, orderId, snapshot } = await pendingOrderFixture();
