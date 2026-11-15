@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "yardsale",
+    "slug": "garage-sale",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.garagesale.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Pick photos of clothes to sell.",
+        "NSCameraUsageDescription": "Take photos of clothes to sell.",
+        "NSLocationWhenInUseUsageDescription": "Show yard sales near you."
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-web-browser",
+      "expo-image",
+      "expo-font",
+      "expo-asset"
+    ],
+    "scheme": "garagesale",
+    "platforms": [
+      "ios"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
