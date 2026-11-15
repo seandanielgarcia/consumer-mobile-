@@ -1,6 +1,19 @@
-# AGENTS.md: Garage Sale
+# AGENTS.md: yard sale (formerly Garage Sale)
 
-Garage Sale is an iOS app where people bulk-upload photos of clothes, AI writes each listing, buyers within about 2 mi search and pick items, and they pay through Whop for local pickup. The source of truth is the handoff in Capy Drive: `garage-sale-handoff/PRD.md`, `garage-sale-handoff/DRIVERS.md`, and the mockups in `garage-sale-handoff/mockups/*.dc.html` (project drive). Sean's rulings recorded in this file override the PRD; otherwise, when this file and the PRD disagree, the PRD wins; when the PRD's prose and a mockup disagree, build the mockup and flag the difference to the requirement's driver.
+yard sale is an iOS app where people bulk-upload photos of things to sell, AI writes each listing, buyers within about 2 mi search and pick items, and they pay through Whop for local pickup. The source of truth is the handoff in Capy Drive: `garage-sale-handoff/PRD.md`, `garage-sale-handoff/DRIVERS.md`, and the mockups in `garage-sale-handoff/mockups/*.dc.html` (project drive). The product decisions recorded in this file override the PRD; otherwise, when this file and the PRD disagree, the PRD wins; when the PRD's prose and a mockup disagree, build the mockup and flag the difference to the requirement's driver.
+
+## Product decisions since the PRD
+
+These override the PRD and the mockups.
+
+- **Name:** the product is "yard sale" (lowercase). User-facing text says "yard" instead of "garage" ("Your yard", "Open my yard", "Hailey's yard"). Code identifiers (`garages`, `garageId`) stay as they are. (Hailey)
+- **Anything sells**, not just clothes. Size is optional and shown only when it applies; the AI also extracts category, brand, condition and colour. (Hailey, overriding PRD Decision 5)
+- **Review queue replaces the Price it list:** one item per screen with Approve, Edit and Skip, then a summary. (Hailey)
+- **Landing and Home:** signed-out or first-time users see the two-path landing ("Sell your stuff" / "Shop near you" over a polaroid stack); sign-in is asked for only at "Open my yard" or Buy. A seller with a yard gets Home as their yard: an editable grid using the review queue's Edit card, Reserved and Sold stickers, Sold and Put back per item, "Add more" (library or camera into the review queue) and "Shop near you". (Compass for Hailey)
+- **Keiki card on Yard open** is one line, "More later? Text Keiki a pic and a price.", plus "Save Keiki to contacts". (Compass)
+- **Radius:** buyers pick 1, 2, 5 or 10 mi (default 2 mi). (Sean)
+- **Sign-in:** a phone number verified by a code sent through Keiki, plus a first name. (Sean)
+- **No AI label:** AI-written fields just appear filled in and editable. (Sean)
 
 ## Stack
 
@@ -70,7 +83,6 @@ Money is always integer cents.
 - **Two buyers can't pay for the same item.** Check every item is still `live` when creating the order and again in the webhook. If an item became `reserved` while it sat in someone's selection, remove it and tell the buyer before checkout.
 - **One garage per checkout.**
 - The seller can mark an item `sold` after pickup, or put it back to `live`. No timers for MVP.
-- Clothes only: the AI prompt and the size filter assume clothing.
 - Sign-in is a phone number verified by a code (sent through Keiki), plus a first name.
 
 ## Whop checkout flow
@@ -87,7 +99,7 @@ One call per photo on the Price it screen, from a Convex action, returning JSON 
 
 ## Screens
 
-Build to match the mockups exactly: Seller 1A Home → 2 Price it → 3 Garage open, and Buyer 1A Near you → 2 Garage → 3 Paid. The Paid screen has no mockup; follow the PRD spec. Map view (1B) and grouped-by-garage view (1C) are cut.
+Build to match the mockups except where "Product decisions since the PRD" says otherwise: Landing / Home (yard), Review queue, Yard open, and Buyer Near you → Yard → Paid. The Paid screen has no mockup; follow the PRD spec. Map view (1B) and grouped-by-garage view (1C) are cut.
 
 - 20px side padding, 56–60px top padding, buttons at least 44px tall and fully rounded, big CTAs 60px tall.
 - Colors: brand blue `#2340FF`, cream `#FFF6E5`, price-tag yellow `#FFE14D`, ink `#111111`, muted text `#5A5245`. Keep them in one theme module, not inline.
