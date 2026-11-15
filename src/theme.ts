@@ -26,12 +26,26 @@ export const spacing = {
   radius: 999,
 } as const;
 
+export const typeSize = {
+  hero: 40,
+  title: 28,
+  itemTitle: 22,
+  sentence: 17,
+  row: 15,
+  meta: 13,
+  listPrice: 18,
+  heroPrice: 32,
+} as const;
+
 export const type = {
-  display: { fontFamily: fonts.display, fontSize: 34, lineHeight: 36, letterSpacing: -1 },
-  title: { fontFamily: fonts.display, fontSize: 22, lineHeight: 28 },
-  body: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21 },
-  label: { fontFamily: fonts.body, fontSize: 15 },
-  caption: { fontFamily: fonts.body, fontSize: 13 },
+  hero: { fontFamily: fonts.display, fontSize: typeSize.hero, lineHeight: 44, letterSpacing: -1.5 },
+  title: { fontFamily: fonts.display, fontSize: typeSize.title, lineHeight: 32, letterSpacing: -0.5 },
+  itemTitle: { fontFamily: fonts.display, fontSize: typeSize.itemTitle, lineHeight: 28 },
+  sentence: { fontFamily: fonts.body, fontSize: typeSize.sentence, lineHeight: 23 },
+  row: { fontFamily: fonts.body, fontSize: typeSize.row, lineHeight: 21 },
+  meta: { fontFamily: fonts.body, fontSize: typeSize.meta, lineHeight: 18 },
+  listPrice: { fontFamily: fonts.display, fontSize: typeSize.listPrice, lineHeight: 22 },
+  heroPrice: { fontFamily: fonts.display, fontSize: typeSize.heroPrice, lineHeight: 36 },
 } as const;
 
 export const primaryButton = {

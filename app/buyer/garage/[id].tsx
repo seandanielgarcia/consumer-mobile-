@@ -10,7 +10,7 @@ import { ItemCard } from "../../../src/buyer/ItemCard";
 import { PrimaryButton } from "../../../src/components/PrimaryButton";
 import { useBuyerLocation } from "../../../src/buyer/location";
 import { useCurrentUser } from "../../../src/lib/useCurrentUser";
-import { colors, fonts } from "../../../src/theme";
+import { colors, fonts, typeSize } from "../../../src/theme";
 
 export default function BuyerGarage() {
   const { id, selected } = useLocalSearchParams<{ id: string; selected?: string }>();
@@ -54,7 +54,7 @@ export default function BuyerGarage() {
   if (garage === null) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.cream, justifyContent: "center", alignItems: "center", padding: 20 }}>
-        <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted }}>This yard is gone.</Text>
+        <Text style={{ fontFamily: fonts.body, fontSize: typeSize.row, color: colors.muted }}>This yard is gone.</Text>
       </View>
     );
   }
@@ -63,7 +63,7 @@ export default function BuyerGarage() {
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
       <View style={{ backgroundColor: colors.brand, paddingTop: 56, paddingHorizontal: 20, paddingBottom: 22, gap: 14 }}>
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/buyer"))} hitSlop={12} style={{ alignSelf: "flex-start", minHeight: 24 }}>
-          <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.cream }}>← Nearby</Text>
+          <Text style={{ fontFamily: fonts.body, fontSize: typeSize.row, color: colors.cream }}>← Nearby</Text>
         </Pressable>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.tag, alignItems: "center", justifyContent: "center" }}>
@@ -91,7 +91,7 @@ export default function BuyerGarage() {
       ) : (
         <ScrollView contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16, padding: 16 }}>
           {garage.items.length === 0 && (
-            <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted }}>Everything here is spoken for.</Text>
+            <Text style={{ fontFamily: fonts.body, fontSize: typeSize.row, color: colors.muted }}>Everything here is spoken for.</Text>
           )}
           {garage.items.map((item) => (
             <ItemCard key={item._id} item={item} width={cardWidth} selected={picked.includes(item._id)} onPress={() => toggle(item._id)} />
