@@ -11,6 +11,7 @@ export type CardItem = {
   condition?: string;
   brand?: string;
   distanceMi?: number;
+  ownerName?: string;
 };
 
 export function ItemCard({ item, width, onPress, selected }: { item: CardItem; width: number; onPress: () => void; selected?: boolean }) {
@@ -38,9 +39,16 @@ export function ItemCard({ item, width, onPress, selected }: { item: CardItem; w
       <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 14, color: colors.ink }}>
         {item.title}
       </Text>
-      <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted }}>
-        {detailLine([item.condition, item.size && `Size ${item.size}`, item.brand, item.distanceMi !== undefined ? `${item.distanceMi} mi` : undefined])}
-      </Text>
+      {detailLine([item.condition, item.size && `Size ${item.size}`, item.brand]) !== "" && (
+        <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted }}>
+          {detailLine([item.condition, item.size && `Size ${item.size}`, item.brand])}
+        </Text>
+      )}
+      {(item.ownerName || item.distanceMi !== undefined) && (
+        <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted }}>
+          {detailLine([item.ownerName && `${item.ownerName}'s yard`, item.distanceMi !== undefined ? `${item.distanceMi} mi` : undefined])}
+        </Text>
+      )}
     </Pressable>
   );
 }

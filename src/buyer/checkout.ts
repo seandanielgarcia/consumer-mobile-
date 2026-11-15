@@ -16,8 +16,8 @@ function waitForReturn(purchaseUrl: string): Promise<boolean> {
     };
     const subscription = Linking.addEventListener("url", ({ url }) => {
       if (!url.startsWith("garagesale://buyer/paid")) return;
-      WebBrowser.dismissBrowser();
       finish(true);
+      setTimeout(() => WebBrowser.dismissBrowser(), 300);
     });
     WebBrowser.openBrowserAsync(purchaseUrl).then(
       () => finish(false),
@@ -35,6 +35,6 @@ export async function startCheckout(
   const { orderId } = await convex.mutation(api.orders.createPending, { buyerId, garageId, itemIds });
   const { purchaseUrl } = (await convex.action(anyApi.whop.createOrderCheckout, { orderId })) as { purchaseUrl: string };
   const returned = await waitForReturn(purchaseUrl);
-  if (returned) await convex.mutation(api.orders.confirmReturn, { orderId });
+  if (returned) void convex.mutation(api.orders.confirmReturn, { orderId }).catch(() => undefined);
   return { orderId, returned };
 }
