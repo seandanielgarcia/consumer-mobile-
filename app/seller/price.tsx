@@ -726,5 +726,5 @@ const styles = StyleSheet.create({
   summaryTitle: { fontFamily: fonts.semibold, fontSize: 16, color: colors.ink },
   summaryMeta: { ...type.meta, color: MUTED },
   summaryPrice: { fontFamily: fonts.display, fontSize: 18, color: colors.ink },
-  error: { fontFamily: fonts.medium, fontSize: 14, color: "#B3261E", textAlign: "center" },
+  error: { fontFamily: fonts.medium, fontSize: 14, color: colors.error, textAlign: "center" },
 });
