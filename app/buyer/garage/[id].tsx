@@ -80,7 +80,10 @@ export default function BuyerGarage() {
     setPicked((p) => (p.includes(itemId) ? p.filter((x) => x !== itemId) : [...p, itemId]));
   };
 
+  const buyDisabled = buying || pickedItems.length === 0;
+
   const buy = () => {
+    if (buyDisabled || checkoutInProgress.current) return;
     const itemIds = pickedItems.map((item) => item._id);
     if (!buyerId) {
       router.push({
@@ -194,8 +197,10 @@ export default function BuyerGarage() {
         </View>
         <Pressable
           onPress={buy}
-          disabled={pickedItems.length === 0 || buying}
-          style={{ height: 56, paddingHorizontal: 32, borderRadius: 28, backgroundColor: colors.brand, justifyContent: "center", opacity: pickedItems.length === 0 ? 0.4 : 1 }}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: buyDisabled, busy: buying }}
+          disabled={buyDisabled}
+          style={{ height: 56, paddingHorizontal: 32, borderRadius: 28, backgroundColor: colors.brand, justifyContent: "center", opacity: buyDisabled ? 0.4 : 1 }}
         >
           {buying ? <ActivityIndicator color={colors.cream} /> : <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: colors.cream }}>Buy</Text>}
         </Pressable>

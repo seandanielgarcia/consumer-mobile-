@@ -71,7 +71,11 @@ export const garage = query({
     const garage = await ctx.db.get(garageId);
     if (!garage) return null;
     const owner = await ctx.db.get(garage.ownerId);
-    const held = await heldItemIds(ctx, garageId, buyerId, now);
+    const serverNow = Date.now();
+    const holdNow = now === undefined || !Number.isFinite(now)
+      ? serverNow
+      : Math.min(serverNow + 60_000, Math.max(serverNow - 60_000, now));
+    const held = await heldItemIds(ctx, garageId, buyerId, holdNow);
     const items = await ctx.db
       .query("items")
       .withIndex("by_garage", (q) => q.eq("garageId", garageId))
