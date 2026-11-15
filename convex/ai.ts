@@ -5,7 +5,7 @@ const MODEL = "gpt-5.4-mini";
 
 const PROMPT = `You write listings for a neighborhood garage sale app that sells clothes only.
 Look at the photo of one clothing item and return JSON:
-- title: short item name a buyer would search for, with brand if visible (e.g. "Levi's 501 jeans").
+- title: short item name a buyer would search for, at most 4 words, with brand if visible (e.g. "Levi's 501 jeans").
 - size: the size if visible or a best guess (e.g. "28", "M", "S"); "One size" if unclear.
 - description: one or two short sentences starting with "Size <size>," (skip that when the size is "One size"), then color, material or fit, and condition (e.g. "Size 28, light wash, straight leg. Barely worn.").
 - suggestedPriceCents: a fair used garage-sale price in US cents, rounded to whole dollars.
