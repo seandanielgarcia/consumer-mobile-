@@ -9,10 +9,11 @@ import { formatPrice, itemLabel } from "../../src/buyer/format";
 import { locateMe, locatePlace, useBuyerLocation } from "../../src/buyer/location";
 import { colors, fonts } from "../../src/theme";
 
-function Pill({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function Pill({ label, active, onPress }: { label: string; active: boolean; onPress?: () => void }) {
   return (
     <Pressable
       onPress={onPress}
+      disabled={!onPress}
       hitSlop={8}
       style={{
         height: 32,
@@ -100,7 +101,6 @@ export default function BuyerNearYou() {
   const [size, setSize] = useState<string | null>(null);
   const [sizeOpen, setSizeOpen] = useState(false);
   const [under30, setUnder30] = useState(false);
-  const [closest, setClosest] = useState(true);
   const [radiusMiles, setRadiusMiles] = useState(2);
   const [sheetOpen, setSheetOpen] = useState(false);
   const { width } = useWindowDimensions();
@@ -112,9 +112,8 @@ export default function BuyerNearYou() {
     [results],
   );
   const shown = useMemo(() => {
-    const list = (results ?? []).filter((r) => (!size || !r.size || r.size === size) && (!under30 || r.priceCents < 3000));
-    return closest ? [...list].sort((a, b) => a.distanceMi - b.distanceMi) : list;
-  }, [results, size, under30, closest]);
+    return (results ?? []).filter((r) => (!size || !r.size || r.size === size) && (!under30 || r.priceCents < 3000));
+  }, [results, size, under30]);
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.cream }} contentContainerStyle={{ paddingTop: 56, paddingHorizontal: 16, paddingBottom: 40, gap: 14 }} keyboardShouldPersistTaps="handled">
@@ -147,7 +146,7 @@ export default function BuyerNearYou() {
       <View style={{ flexDirection: "row", gap: 8 }}>
         <Pill label={size ? `Size ${size}` : "Size"} active={!!size} onPress={() => setSizeOpen((o) => !o)} />
         <Pill label="Under $30" active={under30} onPress={() => setUnder30((u) => !u)} />
-        <Pill label="Closest first" active={closest} onPress={() => setClosest((c) => !c)} />
+        <Pill label="Closest first" active />
       </View>
       <View style={{ flexDirection: "row", gap: 8 }}>
         {RADII.map((r) => (
