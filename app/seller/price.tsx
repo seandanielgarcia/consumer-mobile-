@@ -16,6 +16,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { api } from "../../convex/_generated/api";
@@ -62,6 +63,9 @@ const sizeRelevant = (d: Draft) => d.size.trim() !== "" || /cloth|shoe|apparel|w
 const visibleFields = (d: Draft): Field[] =>
   sizeRelevant(d) ? ["condition", "size", "brand", "color", "category"] : ["condition", "brand", "color", "category"];
 
+const blockerOf = (d: Draft) =>
+  !d.condition.trim() ? "condition" : !d.title.trim() ? "title" : d.priceCents <= 0 ? "price" : null;
+
 const DEFAULT_LOCATION = { neighborhood: "Mission", lat: 37.76, lng: -122.42 };
 
 const withTimeout = <T,>(promise: Promise<T>, ms: number) =>
@@ -103,7 +107,7 @@ export default function SellerReview() {
     getPickedPhotos().map((uri) => ({
       uri,
       status: "loading",
-      review: "pending",
+      review: "approved",
       title: "",
       category: "",
       size: "",
@@ -116,18 +120,16 @@ export default function SellerReview() {
       touched: [],
     })),
   );
-  const [order, setOrder] = useState<number[]>(() => getPickedPhotos().map((_, index) => index));
   const [sheet, setSheet] = useState<Field | "description" | null>(null);
   const [sheetText, setSheetText] = useState("");
   const [expanded, setExpanded] = useState(false);
-  const [undo, setUndo] = useState<number | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [keyboardUp, setKeyboardUp] = useState(false);
   const priceFresh = useRef(false);
-  const [history, setHistory] = useState<number[]>([]);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const user = useCurrentUser();
+  const { width } = useWindowDimensions();
   const [wantsOpen, setWantsOpen] = useState(false);
   const location = useRef<ReturnType<typeof approximateLocation> | null>(null);
 
@@ -166,7 +168,7 @@ export default function SellerReview() {
           aiGenerated: true,
         });
       } catch {
-        update(index, { status: storageId ? "ready" : "failed", storageId });
+        update(index, storageId ? { status: "ready", storageId } : { status: "failed", review: "removed" });
       }
     };
     (async () => {
@@ -177,7 +179,7 @@ export default function SellerReview() {
           update(index, { uri });
           describe(uri, index);
         } catch {
-          update(index, { status: "failed" });
+          update(index, { status: "failed", review: "removed" });
         }
       }
     })();
@@ -196,20 +198,12 @@ export default function SellerReview() {
     };
   }, []);
 
-  useEffect(() => {
-    if (undo === null) return;
-    const timer = setTimeout(() => setUndo(null), 3000);
-    return () => clearTimeout(timer);
-  }, [undo]);
+  const approved = drafts.filter((d) => d.review === "approved");
+  const pricing = approved.filter((d) => d.status === "loading").length;
+  const needsFix = approved.filter((d) => d.status === "ready" && blockerOf(d)).length;
+  const canOpen = approved.length > 0 && pricing === 0 && needsFix === 0 && !opening;
 
-  const kept = drafts.filter((d) => d.review !== "removed");
-  const approved = kept.filter((d) => d.review === "approved");
-  const currentIndex =
-    editingIndex !== null && drafts[editingIndex].review === "pending"
-      ? editingIndex
-      : order.find((index) => drafts[index].review === "pending");
-
-  useEffect(() => setExpanded(false), [currentIndex]);
+  useEffect(() => setExpanded(false), [editingIndex]);
 
   const openGarage = () => {
     setError(null);
@@ -259,90 +253,111 @@ export default function SellerReview() {
     }
   };
 
-  const reopen = (index: number) => {
-    update(index, { review: "pending" });
-    setUndo(null);
-    setEditingIndex(index);
-  };
+  const toggle = (index: number) =>
+    update(index, { review: drafts[index].review === "approved" ? "removed" : "approved" });
 
-  const goBack = () => {
-    Keyboard.dismiss();
-    const previous = [...history].reverse().find((index) => drafts[index].review === "approved");
-    if (previous !== undefined) return reopen(previous);
-    if (kept.length === 0) return router.dismissTo("/");
-    Alert.alert(`Discard ${kept.length} ${kept.length === 1 ? "item" : "items"}?`, undefined, [
+  const discard = () => {
+    if (approved.length === 0) return router.dismissTo("/");
+    Alert.alert(`Discard ${approved.length} ${approved.length === 1 ? "item" : "items"}?`, undefined, [
       { text: "Keep reviewing", style: "cancel" },
       { text: "Discard", style: "destructive", onPress: () => router.dismissTo("/") },
     ]);
   };
 
-  if (currentIndex === undefined) {
+  if (editingIndex === null) {
+    const cardWidth = (width - spacing.sidePad * 2 - 12) / 2;
     return (
       <View style={styles.summaryScreen}>
-        <Pressable onPress={goBack} hitSlop={12} style={styles.back}>
+        <Pressable onPress={discard} hitSlop={12} style={styles.back} accessibilityRole="button">
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
-        <Text style={styles.headline}>Ready to go</Text>
+        <Text style={styles.headline}>Your yard</Text>
         <Text style={styles.subline}>
-          {approved.length} {approved.length === 1 ? "item" : "items"} · {dollars(approved.reduce((sum, d) => sum + d.priceCents, 0)) || "$0"}
+          {pricing > 0
+            ? `Pricing ${pricing} ${pricing === 1 ? "photo" : "photos"}…`
+            : `${approved.length} ${approved.length === 1 ? "item" : "items"} · ${dollars(approved.reduce((sum, d) => sum + d.priceCents, 0)) || "$0"} · tap to edit`}
         </Text>
-        <ScrollView style={styles.flex} contentContainerStyle={styles.summaryContent} keyboardShouldPersistTaps="handled">
-          {approved.length === 0 ? (
-            <Text style={styles.muted}>Nothing approved yet</Text>
-          ) : (
-            <View style={styles.summaryList}>
-              {drafts.map((d, index) => ({ d, index }))
-                .filter(({ d }) => d.review === "approved")
-                .map(({ d, index }, row) => (
+        <ScrollView style={styles.flex} contentContainerStyle={styles.grid}>
+          {drafts.map((d, index) => {
+            const removed = d.review === "removed";
+            const size = d.size.trim();
+            return (
+              <View key={index} style={[styles.card, { width: cardWidth }, removed && styles.cardRemoved]}>
+                <Pressable
+                  onPress={() => setEditingIndex(index)}
+                  disabled={d.status !== "ready"}
+                  accessibilityRole="button"
+                  accessibilityLabel={d.title ? `Edit ${d.title}` : "Photo"}
+                >
+                  <View>
+                    <Image source={{ uri: d.uri }} style={styles.cardPhoto} contentFit="cover" transition={0} />
+                    {d.status === "loading" && (
+                      <View style={styles.cardSpinner}>
+                        <ActivityIndicator color={colors.white} />
+                      </View>
+                    )}
+                    {d.status === "ready" && d.priceCents > 0 && (
+                      <View style={styles.sticker}>
+                        <Text style={styles.stickerText}>{dollars(d.priceCents)}</Text>
+                      </View>
+                    )}
+                    {d.status === "ready" && size !== "" && (
+                      <View style={styles.sizeBadge}>
+                        <Text style={styles.sizeText} numberOfLines={1}>
+                          {size}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.cardTitle} numberOfLines={1}>
+                    {d.status === "failed" ? "Couldn't upload" : d.status === "loading" ? " " : d.title || "Add a title"}
+                  </Text>
+                  {d.status === "ready" && blockerOf(d) && <Text style={styles.cardFix}>Add {blockerOf(d)}</Text>}
+                </Pressable>
+                {d.status !== "failed" && (
                   <Pressable
-                    key={d.uri}
-                    onPress={() => reopen(index)}
-                    style={[styles.summaryRow, row > 0 && styles.rowDivider]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Edit ${d.title}`}
+                    onPress={() => toggle(index)}
+                    hitSlop={8}
+                    style={[styles.toggle, removed && styles.toggleOff]}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: !removed }}
+                    accessibilityLabel={removed ? "Add back" : "Remove"}
                   >
-                    <Image source={{ uri: d.uri }} style={styles.thumb} contentFit="cover" />
-                    <View style={styles.summaryText}>
-                      <Text style={styles.summaryTitle} numberOfLines={1}>
-                        {d.title}
-                      </Text>
-                      <Text style={styles.summaryMeta} numberOfLines={1}>
-                        {[d.condition.trim(), d.size.trim() && `Size ${d.size.trim()}`, d.brand.trim()].filter(Boolean).join(" · ")}
-                      </Text>
-                    </View>
-                    <Text style={styles.summaryPrice}>{dollars(d.priceCents)}</Text>
+                    <Text style={[styles.toggleText, removed && styles.toggleTextOff]}>{removed ? "✕" : "✓"}</Text>
                   </Pressable>
-                ))}
-            </View>
-          )}
+                )}
+              </View>
+            );
+          })}
         </ScrollView>
         {error && <Text style={styles.error}>{error}</Text>}
+        {needsFix > 0 && pricing === 0 && (
+          <Text style={styles.muted}>Fix {needsFix} {needsFix === 1 ? "item" : "items"} to continue</Text>
+        )}
         <Pressable
           onPress={openGarage}
-          disabled={approved.length === 0 || opening}
-          style={[styles.approve, (approved.length === 0 || opening) && styles.disabled]}
+          disabled={!canOpen}
+          style={[styles.approve, !canOpen && styles.disabled]}
           accessibilityRole="button"
         >
           {opening ? (
             <ActivityIndicator color={colors.white} />
           ) : (
-            <Text style={styles.approveText}>
-              Open my yard
-            </Text>
+            <Text style={styles.approveText}>Approve all ({approved.length})</Text>
           )}
         </Pressable>
       </View>
     );
   }
 
-  const i = currentIndex;
+  const i = editingIndex;
   const d = drafts[i];
   const loading = d.status === "loading";
   const failed = d.status === "failed";
   const fields = visibleFields(d);
   const aiMarked = (field: Field) => d.aiGenerated && d[field].trim() !== "" && !d.touched.includes(field);
   const anyAi = d.aiGenerated && fields.some(aiMarked);
-  const blocker = !d.condition.trim() ? "condition" : !d.title.trim() ? "title" : d.priceCents <= 0 ? "price" : null;
+  const blocker = blockerOf(d);
   const canApprove = d.status === "ready" && !blocker;
 
   const setField = (field: Field, value: string) =>
@@ -362,32 +377,15 @@ export default function SellerReview() {
     setSheet(null);
   };
 
-  const editing = editingIndex === i;
-
-  const approve = () => {
+  const done = () => {
     Keyboard.dismiss();
-    update(i, { review: "approved" });
-    if (editing) setEditingIndex(null);
-    else setUndo(i);
-    setHistory((prev) => [...prev.filter((index) => index !== i), i]);
-  };
-
-  const skip = () => {
-    Keyboard.dismiss();
-    setOrder((prev) => [...prev.filter((index) => index !== i), i]);
+    setEditingIndex(null);
   };
 
   const remove = () => {
     Keyboard.dismiss();
     update(i, { review: "removed" });
-    if (editing) setEditingIndex(null);
-  };
-
-  const undoApprove = () => {
-    if (undo === null) return;
-    update(undo, { review: "pending" });
-    setOrder((prev) => [undo, ...prev.filter((index) => index !== undo)]);
-    setUndo(null);
+    setEditingIndex(null);
   };
 
   const sheetOptions = sheet && sheet !== "description" ? FIELD_OPTIONS[sheet] : undefined;
@@ -399,27 +397,14 @@ export default function SellerReview() {
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={styles.topBar}>
-        <Pressable onPress={goBack} hitSlop={12} style={styles.back} accessibilityRole="button">
+        <Pressable onPress={done} hitSlop={12} style={styles.back} accessibilityRole="button">
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
-        <Text style={styles.counter}>{editing ? "Edit item" : `${approved.length + 1} of ${kept.length}`}</Text>
-        {editing ? (
-          <Pressable onPress={approve} disabled={!canApprove} hitSlop={12} accessibilityRole="button">
-            <Text style={[styles.skip, !canApprove && styles.disabled]}>Done</Text>
-          </Pressable>
-        ) : (
-          <Pressable onPress={skip} hitSlop={12} accessibilityRole="button">
-            <Text style={styles.skip}>Skip</Text>
-          </Pressable>
-        )}
+        <Text style={styles.counter}>Edit item</Text>
+        <Pressable onPress={done} disabled={!canApprove} hitSlop={12} accessibilityRole="button">
+          <Text style={[styles.skip, !canApprove && styles.disabled]}>Done</Text>
+        </Pressable>
       </View>
-      {!editing && (
-        <View style={styles.progressTrack}>
-          <View
-            style={[styles.progressFill, { width: `${((approved.length + 1) / Math.max(kept.length, 1)) * 100}%` }]}
-          />
-        </View>
-      )}
       <ScrollView
         style={styles.flex}
         contentContainerStyle={styles.body}
@@ -535,20 +520,12 @@ export default function SellerReview() {
             <Text style={styles.accessoryDone}>Done</Text>
           </Pressable>
         )}
-        {undo !== null && (
-          <View style={styles.toast}>
-            <Text style={styles.toastText}>Approved</Text>
-            <Pressable onPress={undoApprove} hitSlop={10} accessibilityRole="button">
-              <Text style={styles.toastUndo}>Undo</Text>
-            </Pressable>
-          </View>
-        )}
         <Pressable onPress={remove} hitSlop={8} style={styles.remove} accessibilityRole="button">
           <Text style={styles.removeText}>Remove item</Text>
         </Pressable>
         {!failed && (
           <Pressable
-            onPress={approve}
+            onPress={done}
             disabled={!canApprove}
             style={[styles.approve, !canApprove && styles.disabled]}
             accessibilityRole="button"
@@ -558,8 +535,8 @@ export default function SellerReview() {
             ) : (
               <Text style={styles.approveText}>
                 {blocker
-                  ? `Add ${blocker} to ${editing ? "save" : "approve"}`
-                  : `${editing ? "Save" : "Approve"} · ${dollars(d.priceCents)}`}
+                  ? `Add ${blocker} to save`
+                  : `Save · ${dollars(d.priceCents)}`}
               </Text>
             )}
           </Pressable>
@@ -634,8 +611,6 @@ const styles = StyleSheet.create({
   },
   counter: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
   skip: { fontFamily: fonts.medium, fontSize: 15, color: colors.brand },
-  progressTrack: { height: 4, marginHorizontal: 16, borderRadius: 2, backgroundColor: HAIRLINE, overflow: "hidden" },
-  progressFill: { height: 4, backgroundColor: colors.brand },
   body: { padding: 16, gap: 12, paddingBottom: 24 },
   photo: { width: "100%", aspectRatio: 4 / 3, borderRadius: 16, backgroundColor: HAIRLINE },
   caveat: { fontFamily: fonts.body, fontSize: 13, color: MUTED },
@@ -675,21 +650,6 @@ const styles = StyleSheet.create({
     paddingBottom: 34,
     gap: 4,
   },
-  toast: {
-    position: "absolute",
-    left: 16,
-    right: 16,
-    top: -56,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: colors.ink,
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  toastText: { fontFamily: fonts.medium, fontSize: 15, color: colors.white },
-  toastUndo: { fontFamily: fonts.semibold, fontSize: 15, color: colors.tag },
   remove: { alignSelf: "center", minHeight: 36, justifyContent: "center" },
   removeText: { fontFamily: fonts.body, fontSize: 14, color: MUTED },
   approve: primaryButton,
@@ -732,13 +692,56 @@ const styles = StyleSheet.create({
   sheetInputTall: { height: 120, paddingTop: 10, textAlignVertical: "top" },
   muted: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
   subline: { ...type.row, color: MUTED, marginTop: -6 },
-  summaryContent: { paddingBottom: 12 },
-  summaryList: { backgroundColor: colors.white, borderRadius: 16, paddingHorizontal: 12 },
-  summaryRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
-  thumb: { width: 52, height: 52, borderRadius: 10, backgroundColor: HAIRLINE },
-  summaryText: { flex: 1, gap: 2 },
-  summaryTitle: { fontFamily: fonts.semibold, fontSize: 16, color: colors.ink },
-  summaryMeta: { ...type.meta, color: MUTED },
-  summaryPrice: { fontFamily: fonts.display, fontSize: 18, color: colors.ink },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 12, paddingTop: 4, paddingBottom: 12 },
+  card: { backgroundColor: colors.white, padding: 6, paddingBottom: 10, gap: 6, borderRadius: 4 },
+  cardRemoved: { opacity: 0.45 },
+  cardPhoto: { width: "100%", aspectRatio: 1, backgroundColor: HAIRLINE },
+  cardSpinner: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(17,17,17,0.25)" },
+  cardTitle: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 18, color: colors.ink },
+  cardFix: { ...type.meta, color: colors.brand },
+  sticker: {
+    position: "absolute",
+    left: -4,
+    bottom: 6,
+    paddingHorizontal: 8,
+    height: 28,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    backgroundColor: colors.tag,
+    justifyContent: "center",
+    transform: [{ rotate: "-4deg" }],
+  },
+  stickerText: { ...type.listPrice, fontSize: 16, color: colors.ink },
+  sizeBadge: {
+    position: "absolute",
+    right: 6,
+    bottom: 6,
+    minWidth: 26,
+    maxWidth: 72,
+    height: 22,
+    paddingHorizontal: 7,
+    borderRadius: spacing.radius,
+    backgroundColor: colors.ink,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sizeText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.white },
+  toggle: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 28,
+    height: 28,
+    borderRadius: spacing.radius,
+    backgroundColor: colors.brand,
+    borderWidth: 2,
+    borderColor: colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  toggleOff: { backgroundColor: colors.white, borderColor: colors.ink },
+  toggleText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.white },
+  toggleTextOff: { color: colors.ink },
   error: { fontFamily: fonts.medium, fontSize: 14, color: colors.error, textAlign: "center" },
 });
