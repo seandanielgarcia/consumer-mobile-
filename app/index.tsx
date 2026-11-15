@@ -1,8 +1,8 @@
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { ActionSheetIOS, Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "../convex/_generated/api";
 import { setPickedPhotos } from "../src/lib/pickedPhotos";
 import { signOut, useCurrentUser } from "../src/lib/useCurrentUser";
@@ -19,6 +19,25 @@ export default function Landing() {
   const user = useCurrentUser();
   const mine = useQuery(api.garages.mine, user ? { ownerId: user.userId } : "skip");
   const samples = useQuery(api.items.sampleLive) ?? [];
+  const items = useQuery(api.items.byGarage, mine ? { garageId: mine.garage._id } : "skip") ?? [];
+  const setStatus = useMutation(api.items.setStatus);
+  const sold = items.filter((item) => item.status === "sold");
+  const counts = (["live", "reserved"] as const)
+    .map((status) => [items.filter((item) => item.status === status).length, status] as const)
+    .filter(([n]) => n > 0)
+    .map(([n, status]) => `${n} ${status}`)
+    .join(" · ");
+
+  const relistSold = () => {
+    if (sold.length === 0 || !user) return;
+    ActionSheetIOS.showActionSheetWithOptions(
+      { title: "Put back on sale", options: [...sold.map((item) => item.title), "Cancel"], cancelButtonIndex: sold.length },
+      (index) => {
+        const item = sold[index];
+        if (item) setStatus({ itemId: item._id, ownerId: user.userId, status: "live" }).catch(() => {});
+      },
+    );
+  };
 
   const pickPhotos = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -55,12 +74,25 @@ export default function Landing() {
             <Text style={styles.buttonText}>Shop near you</Text>
           </Pressable>
         </View>
-        {mine && mine.items.length > 0 && (
+        {mine && items.length > 0 && (
           <Pressable
             style={styles.garageRow}
+            accessibilityRole="button"
             onPress={() => router.push({ pathname: "/seller/open", params: { garageId: mine.garage._id } })}
           >
-            <Text style={styles.garageRowText}>Your garage · {mine.items.length} live</Text>
+            <Text style={styles.garageRowText}>Your garage{counts ? ` · ${counts}` : ""}</Text>
+            {sold.length > 0 && (
+              <Pressable
+                onPress={relistSold}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={`${sold.length} sold. Tap to put one back on sale.`}
+                style={styles.soldButton}
+              >
+                <Text style={[styles.garageRowText, styles.soldText]}>· {sold.length} sold</Text>
+              </Pressable>
+            )}
+            <View style={styles.rowSpacer} />
             <Text style={styles.garageRowText}>→</Text>
           </Pressable>
         )}
@@ -107,11 +139,14 @@ const styles = StyleSheet.create({
   wordmark: { fontFamily: fonts.display, fontSize: 44, letterSpacing: -1.5, color: colors.cream },
   garageRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    gap: 4,
     minHeight: spacing.minButton,
     paddingHorizontal: 4,
   },
+  soldButton: { minHeight: spacing.minButton, justifyContent: "center" },
+  soldText: { textDecorationLine: "underline" },
+  rowSpacer: { flex: 1 },
   session: { flexDirection: "row", justifyContent: "center", alignItems: "center", minHeight: 44 },
   sessionText: { fontFamily: fonts.body, fontSize: 14, color: colors.cream },
   signOut: { textDecorationLine: "underline" },
