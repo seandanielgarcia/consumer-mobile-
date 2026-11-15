@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@edge-runtime/vm": "^5.0.0",
+    "@types/node": "^26.6.6",
     "@types/react": "~19.3.0",
     "convex-test": "^0.0.71",
     "typescript": "~6.0.3",
@@ -36,7 +37,9 @@
   "scripts": {
     "start": "expo start",
     "ios": "expo start --ios",
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p .",
+    "typecheck:convex": "convex typecheck"
   },
   "private": true
 }

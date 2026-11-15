@@ -140,8 +140,7 @@ describe.each(cleanups)("$name", ({ run }) => {
     expect(await read(maya)).toMatchObject({ name: "Maya B" });
   });
 
-  // The guard currently treats the two known demo accounts as throwaways after 15 minutes.
-  it.fails("keeps older Sam and Maya B demo accounts", async () => {
+  it("keeps older Sam and Maya B demo accounts", async () => {
     vi.setSystemTime(old);
     const { t, user, read } = setup();
     const sam = await user("+15555550101", "Sam");
@@ -153,8 +152,7 @@ describe.each(cleanups)("$name", ({ run }) => {
     expect([await read(sam), await read(maya)].map((account) => account?.name)).toEqual(["Sam", "Maya B"]);
   });
 
-  // An old throwaway owner is currently selected for deletion without checking for a recent order in their yard.
-  it.fails("keeps a recent paid order and its dependencies in an older throwaway yard", async () => {
+  it("keeps a recent paid order and its dependencies in an older throwaway yard", async () => {
     vi.setSystemTime(old);
     const { t, user, yard, paidOrder, read } = setup();
     const ownerId = await user("+15559990001");

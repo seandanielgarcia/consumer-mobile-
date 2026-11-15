@@ -4,23 +4,26 @@ import type { Id } from "./_generated/dataModel";
 
 export const HOLD_MS = 10 * 60 * 1000;
 
-export async function heldItemIds(ctx: QueryCtx, garageId: Id<"garages">, exceptBuyerId?: Id<"users">, now = Date.now()) {
+function recentPendingOrders(ctx: QueryCtx, garageId: Id<"garages">, now: number) {
   const since = now - HOLD_MS;
-  const pending = await ctx.db
+  return ctx.db
     .query("orders")
     .withIndex("by_garage", (q) => q.eq("garageId", garageId))
     .filter((q) => q.and(q.eq(q.field("status"), "pending"), q.gt(q.field("_creationTime"), since)))
     .collect();
+}
+
+export async function heldItemIds(ctx: QueryCtx, garageId: Id<"garages">, exceptBuyerId?: Id<"users">, now = Date.now()) {
+  const pending = await recentPendingOrders(ctx, garageId, now);
   return new Set(pending.filter((p) => p.buyerId !== exceptBuyerId).flatMap((p) => p.itemIds));
 }
 
 async function markOrderPaid(ctx: MutationCtx, orderId: Id<"orders">) {
   const order = await ctx.db.get(orderId);
   if (!order) throw new Error("Order not found");
-  if (order.status === "cancelled") throw new Error("Order was cancelled");
   const garage = await ctx.db.get(order.garageId);
   const seller = garage && (await ctx.db.get(garage.ownerId));
-  const result = { orderId, alreadyPaid: order.status !== "pending", sellerName: seller?.name ?? "", sellerPhone: seller?.phone ?? "" };
+  const result = { orderId, alreadyPaid: order.status === "paid" || order.status === "picked_up", sellerName: seller?.name ?? "", sellerPhone: seller?.phone ?? "" };
   if (result.alreadyPaid) return { ...result, unavailableItemIds: [] as Id<"items">[] };
   const unavailableItemIds: Id<"items">[] = [];
   for (const itemId of order.itemIds) {
@@ -38,7 +41,8 @@ export const createPending = mutation({
     const ids = [...new Set(itemIds)];
     if (ids.length === 0) throw new Error("Pick at least one item");
     if (!(await ctx.db.get(buyerId))) throw new Error("Unknown buyer");
-    const held = await heldItemIds(ctx, garageId, buyerId);
+    const pending = await recentPendingOrders(ctx, garageId, Date.now());
+    const held = new Set(pending.filter((order) => order.buyerId !== buyerId).flatMap((order) => order.itemIds));
     let totalCents = 0;
     for (const id of ids) {
       const item = await ctx.db.get(id);
@@ -47,6 +51,12 @@ export const createPending = mutation({
       if (item.status !== "live") throw new Error(`${item.title} is no longer available`);
       if (held.has(id)) throw new Error(`Someone else is checking out ${item.title} right now`);
       totalCents += item.priceCents;
+    }
+    const selected = new Set(ids);
+    for (const order of pending) {
+      if (order.buyerId === buyerId && order.itemIds.some((id) => selected.has(id))) {
+        await ctx.db.patch(order._id, { status: "cancelled" });
+      }
     }
     const orderId = await ctx.db.insert("orders", { buyerId, garageId, itemIds: ids, totalCents, status: "pending" });
     return { orderId, totalCents };
@@ -80,7 +90,7 @@ export const getOrder = query({
     return {
       status: order.status,
       totalCents: order.totalCents,
-      sellerName: seller?.name ?? "The seller",
+      sellerName: seller?.name?.split(" ")[0] ?? "The seller",
       items: items
         .filter((i) => i !== null)
         .map((i) => ({
