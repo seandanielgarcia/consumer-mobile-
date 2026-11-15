@@ -183,7 +183,7 @@ export default function SellerReview() {
     setError(null);
     setWantsOpen(true);
     if (user) return;
-    requireUser().catch((e) => {
+    requireUser("Sign in to open your yard").catch((e) => {
       setWantsOpen(false);
       if (!(e instanceof SignInCancelled)) setError("Couldn't sign you in. Try again.");
     });
@@ -227,6 +227,11 @@ export default function SellerReview() {
     }
   };
 
+  const reopen = (index: number) => {
+    update(index, { review: "pending" });
+    setOrder((prev) => [index, ...prev.filter((other) => other !== index)]);
+  };
+
   if (currentIndex === undefined) {
     return (
       <View style={styles.summaryScreen}>
@@ -234,26 +239,37 @@ export default function SellerReview() {
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
         <Text style={styles.headline}>Ready to go</Text>
-        <ScrollView style={styles.flex} contentContainerStyle={styles.summaryList}>
-          {approved.length === 0 && <Text style={styles.muted}>Nothing approved yet</Text>}
-          {drafts.map((d, i) =>
-            d.review === "approved" ? (
-              <View key={d.uri} style={styles.summaryRow}>
-                <Image source={{ uri: d.uri }} style={styles.thumb} contentFit="cover" />
-                <Text style={styles.summaryTitle} numberOfLines={1}>
-                  {d.title}
-                </Text>
-                <Text style={styles.summaryPrice}>{dollars(d.priceCents)}</Text>
-                <Pressable
-                  onPress={() => update(i, { review: "pending" })}
-                  hitSlop={10}
-                  accessibilityLabel={`Edit ${d.title}`}
-                  style={styles.editIcon}
-                >
-                  <Text style={styles.editIconText}>✎</Text>
-                </Pressable>
-              </View>
-            ) : null,
+        <Text style={styles.subline}>
+          {approved.length} {approved.length === 1 ? "item" : "items"} · {dollars(approved.reduce((sum, d) => sum + d.priceCents, 0)) || "$0"}
+        </Text>
+        <ScrollView style={styles.flex} contentContainerStyle={styles.summaryContent}>
+          {approved.length === 0 ? (
+            <Text style={styles.muted}>Nothing approved yet</Text>
+          ) : (
+            <View style={styles.summaryList}>
+              {drafts.map((d, index) => ({ d, index }))
+                .filter(({ d }) => d.review === "approved")
+                .map(({ d, index }, row) => (
+                  <Pressable
+                    key={d.uri}
+                    onPress={() => reopen(index)}
+                    style={[styles.summaryRow, row > 0 && styles.rowDivider]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Edit ${d.title}`}
+                  >
+                    <Image source={{ uri: d.uri }} style={styles.thumb} contentFit="cover" />
+                    <View style={styles.summaryText}>
+                      <Text style={styles.summaryTitle} numberOfLines={1}>
+                        {d.title}
+                      </Text>
+                      <Text style={styles.summaryMeta} numberOfLines={1}>
+                        {[d.condition.trim(), d.size.trim() && `Size ${d.size.trim()}`, d.brand.trim()].filter(Boolean).join(" · ")}
+                      </Text>
+                    </View>
+                    <Text style={styles.summaryPrice}>{dollars(d.priceCents)}</Text>
+                  </Pressable>
+                ))}
+            </View>
           )}
         </ScrollView>
         {error && <Text style={styles.error}>{error}</Text>}
@@ -267,7 +283,7 @@ export default function SellerReview() {
             <ActivityIndicator color={colors.white} />
           ) : (
             <Text style={styles.approveText}>
-              Open my yard ({approved.length} {approved.length === 1 ? "item" : "items"})
+              Open my yard
             </Text>
           )}
         </Pressable>
@@ -539,7 +555,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   back: { alignSelf: "flex-start" },
   backText: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
-  headline: { fontFamily: fonts.display, fontSize: 34, lineHeight: 34, letterSpacing: -1, color: colors.ink },
+  headline: { ...type.title, color: colors.ink },
   topBar: {
     height: 44,
     paddingHorizontal: 16,
@@ -555,7 +571,7 @@ const styles = StyleSheet.create({
   photo: { width: "100%", aspectRatio: 4 / 3, borderRadius: 16, backgroundColor: HAIRLINE },
   caveat: { fontFamily: fonts.body, fontSize: 13, color: MUTED },
   spark: { color: colors.brand, fontSize: 12 },
-  title: { ...type.title, color: colors.ink, padding: 0, maxHeight: 60 },
+  title: { ...type.itemTitle, color: colors.ink, padding: 0, maxHeight: 60 },
   pricePill: {
     alignSelf: "flex-start",
     backgroundColor: colors.tag,
@@ -653,12 +669,14 @@ const styles = StyleSheet.create({
   },
   sheetInputTall: { height: 120, paddingTop: 10, textAlignVertical: "top" },
   muted: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
-  summaryList: { gap: 10 },
-  summaryRow: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: colors.white, borderRadius: 14, padding: 8 },
-  thumb: { width: 48, height: 48, borderRadius: 8, backgroundColor: colors.line },
-  summaryTitle: { flex: 1, fontFamily: fonts.semibold, fontSize: 16, color: colors.ink },
+  subline: { ...type.row, color: MUTED, marginTop: -6 },
+  summaryContent: { paddingBottom: 12 },
+  summaryList: { backgroundColor: colors.white, borderRadius: 16, paddingHorizontal: 12 },
+  summaryRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
+  thumb: { width: 52, height: 52, borderRadius: 10, backgroundColor: HAIRLINE },
+  summaryText: { flex: 1, gap: 2 },
+  summaryTitle: { fontFamily: fonts.semibold, fontSize: 16, color: colors.ink },
+  summaryMeta: { ...type.meta, color: MUTED },
   summaryPrice: { fontFamily: fonts.display, fontSize: 18, color: colors.ink },
-  editIcon: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  editIconText: { fontSize: 18, color: colors.muted },
   error: { fontFamily: fonts.medium, fontSize: 14, color: "#B3261E", textAlign: "center" },
 });
