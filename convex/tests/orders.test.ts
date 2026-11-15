@@ -53,11 +53,36 @@ describe("orders.createPending", () => {
     expect(order).toMatchObject({ itemIds: [firstId, secondId], totalCents: 1350, status: "pending" });
   });
 
-  // Enable this regression test once PR #10 lands.
-  it.todo("cancels an older same-buyer pending order with an overlapping cart");
+  it("cancels a recent overlapping hold for the same buyer and preserves a disjoint hold", async () => {
+    const { t, buyerId, garageId, firstId, secondId } = await checkoutFixture();
+    const cart = { buyerId, garageId };
+    const { orderId: olderId } = await t.mutation(api.orders.createPending, { ...cart, itemIds: [firstId] });
+    const { orderId: disjointId } = await t.mutation(api.orders.createPending, { ...cart, itemIds: [secondId] });
+    const { orderId: newId } = await t.mutation(api.orders.createPending, { ...cart, itemIds: [firstId] });
+
+    expect(newId).not.toBe(olderId);
+    const orders = await t.run(({ db }) => Promise.all([db.get(olderId), db.get(disjointId), db.get(newId)]));
+    expect(orders.map((order) => order?.status)).toEqual(["cancelled", "pending", "pending"]);
+  });
 });
 
 describe("orders.markPaid", () => {
+  it("honors a late payment for a superseded order and reports unavailable items", async () => {
+    const { t, buyerId, garageId, firstId, secondId } = await checkoutFixture();
+    const { orderId } = await t.mutation(api.orders.createPending, { buyerId, garageId, itemIds: [firstId, secondId] });
+    await t.run(async ({ db }) => {
+      await db.patch(orderId, { status: "cancelled" });
+      await db.patch(secondId, { status: "sold" });
+    });
+
+    await expect(t.mutation(internal.orders.markPaid, { orderId }))
+      .resolves.toMatchObject({ alreadyPaid: false, unavailableItemIds: [secondId] });
+    const rows = await t.run(({ db }) => Promise.all([db.get(orderId), db.get(firstId), db.get(secondId)]));
+    expect(rows.map((row) => row?.status)).toEqual(["paid", "reserved", "sold"]);
+    await expect(t.mutation(internal.orders.markPaid, { orderId }))
+      .resolves.toMatchObject({ alreadyPaid: true, unavailableItemIds: [] });
+  });
+
   it("reserves live items, reports unavailable lines, and remains idempotent", async () => {
     const { t, buyerId, garageId, firstId, secondId } = await checkoutFixture();
     const { orderId } = await t.mutation(api.orders.createPending, { buyerId, garageId, itemIds: [firstId, secondId] });
