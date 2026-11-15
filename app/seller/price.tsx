@@ -4,6 +4,7 @@ import * as Location from "expo-location";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
+  Alert,
   ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
@@ -122,6 +123,7 @@ export default function SellerReview() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [keyboardUp, setKeyboardUp] = useState(false);
   const priceFresh = useRef(false);
+  const [history, setHistory] = useState<number[]>([]);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const user = useCurrentUser();
@@ -249,10 +251,21 @@ export default function SellerReview() {
     setEditingIndex(index);
   };
 
+  const goBack = () => {
+    Keyboard.dismiss();
+    const previous = [...history].reverse().find((index) => drafts[index].review === "approved");
+    if (previous !== undefined) return reopen(previous);
+    if (kept.length === 0) return router.dismissTo("/");
+    Alert.alert(`Discard ${kept.length} ${kept.length === 1 ? "item" : "items"}?`, undefined, [
+      { text: "Keep reviewing", style: "cancel" },
+      { text: "Discard", style: "destructive", onPress: () => router.dismissTo("/") },
+    ]);
+  };
+
   if (currentIndex === undefined) {
     return (
       <View style={styles.summaryScreen}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
+        <Pressable onPress={goBack} hitSlop={12} style={styles.back}>
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
         <Text style={styles.headline}>Ready to go</Text>
@@ -342,6 +355,7 @@ export default function SellerReview() {
     update(i, { review: "approved" });
     if (editing) setEditingIndex(null);
     else setUndo(i);
+    setHistory((prev) => [...prev.filter((index) => index !== i), i]);
   };
 
   const skip = () => {
@@ -371,6 +385,9 @@ export default function SellerReview() {
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={styles.topBar}>
+        <Pressable onPress={goBack} hitSlop={12} style={styles.back} accessibilityRole="button">
+          <Text style={styles.backText}>← Back</Text>
+        </Pressable>
         <Text style={styles.counter}>{editing ? "Edit item" : `${approved.length + 1} of ${kept.length}`}</Text>
         {editing ? (
           <Pressable onPress={approve} disabled={!canApprove} hitSlop={12} accessibilityRole="button">
@@ -591,7 +608,7 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   flex: { flex: 1 },
-  back: { alignSelf: "flex-start" },
+  back: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center" },
   backText: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
   headline: { ...type.title, color: colors.ink },
   topBar: {
