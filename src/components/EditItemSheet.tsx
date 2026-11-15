@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   saveText: primaryButtonText,
   disabled: { opacity: 0.4 },
   remove: { alignSelf: "center", minHeight: spacing.minButton, justifyContent: "center" },
-  removeText: { ...fonts.medium, fontSize: 16, color: "#D93025" },
+  removeText: { ...fonts.medium, fontSize: 16, color: colors.destructive },
   scrim: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)" },
   picker: { backgroundColor: colors.cream, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: spacing.sidePad, paddingBottom: 34, gap: 4 },
   pickerTitle: { ...fonts.semibold, fontSize: 20, color: colors.ink, marginBottom: 8 },
