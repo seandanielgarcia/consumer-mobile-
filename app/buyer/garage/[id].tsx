@@ -22,7 +22,7 @@ export default function BuyerGarage() {
     const timer = setInterval(() => setNow(Math.floor(Date.now() / 30000) * 30000), 30000);
     return () => clearInterval(timer);
   }, []);
-  const garage = useQuery(api.buyer.garage, location ? { garageId, lat: location.lat, lng: location.lng, buyerId, now } : "skip");
+  const garage = useQuery(api.buyer.garage, { garageId, lat: location.lat, lng: location.lng, buyerId, now });
   const [picked, setPicked] = useState<Id<"items">[]>(selected ? [selected as Id<"items">] : []);
   const [notice, setNotice] = useState<string | null>(null);
   const titles = useRef(new Map<string, string>());
