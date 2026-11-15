@@ -46,12 +46,12 @@ export async function signOut() {
   emit();
 }
 
-export function requireUser(): Promise<Id<"users">> {
+export function requireUser(reason = "Sign in to continue"): Promise<Id<"users">> {
   if (current) return Promise.resolve(current.userId);
   waiting?.reject(new SignInCancelled());
   return new Promise((resolve, reject) => {
     waiting = { resolve, reject };
-    router.push("/signin");
+    router.push({ pathname: "/signin", params: { reason } });
   });
 }
 
