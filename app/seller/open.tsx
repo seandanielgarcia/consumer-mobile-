@@ -38,7 +38,7 @@ export default function SellerOpen() {
               <ChatIcon size={20} color={colors.ink} />
             </View>
             <Text style={styles.keikiTitle} numberOfLines={1}>
-              More later? Text Keiki a pic + price
+              Add more later: text Keiki
             </Text>
           </View>
           <Pressable
