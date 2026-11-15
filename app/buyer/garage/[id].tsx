@@ -6,7 +6,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensio
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { startCheckout } from "../../../src/buyer/checkout";
-import { formatPrice } from "../../../src/buyer/format";
+import { formatPrice, itemLabel } from "../../../src/buyer/format";
 import { useBuyerLocation } from "../../../src/buyer/location";
 import { colors, fonts } from "../../../src/theme";
 
@@ -139,7 +139,7 @@ export default function BuyerGarage() {
                   </View>
                 </View>
                 <Text numberOfLines={1} style={{ fontFamily: fonts.semibold, fontSize: 15, color: colors.ink }}>
-                  {item.title}, {item.size}
+                  {itemLabel(item)}
                 </Text>
               </Pressable>
             );

@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
-import { formatPrice } from "../../src/buyer/format";
+import { formatPrice, itemLabel } from "../../src/buyer/format";
 import { useBuyerLocation } from "../../src/buyer/location";
 import { colors, fonts } from "../../src/theme";
 
@@ -43,11 +43,11 @@ export default function BuyerNearYou() {
 
   const results = useQuery(api.buyer.search, location ? { q, lat: location.lat, lng: location.lng } : "skip");
   const sizes = useMemo(
-    () => [...new Set((results ?? []).map((r) => r.size))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+    () => [...new Set((results ?? []).flatMap((r) => (r.size ? [r.size] : [])))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
     [results],
   );
   const shown = useMemo(() => {
-    const list = (results ?? []).filter((r) => (!size || r.size === size) && (!under30 || r.priceCents < 3000));
+    const list = (results ?? []).filter((r) => (!size || !r.size || r.size === size) && (!under30 || r.priceCents < 3000));
     return closest ? [...list].sort((a, b) => a.distanceMi - b.distanceMi) : list;
   }, [results, size, under30, closest]);
 
@@ -118,7 +118,7 @@ export default function BuyerNearYou() {
                 </View>
               </View>
               <Text numberOfLines={1} style={{ fontFamily: fonts.semibold, fontSize: 15, color: colors.ink }}>
-                {item.title}, {item.size}
+                {itemLabel(item)}
               </Text>
               {/* TODO(SEA-3 C): second half of the badge, distance ("· 1 mi") vs neighborhood ("· Hayes Valley"). */}
               <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted }}>
