@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import { CHIP_LABELS, chipFields, chipLabel, ItemEditFields, type ChipField } from "../../src/components/ItemEditFields";
 import { getPickedPhotos } from "../../src/lib/pickedPhotos";
 import { requireUser, SignInCancelled } from "../../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../../src/theme";
@@ -25,21 +26,6 @@ type Draft = {
   priceCents: number;
   aiGenerated: boolean;
 };
-
-type ChipField = "size" | "brand" | "condition" | "color";
-
-const CHIP_LABELS: Record<ChipField, string> = { size: "Size", brand: "Brand", condition: "Condition", color: "Color" };
-
-const chipFields = (d: Draft): ChipField[] =>
-  sizeRelevant(d) ? ["size", "brand", "condition", "color"] : ["brand", "condition", "color"];
-
-const chipLabel = (d: Draft, field: ChipField) => {
-  const value = d[field].trim();
-  if (!value) return `+ ${CHIP_LABELS[field].toLowerCase()}`;
-  return field === "size" ? `Size ${value}` : value;
-};
-
-const sizeRelevant = (d: Draft) => d.size.trim() !== "" || /cloth|shoe|apparel|wear/i.test(d.category);
 
 export const LOCATION_NEEDED = "Location is needed so buyers nearby can find your garage.";
 
@@ -299,37 +285,7 @@ export default function SellerReview() {
         ) : failed ? (
           <Text style={styles.title}>Couldn't upload this one</Text>
         ) : editing ? (
-          <View style={styles.fields}>
-            <TextInput
-              value={d.title}
-              onChangeText={(title) => update(i, { title })}
-              placeholder="Title"
-              placeholderTextColor={colors.muted}
-              style={styles.fieldInput}
-              autoFocus
-            />
-            <View style={styles.chips}>
-              {chipFields(d).map((field) => (
-                <TextInput
-                  key={field}
-                  value={d[field]}
-                  onChangeText={(value) => update(i, { [field]: value })}
-                  placeholder={CHIP_LABELS[field]}
-                  placeholderTextColor={colors.muted}
-                  style={[styles.chip, styles.chipInput]}
-                />
-              ))}
-            </View>
-            <TextInput
-              value={d.description}
-              onChangeText={(description) => update(i, { description })}
-              placeholder="Description"
-              placeholderTextColor={colors.muted}
-              multiline
-              numberOfLines={3}
-              style={[styles.fieldInput, styles.descriptionInput]}
-            />
-          </View>
+          <ItemEditFields value={d} onChange={(patch) => update(i, patch)} />
         ) : (
           <View style={styles.fields}>
             <Text style={styles.title} numberOfLines={1}>
@@ -435,22 +391,10 @@ const styles = StyleSheet.create({
     fontSize: 30,
     color: colors.ink,
   },
-  descriptionInput: { height: 76, paddingTop: 10, textAlignVertical: "top" },
   skeleton: { gap: 10 },
   skeletonBar: { height: 28, borderRadius: 8, backgroundColor: colors.line },
   fields: { gap: 10 },
   title: { fontFamily: fonts.display, fontSize: 26, color: colors.ink },
-  fieldInput: {
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: colors.ink,
-    backgroundColor: colors.white,
-    paddingHorizontal: 12,
-    fontFamily: fonts.body,
-    fontSize: 16,
-    color: colors.ink,
-  },
   chips: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
   chip: { height: 34, paddingHorizontal: 14, borderRadius: 999, backgroundColor: colors.white, justifyContent: "center" },
   chipEmpty: { backgroundColor: "transparent", borderWidth: 1, borderStyle: "dashed", borderColor: colors.muted },
