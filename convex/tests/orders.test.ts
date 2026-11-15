@@ -53,16 +53,7 @@ describe("orders.createPending", () => {
     expect(order).toMatchObject({ itemIds: [firstId, secondId], totalCents: 1350, status: "pending" });
   });
 
-  it("currently leaves both same-buyer overlapping orders pending", async () => {
-    const { t, buyerId, garageId, firstId, secondId } = await checkoutFixture();
-    const { orderId: olderId } = await t.mutation(api.orders.createPending, { buyerId, garageId, itemIds: [firstId] });
-    const { orderId: newerId } = await t.mutation(api.orders.createPending, { buyerId, garageId, itemIds: [firstId, secondId] });
-    expect(newerId).not.toBe(olderId);
-    const orders = await t.run(({ db }) => Promise.all([db.get(olderId), db.get(newerId)]));
-    expect(orders.map((order) => order?.status)).toEqual(["pending", "pending"]);
-  });
-
-  // PR #10 implements cancellation; capy/integration still leaves the older order pending.
+  // Enable this regression test once PR #10 lands.
   it.todo("cancels an older same-buyer pending order with an overlapping cart");
 });
 

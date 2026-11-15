@@ -48,7 +48,7 @@ async function smoke() {
   const client = deployedClient();
   const suffixes = new Set();
   while (suffixes.size < 2) suffixes.add(String(randomInt(10_000)).padStart(4, "0"));
-  const [sellerPhone, buyerPhone] = [...suffixes].map((suffix) => `+1555888${suffix}`);
+  const [sellerPhone, buyerPhone] = [...suffixes].map((suffix) => `+1555977${suffix}`);
 
   const [sellerId, buyerId] = await Promise.all([
     client.mutation(api.users.getOrCreateByPhone, { name: "Smoke Seller", phone: sellerPhone }),

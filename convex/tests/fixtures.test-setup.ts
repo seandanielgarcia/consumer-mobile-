@@ -8,10 +8,10 @@ const modules = import.meta.glob("../**/*.ts");
 export async function checkoutFixture() {
   const t = convexTest(schema, modules);
   const ids = await t.run(async ({ db }) => {
-    const sellerPhone = "+15558880001";
+    const sellerPhone = "+15559770001";
     const sellerId = await db.insert("users", { name: "Maya Rivera", phone: sellerPhone, avatarColor: "#2340FF" });
-    const buyerId = await db.insert("users", { name: "Jo", phone: "+15558880002", avatarColor: "#2340FF" });
-    const otherBuyerId = await db.insert("users", { name: "Sam", phone: "+15558880003", avatarColor: "#2340FF" });
+    const buyerId = await db.insert("users", { name: "Jo", phone: "+15559770002", avatarColor: "#2340FF" });
+    const otherBuyerId = await db.insert("users", { name: "Sam", phone: "+15559770003", avatarColor: "#2340FF" });
     const yard = { ownerId: sellerId, neighborhood: "Mission", approxLat: 37.76, approxLng: -122.42, isOpen: true };
     const garageId = await db.insert("garages", yard);
     const otherGarageId = await db.insert("garages", { ...yard, ownerId: otherBuyerId });
