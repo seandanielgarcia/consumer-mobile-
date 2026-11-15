@@ -187,7 +187,7 @@ export default function SellerReview() {
       });
       router.replace({
         pathname: "/seller/open",
-        params: { garageId, picked: itemIds.slice(0, 3).join(","), first: firstOpen ? "1" : "0" },
+        params: { garageId, picked: itemIds.join(","), first: firstOpen ? "1" : "0" },
       });
     } catch (e) {
       setError("Couldn't open your garage. Try again.");
