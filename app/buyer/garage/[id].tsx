@@ -1,6 +1,6 @@
 import { useQuery } from "convex/react";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -26,7 +26,12 @@ export default function BuyerGarage() {
   const [picked, setPicked] = useState<Id<"items">[]>(selected ? (selected.split(",") as Id<"items">[]) : []);
   const [notice, setNotice] = useState<string | null>(returnNotice ?? null);
   const titles = useRef(new Map<string, string>());
-  const { buy: buyItems, buying, error, checkingOut } = useBuy(garageId);
+  const removeUnavailable = useCallback((itemIds: Id<"items">[]) => {
+    setPicked((current) => current.filter((id) => !itemIds.includes(id)));
+    const names = itemIds.map((id) => titles.current.get(id) ?? "An item");
+    setNotice(names.map((name) => `${name} just got picked up by someone else, so we took it out of your picks.`).join(" "));
+  }, []);
+  const { buy: buyItems, buying, error, checkingOut } = useBuy(garageId, (itemId) => removeUnavailable([itemId]));
   const buy = () => buyItems(pickedItems.map((i) => i._id));
   const { width } = useWindowDimensions();
   const cardWidth = (width - 32 - 12) / 2;
@@ -36,11 +41,8 @@ export default function BuyerGarage() {
     garage.items.forEach((i) => titles.current.set(i._id, i.title));
     const live = new Set<string>(garage.items.map((i) => i._id));
     const gone = picked.filter((p) => !live.has(p));
-    if (gone.length === 0 || checkingOut.current) return;
-    setPicked(picked.filter((p) => live.has(p)));
-    const names = gone.map((g) => titles.current.get(g) ?? "An item");
-    setNotice(`${names.join(" and ")} just sold, so we removed ${gone.length > 1 ? "them" : "it"}.`);
-  }, [garage, picked]);
+    if (gone.length > 0 && !checkingOut.current) removeUnavailable(gone);
+  }, [garage, picked, buying, checkingOut, removeUnavailable]);
 
   const pickedItems = garage?.items.filter((i) => picked.includes(i._id)) ?? [];
   const total = pickedItems.reduce((sum, i) => sum + i.priceCents, 0);

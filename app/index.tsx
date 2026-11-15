@@ -77,7 +77,7 @@ function Landing({ user }: { user: { userId: Doc<"users">["_id"]; name?: string 
     <View style={styles.screen}>
       <View style={styles.block}>
         <Pressable onPress={() => router.dismissTo("/")} accessibilityRole="link" accessibilityLabel="Home">
-          <Text style={styles.wordmark}>yard sale</Text>
+          <Text style={styles.wordmark}>yardsale</Text>
         </Pressable>
         <Text style={styles.tagline} numberOfLines={1} adjustsFontSizeToFit>
           Share a photo and set a price, we'll take care of the rest
@@ -212,7 +212,7 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
     <View style={styles.yard}>
       <View style={styles.yardHeader}>
         <Pressable onPress={() => router.dismissTo("/")} accessibilityRole="link" accessibilityLabel="Home">
-          <Text style={styles.yardWordmark}>yard sale</Text>
+          <Text style={styles.yardWordmark}>yardsale</Text>
         </Pressable>
         <View style={styles.session}>
           <Text style={styles.yardSessionText}>{user.name ? `Hi ${user.name}` : "Signed in"} · </Text>
