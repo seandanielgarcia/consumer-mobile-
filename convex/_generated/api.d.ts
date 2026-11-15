@@ -8,7 +8,10 @@
  * @module
  */
 
+<<<<<<< HEAD
 import type * as ai from "../ai.js";
+=======
+>>>>>>> origin/capy/buyer-flow
 import type * as buyer from "../buyer.js";
 import type * as garages from "../garages.js";
 import type * as http from "../http.js";
@@ -19,8 +22,11 @@ import type * as lib_location from "../lib/location.js";
 import type * as notify from "../notify.js";
 import type * as orders from "../orders.js";
 import type * as seed from "../seed.js";
+<<<<<<< HEAD
 import type * as users from "../users.js";
 import type * as whop from "../whop.js";
+=======
+>>>>>>> origin/capy/buyer-flow
 
 import type {
   ApiFromModules,
@@ -29,7 +35,10 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+<<<<<<< HEAD
   ai: typeof ai;
+=======
+>>>>>>> origin/capy/buyer-flow
   buyer: typeof buyer;
   garages: typeof garages;
   http: typeof http;
@@ -40,8 +49,11 @@ declare const fullApi: ApiFromModules<{
   notify: typeof notify;
   orders: typeof orders;
   seed: typeof seed;
+<<<<<<< HEAD
   users: typeof users;
   whop: typeof whop;
+=======
+>>>>>>> origin/capy/buyer-flow
 }>;
 
 /**
