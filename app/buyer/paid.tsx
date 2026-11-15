@@ -20,7 +20,13 @@ export default function BuyerPaid() {
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
       <ScrollView contentContainerStyle={{ paddingTop: 58, paddingHorizontal: 20, paddingBottom: 20, gap: 20 }}>
         <Text style={{ fontFamily: fonts.display, fontSize: 44, letterSpacing: -1.5, color: colors.ink }}>
-          {!order ? "Order not found" : paid ? `Paid ${formatPrice(order.totalCents)}` : `Paying ${formatPrice(order.totalCents)}…`}
+          {!order
+            ? "Order not found"
+            : paid
+              ? `Paid ${formatPrice(order.totalCents)}`
+              : order.status === "cancelled"
+                ? "Order cancelled"
+                : `Paying ${formatPrice(order.totalCents)}…`}
         </Text>
         {order?.items.map((item) => (
           <View key={item._id} style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: colors.white, borderRadius: 18, padding: 10 }}>
@@ -35,9 +41,6 @@ export default function BuyerPaid() {
           <Text style={{ fontFamily: fonts.body, fontSize: 17, lineHeight: 24, color: colors.ink }}>
             {order.sellerName} got a text. They'll message you to meet up.
           </Text>
-        )}
-        {order?.status === "cancelled" && (
-          <Text style={{ fontFamily: fonts.body, fontSize: 17, lineHeight: 24, color: colors.ink }}>This order was cancelled.</Text>
         )}
       </ScrollView>
       <View style={{ paddingHorizontal: 20, paddingBottom: 34 }}>

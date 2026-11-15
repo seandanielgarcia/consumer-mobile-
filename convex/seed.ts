@@ -82,6 +82,7 @@ export const run = internalMutation({
         .query("items")
         .withIndex("by_garage", (q) => q.eq("garageId", garageId))
         .collect();
+      existing.forEach((e) => e.storageId && used.add(e.storageId));
       for (const { photo, ...item } of g.items) {
         if (existing.some((e) => e.title === item.title)) continue;
         const storageId = photos[photo];

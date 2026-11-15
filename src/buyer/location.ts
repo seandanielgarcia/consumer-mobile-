@@ -13,7 +13,7 @@ async function locate(): Promise<BuyerLocation> {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") return SF_FALLBACK;
     const pos =
-      (await Location.getLastKnownPositionAsync()) ??
+      (await Location.getLastKnownPositionAsync({ maxAge: 5 * 60 * 1000, requiredAccuracy: 3000 })) ??
       (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low }));
     const lat = round(pos.coords.latitude);
     const lng = round(pos.coords.longitude);
@@ -27,7 +27,7 @@ async function locate(): Promise<BuyerLocation> {
 export function useBuyerLocation() {
   const [location, setLocation] = useState<BuyerLocation | null>(null);
   useEffect(() => {
-    cached ??= locate();
+    cached ??= Promise.race([locate(), new Promise<BuyerLocation>((resolve) => setTimeout(() => resolve(SF_FALLBACK), 8000))]);
     cached.then(setLocation);
   }, []);
   return location;
