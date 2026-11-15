@@ -12,8 +12,15 @@ function roughMiles(lat: number, lng: number, garage: Doc<"garages">) {
 }
 
 export const search = query({
-  args: { q: v.string(), lat: v.number(), lng: v.number(), radiusMiles: v.number() },
-  handler: async (ctx, { q, lat, lng, radiusMiles }) => {
+  args: {
+    q: v.string(),
+    lat: v.number(),
+    lng: v.number(),
+    radiusMiles: v.number(),
+    buyerId: v.optional(v.id("users")),
+    now: v.optional(v.number()),
+  },
+  handler: async (ctx, { q, lat, lng, radiusMiles, buyerId, now }) => {
     const radius = Math.min(Math.max(radiusMiles, 0), MAX_RADIUS_MILES);
     const term = q.trim();
     let items: Doc<"items">[];
@@ -40,6 +47,7 @@ export const search = query({
 
     const garages = new Map<Id<"garages">, Doc<"garages"> | null>();
     const owners = new Map<Id<"users">, Doc<"users"> | null>();
+    const held = new Map<Id<"garages">, Set<Id<"items">>>();
     const results = [];
     for (const item of items) {
       if (item.status !== "live") continue;
@@ -48,6 +56,8 @@ export const search = query({
       if (!garage) continue;
       const distanceMi = roughMiles(lat, lng, garage);
       if (distanceMi > radius) continue;
+      if (!held.has(garage._id)) held.set(garage._id, await heldItemIds(ctx, garage._id, buyerId, now));
+      if (held.get(garage._id)!.has(item._id)) continue;
       if (!owners.has(garage.ownerId)) owners.set(garage.ownerId, await ctx.db.get(garage.ownerId));
       results.push({
         _id: item._id,
