@@ -3,7 +3,7 @@ import { query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { haversineMiles, roundCoord } from "./lib/location";
 
-const RADIUS_MILES = 2;
+const MAX_RADIUS_MILES = 10;
 
 function roughMiles(lat: number, lng: number, garage: Doc<"garages">) {
   const miles = haversineMiles(roundCoord(lat), roundCoord(lng), garage.approxLat, garage.approxLng);
@@ -11,8 +11,9 @@ function roughMiles(lat: number, lng: number, garage: Doc<"garages">) {
 }
 
 export const search = query({
-  args: { q: v.string(), lat: v.number(), lng: v.number() },
-  handler: async (ctx, { q, lat, lng }) => {
+  args: { q: v.string(), lat: v.number(), lng: v.number(), radiusMiles: v.number() },
+  handler: async (ctx, { q, lat, lng, radiusMiles }) => {
+    const radius = Math.min(Math.max(radiusMiles, 0), MAX_RADIUS_MILES);
     const term = q.trim();
     let items: Doc<"items">[];
     if (term) {
@@ -45,7 +46,7 @@ export const search = query({
       const garage = garages.get(item.garageId);
       if (!garage) continue;
       const distanceMi = roughMiles(lat, lng, garage);
-      if (distanceMi > RADIUS_MILES) continue;
+      if (distanceMi > radius) continue;
       if (!owners.has(garage.ownerId)) owners.set(garage.ownerId, await ctx.db.get(garage.ownerId));
       results.push({
         _id: item._id,
