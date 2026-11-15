@@ -1,16 +1,28 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery } from "convex/react";
 import * as Linking from "expo-linking";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  InputAccessoryView,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { api } from "../convex/_generated/api";
 import type { Id } from "../convex/_generated/dataModel";
 import { cancelSignIn, setCurrentUser } from "../src/lib/useCurrentUser";
-import { colors, fonts, spacing } from "../src/theme";
+import { colors, fonts, primaryButton, primaryButtonText, spacing, type } from "../src/theme";
 
 const KEIKI_NUMBER = "+17796251378";
 const KEIKI_NUMBER_DISPLAY = "+1 779-625-1378";
+const PHONE_ACCESSORY = "phone-done";
 const PENDING_KEY = "garage-sale/pending-verification";
 
 type Pending = { userId: Id<"users">; code: string; phone: string; name: string; startedAt: number };
@@ -25,6 +37,7 @@ const normalizePhone = (input: string) => {
 };
 
 export default function SignIn() {
+  const { reason } = useLocalSearchParams<{ reason?: string }>();
   const startVerification = useMutation(api.users.startVerification);
   const devSkip = useMutation(api.users.devSkipVerification);
   const [name, setName] = useState("");
@@ -75,8 +88,8 @@ export default function SignIn() {
     try {
       const firstName = name.trim();
       const result = await startVerification({ phone: normalized, name: firstName });
-      if (result.verified) finish(result.userId, firstName);
-      else setPending({ userId: result.userId, code: result.code ?? "", phone: phone.trim(), name: firstName, startedAt: Date.now() });
+      if (result.verified) finish(result.userId, result.name);
+      else setPending({ userId: result.userId, code: result.code ?? "", phone: phone.trim(), name: result.name, startedAt: Date.now() });
     } catch {
       setError("Couldn't save that. Try again.");
     }
@@ -99,8 +112,17 @@ export default function SignIn() {
   };
 
   return (
-    <KeyboardAvoidingView behavior="padding" style={styles.screen}>
-      <Pressable onPress={() => (pending ? setPending(null) : router.back())} hitSlop={12} style={styles.back}>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.screen}>
+      {Platform.OS === "ios" && (
+        <InputAccessoryView nativeID={PHONE_ACCESSORY}>
+          <View style={styles.accessory}>
+            <Pressable onPress={Keyboard.dismiss} hitSlop={10}>
+              <Text style={styles.accessoryDone}>Done</Text>
+            </Pressable>
+          </View>
+        </InputAccessoryView>
+      )}
+      <Pressable onPress={() => (pending ? setPending(null) : router.canGoBack() ? router.back() : router.replace("/"))} hitSlop={12} style={styles.back}>
         <Text style={styles.backText}>{pending ? "← Back" : "Cancel"}</Text>
       </Pressable>
       {pending ? (
@@ -120,33 +142,39 @@ export default function SignIn() {
         </>
       ) : (
         <>
+          <Text style={styles.headline}>{reason ?? "Sign in to continue"}</Text>
           <View style={styles.fields}>
-            <Text style={styles.fieldLabel}>{"What's your first name?"}</Text>
+            <Text style={styles.fieldLabel}>First name</Text>
             <TextInput
               value={name}
               onChangeText={setName}
-              placeholder="First name"
+              placeholder="Hailey"
               placeholderTextColor={colors.muted}
               autoCapitalize="words"
               autoComplete="given-name"
               textContentType="givenName"
+              returnKeyType="next"
               style={styles.input}
               autoFocus
             />
-            <Text style={styles.subhead}>Buyers see your first name only.</Text>
           </View>
           <View style={styles.fields}>
-            <Text style={styles.fieldLabel}>Your phone number</Text>
+            <Text style={styles.fieldLabel}>Phone number</Text>
             <TextInput
               value={phone}
-              onChangeText={setPhone}
-              placeholder="Phone number"
+              onChangeText={(text) => {
+                setPhone(text);
+                if (text.replace(/\D/g, "").length === 10) Keyboard.dismiss();
+              }}
+              inputAccessoryViewID={PHONE_ACCESSORY}
+              placeholder="(555) 555-0123"
               placeholderTextColor={colors.muted}
               keyboardType="phone-pad"
               autoComplete="tel"
               textContentType="telephoneNumber"
               style={styles.input}
             />
+            <Text style={styles.subhead}>Buyers see your first name only.</Text>
           </View>
         </>
       )}
@@ -186,9 +214,10 @@ const styles = StyleSheet.create({
     paddingBottom: 34,
     gap: 16,
   },
-  back: { alignSelf: "flex-start" },
+  back: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center" },
   backText: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
-  fieldLabel: { fontFamily: fonts.display, fontSize: 24, color: colors.ink },
+  headline: { ...type.title, color: colors.ink },
+  fieldLabel: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
   subhead: { fontFamily: fonts.body, fontSize: 14, lineHeight: 18, color: colors.muted },
   fields: { gap: 10 },
   input: {
@@ -219,15 +248,18 @@ const styles = StyleSheet.create({
   waitingText: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
   error: { fontFamily: fonts.medium, fontSize: 14, color: "#B3261E" },
   spacer: { flex: 1 },
+  accessory: {
+    backgroundColor: "#F2F2F2",
+    borderTopWidth: 1,
+    borderTopColor: colors.hairline,
+    alignItems: "flex-end",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  accessoryDone: { fontFamily: fonts.semibold, fontSize: 16, color: colors.brand },
   skip: { alignSelf: "center", minHeight: 44, justifyContent: "center" },
   skipText: { fontFamily: fonts.semibold, fontSize: 15, color: colors.muted, textDecorationLine: "underline" },
-  cta: {
-    height: spacing.cta,
-    borderRadius: 30,
-    backgroundColor: colors.brand,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  cta: primaryButton,
   ctaDisabled: { opacity: 0.5 },
-  ctaText: { fontFamily: fonts.semibold, fontSize: 18, color: colors.cream },
+  ctaText: primaryButtonText,
 });

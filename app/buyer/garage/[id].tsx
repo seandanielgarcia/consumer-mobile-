@@ -1,15 +1,16 @@
 import { useQuery } from "convex/react";
-import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useBuy } from "../../../src/buyer/useBuy";
-import { formatPrice, itemLabel } from "../../../src/buyer/format";
+import { formatPrice } from "../../../src/buyer/format";
+import { ItemCard } from "../../../src/buyer/ItemCard";
+import { PrimaryButton } from "../../../src/components/PrimaryButton";
 import { useBuyerLocation } from "../../../src/buyer/location";
 import { useCurrentUser } from "../../../src/lib/useCurrentUser";
-import { colors, fonts } from "../../../src/theme";
+import { colors, fonts, typeSize } from "../../../src/theme";
 
 export default function BuyerGarage() {
   const { id, selected } = useLocalSearchParams<{ id: string; selected?: string }>();
@@ -21,14 +22,14 @@ export default function BuyerGarage() {
     const timer = setInterval(() => setNow(Math.floor(Date.now() / 30000) * 30000), 30000);
     return () => clearInterval(timer);
   }, []);
-  const garage = useQuery(api.buyer.garage, location ? { garageId, lat: location.lat, lng: location.lng, buyerId, now } : "skip");
+  const garage = useQuery(api.buyer.garage, { garageId, lat: location.lat, lng: location.lng, buyerId, now });
   const [picked, setPicked] = useState<Id<"items">[]>(selected ? [selected as Id<"items">] : []);
   const [notice, setNotice] = useState<string | null>(null);
   const titles = useRef(new Map<string, string>());
   const { buy: buyItems, buying, error, checkingOut } = useBuy(garageId);
   const buy = () => buyItems(pickedItems.map((i) => i._id));
   const { width } = useWindowDimensions();
-  const cardWidth = (width - 40 - 14) / 2;
+  const cardWidth = (width - 32 - 12) / 2;
 
   useEffect(() => {
     if (!garage) return;
@@ -38,7 +39,7 @@ export default function BuyerGarage() {
     if (gone.length === 0 || checkingOut.current) return;
     setPicked(picked.filter((p) => live.has(p)));
     const names = gone.map((g) => titles.current.get(g) ?? "An item");
-    setNotice(`${names.join(" and ")} just got picked up by someone else, so we took ${gone.length > 1 ? "them" : "it"} out of your picks.`);
+    setNotice(`${names.join(" and ")} just sold, so we removed ${gone.length > 1 ? "them" : "it"}.`);
   }, [garage, picked]);
 
   const pickedItems = garage?.items.filter((i) => picked.includes(i._id)) ?? [];
@@ -52,8 +53,11 @@ export default function BuyerGarage() {
 
   if (garage === null) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.cream, justifyContent: "center", alignItems: "center", padding: 20 }}>
-        <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted }}>This yard is gone.</Text>
+      <View style={{ flex: 1, backgroundColor: colors.cream, justifyContent: "center", alignItems: "center", padding: 20, gap: 16 }}>
+        <Text style={{ fontFamily: fonts.body, fontSize: typeSize.row, color: colors.muted }}>This yard is gone.</Text>
+        <Pressable onPress={() => router.dismissTo("/buyer")} hitSlop={12} style={{ minHeight: 44, justifyContent: "center" }}>
+          <Text style={{ fontFamily: fonts.semibold, fontSize: typeSize.row, color: colors.brand }}>Back to browsing</Text>
+        </Pressable>
       </View>
     );
   }
@@ -62,7 +66,7 @@ export default function BuyerGarage() {
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
       <View style={{ backgroundColor: colors.brand, paddingTop: 56, paddingHorizontal: 20, paddingBottom: 22, gap: 14 }}>
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/buyer"))} hitSlop={12} style={{ alignSelf: "flex-start", minHeight: 24 }}>
-          <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.cream }}>← Nearby</Text>
+          <Text style={{ fontFamily: fonts.body, fontSize: typeSize.row, color: colors.cream }}>← Nearby</Text>
         </Pressable>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.tag, alignItems: "center", justifyContent: "center" }}>
@@ -88,75 +92,23 @@ export default function BuyerGarage() {
       {garage === undefined ? (
         <ActivityIndicator color={colors.ink} style={{ marginTop: 40 }} />
       ) : (
-        <ScrollView contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", columnGap: 14, rowGap: 18, padding: 20 }}>
+        <ScrollView contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16, padding: 16 }}>
           {garage.items.length === 0 && (
-            <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted }}>Everything here is spoken for.</Text>
+            <Text style={{ fontFamily: fonts.body, fontSize: typeSize.row, color: colors.muted }}>Everything here is spoken for.</Text>
           )}
-          {garage.items.map((item, index) => {
-            const on = picked.includes(item._id);
-            return (
-              <Pressable
-                key={item._id}
-                onPress={() => toggle(item._id)}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: on }}
-                style={{
-                  width: cardWidth,
-                  backgroundColor: colors.white,
-                  padding: 8,
-                  paddingBottom: 12,
-                  gap: 8,
-                  transform: [{ rotate: index % 2 === 0 ? "-2deg" : "2deg" }],
-                  shadowColor: "#E2D6BF",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 1,
-                  shadowRadius: 0,
-                }}
-              >
-                <View style={{ height: 150, backgroundColor: colors.line }}>
-                  <Image source={{ uri: item.photoUrl }} style={{ flex: 1 }} contentFit="cover" transition={150} />
-                  <View style={{ position: "absolute", top: 8, left: 8, backgroundColor: colors.tag, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 6 }}>
-                    <Text style={{ fontFamily: fonts.display, fontSize: 17, color: colors.ink }}>{formatPrice(item.priceCents)}</Text>
-                  </View>
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      width: 28,
-                      height: 28,
-                      borderRadius: 14,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: on ? colors.ink : "rgba(0,0,0,0.15)",
-                      borderWidth: on ? 0 : 2,
-                      borderColor: colors.white,
-                    }}
-                  >
-                    {on && <Text style={{ color: colors.cream, fontSize: 15 }}>✓</Text>}
-                  </View>
-                </View>
-                <Text numberOfLines={1} style={{ fontFamily: fonts.semibold, fontSize: 15, color: colors.ink }}>
-                  {itemLabel(item)}
-                </Text>
-              </Pressable>
-            );
-          })}
+          {garage.items.map((item) => (
+            <ItemCard key={item._id} item={item} width={cardWidth} selected={picked.includes(item._id)} onPress={() => toggle(item._id)} />
+          ))}
         </ScrollView>
       )}
 
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingTop: 14, paddingHorizontal: 20, paddingBottom: 34, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: "#E2D6BF" }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: fonts.body, fontSize: 14, color: colors.muted }}>{pickedItems.length} picked</Text>
-          <Text style={{ fontFamily: fonts.display, fontSize: 26, color: colors.ink }}>{formatPrice(total)}</Text>
-        </View>
-        <Pressable
+      <View style={{ paddingTop: 12, paddingHorizontal: 16, paddingBottom: 34, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.hairline }}>
+        <PrimaryButton
+          label={pickedItems.length ? `Buy ${pickedItems.length} · ${formatPrice(total)}` : "Tap items to pick"}
           onPress={buy}
-          disabled={pickedItems.length === 0 || buying}
-          style={{ height: 56, paddingHorizontal: 32, borderRadius: 28, backgroundColor: colors.brand, justifyContent: "center", opacity: pickedItems.length === 0 ? 0.4 : 1 }}
-        >
-          {buying ? <ActivityIndicator color={colors.cream} /> : <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: colors.cream }}>Buy</Text>}
-        </Pressable>
+          disabled={pickedItems.length === 0}
+          loading={buying}
+        />
       </View>
     </View>
   );

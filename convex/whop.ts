@@ -39,7 +39,7 @@ export const createOrderCheckout = action({
     const { totalCents, buyerFirstName } = await ctx.runQuery(internal.whop.pendingOrder, { orderId });
     const checkout = await whopClient().checkoutConfigurations.create({
       variant: {
-        title: "yard sale order",
+        title: "yardsale order",
         billing_type: "one_time",
         initial_price: totalCents / 100,
         currency: "usd",

@@ -83,7 +83,15 @@ export const getOrder = query({
       sellerName: seller?.name?.split(" ")[0] ?? "The seller",
       items: items
         .filter((i) => i !== null)
-        .map((i) => ({ _id: i._id, title: i.title, size: i.size, priceCents: i.priceCents, photoUrl: i.photoUrl })),
+        .map((i) => ({
+          _id: i._id,
+          title: i.title,
+          size: i.size,
+          condition: i.condition,
+          brand: i.brand,
+          priceCents: i.priceCents,
+          photoUrl: i.photoUrl,
+        })),
     };
   },
 });

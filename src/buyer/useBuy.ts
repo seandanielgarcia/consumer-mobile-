@@ -15,7 +15,7 @@ export function useBuy(garageId: Id<"garages">) {
     setError(null);
     let buyer: Id<"users">;
     try {
-      buyer = await requireUser();
+      buyer = await requireUser("Sign in to buy");
     } catch (e) {
       if (!(e instanceof SignInCancelled)) setError("Couldn't sign you in. Try again.");
       return;
@@ -28,6 +28,7 @@ export function useBuy(garageId: Id<"garages">) {
         router.replace({ pathname: "/buyer/paid", params: { orderId } });
         return;
       }
+      setError("Payment didn't go through. Your items are held for 10 min.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Checkout failed.");
     }

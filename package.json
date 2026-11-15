@@ -36,7 +36,9 @@
   "scripts": {
     "start": "expo start",
     "ios": "expo start --ios",
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p .",
+    "typecheck:convex": "convex typecheck"
   },
   "private": true
 }
