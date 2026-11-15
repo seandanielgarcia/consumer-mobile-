@@ -192,7 +192,7 @@ export default function SellerReview() {
         params: { garageId, picked: itemIds.join(","), first: firstOpen ? "1" : "0" },
       });
     } catch (e) {
-      setError("Couldn't open your garage. Try again.");
+      setError("Couldn't open your yard. Try again.");
       setOpening(false);
     }
   };
@@ -236,7 +236,7 @@ export default function SellerReview() {
           {opening ? (
             <ActivityIndicator color={colors.cream} />
           ) : (
-            <Text style={styles.ctaText}>Open my garage ({approved.length} {approved.length === 1 ? "item" : "items"})</Text>
+            <Text style={styles.ctaText}>Open my yard ({approved.length} {approved.length === 1 ? "item" : "items"})</Text>
           )}
         </Pressable>
       </View>

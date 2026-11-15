@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Garage Sale",
+    "name": "yard sale",
     "slug": "garage-sale",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,7 +12,7 @@
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Pick photos of clothes to sell.",
         "NSCameraUsageDescription": "Take photos of clothes to sell.",
-        "NSLocationWhenInUseUsageDescription": "Show garage sales near you."
+        "NSLocationWhenInUseUsageDescription": "Show yard sales near you."
       }
     },
     "plugins": [
