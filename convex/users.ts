@@ -4,11 +4,13 @@ import { mutation, query } from "./_generated/server";
 const AVATAR_COLORS = ["#FFE14D", "#7EE0B5", "#FF8FB1", "#9DB4D6"];
 const CODE_TTL_MS = 10 * 60 * 1000;
 
-const isDemoPhone = (phone: string) =>
-  (process.env.DEMO_PHONES ?? "")
+const isDemoPhone = (phone: string) => {
+  const allowlist: string = process.env.DEMO_PHONES ?? "";
+  return allowlist
     .split(",")
-    .map((p) => p.trim())
+    .map((p: string) => p.trim())
     .includes(phone);
+};
 
 export const getOrCreateByPhone = mutation({
   args: { phone: v.string(), name: v.optional(v.string()) },
