@@ -25,7 +25,7 @@ export const get = query({
   handler: async (ctx, { garageId }) => {
     const garage = await ctx.db.get(garageId);
     if (!garage) return null;
-    return { _id: garage._id, neighborhood: garage.neighborhood, isOpen: garage.isOpen };
+    return { _id: garage._id, neighborhood: garage.neighborhood, city: garage.city, isOpen: garage.isOpen };
   },
 });
 
@@ -33,6 +33,7 @@ export const openWithItems = mutation({
   args: {
     ownerId: v.id("users"),
     neighborhood: v.string(),
+    city: v.optional(v.string()),
     lat: v.number(),
     lng: v.number(),
     items: v.array(
@@ -50,9 +51,9 @@ export const openWithItems = mutation({
       }),
     ),
   },
-  handler: async (ctx, { ownerId, neighborhood, lat, lng, items }) => {
+  handler: async (ctx, { ownerId, neighborhood, city, lat, lng, items }) => {
     if (items.length === 0) throw new Error("Add at least one item");
-    const location = { neighborhood, approxLat: roundCoord(lat), approxLng: roundCoord(lng), isOpen: true };
+    const location = { neighborhood, city, approxLat: roundCoord(lat), approxLng: roundCoord(lng), isOpen: true };
     const existing = await ctx.db
       .query("garages")
       .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))

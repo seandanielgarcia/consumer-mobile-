@@ -16,6 +16,7 @@ export default defineSchema({
   garages: defineTable({
     ownerId: v.id("users"),
     neighborhood: v.string(),
+    city: v.optional(v.string()),
     approxLat: v.number(),
     approxLng: v.number(),
     isOpen: v.boolean(),
