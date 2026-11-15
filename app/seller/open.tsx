@@ -70,7 +70,7 @@ export default function SellerOpen() {
             accessibilityLabel={`${sold.length} sold. Tap to put one back on sale.`}
             style={styles.soldButton}
           >
-            <Text style={styles.soldText}>· {sold.length} sold</Text>
+            <Text style={styles.soldText}>{sold.length} sold</Text>
           </Pressable>
         )}
       </View>
@@ -148,8 +148,16 @@ const styles = StyleSheet.create({
   headline: { fontFamily: fonts.display, fontSize: 44, lineHeight: 43, letterSpacing: -1.5, color: colors.cream },
   metaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", minHeight: spacing.minButton },
   meta: { fontFamily: fonts.body, fontSize: 15, color: colors.cream },
-  soldButton: { minHeight: spacing.minButton, justifyContent: "center", paddingHorizontal: 4 },
-  soldText: { fontFamily: fonts.semibold, fontSize: 15, color: colors.cream, textDecorationLine: "underline" },
+  soldButton: {
+    minHeight: spacing.minButton,
+    justifyContent: "center",
+    marginLeft: 10,
+    paddingHorizontal: 16,
+    borderRadius: spacing.radius,
+    borderWidth: 2,
+    borderColor: colors.cream,
+  },
+  soldText: { fontFamily: fonts.semibold, fontSize: 15, color: colors.cream },
   polaroids: { flexDirection: "row", justifyContent: "center", gap: 10, paddingVertical: 12 },
   polaroid: { width: 108, backgroundColor: colors.white, paddingTop: 6, paddingHorizontal: 6, paddingBottom: 8, gap: 6 },
   polaroidPhoto: { height: 132, backgroundColor: colors.line },
@@ -159,7 +167,15 @@ const styles = StyleSheet.create({
   stickerReserved: { backgroundColor: colors.ink },
   stickerText: { fontFamily: fonts.display, fontSize: 13, color: colors.ink },
   stickerTextReserved: { color: colors.cream },
-  moreButton: { minWidth: 24, minHeight: 24, alignItems: "center", justifyContent: "center" },
+  moreButton: {
+    minWidth: 32,
+    minHeight: 24,
+    borderRadius: spacing.radius,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   moreButtonText: { fontFamily: fonts.display, fontSize: 16, lineHeight: 18, color: colors.ink },
   more: {
     position: "absolute",
