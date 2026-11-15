@@ -28,9 +28,9 @@ export default function BuyerPaid() {
             {paid ? <Text style={{ fontFamily: fonts.display, fontSize: 26, color: colors.ink }}>✓</Text> : <ActivityIndicator color={colors.ink} />}
           </View>
         )}
-        <Text style={{ fontFamily: fonts.display, fontSize: type.hero, letterSpacing: -1, color: colors.ink }}>{heading}</Text>
+        <Text style={{ fontFamily: fonts.display, fontSize: 40, letterSpacing: -1, color: colors.ink }}>{heading}</Text>
         {order && paid && (
-          <Text style={{ fontFamily: fonts.body, fontSize: type.sentence, lineHeight: 24, color: colors.ink }}>{order.sellerName} will text you to meet up.</Text>
+          <Text style={{ fontFamily: fonts.body, fontSize: 17, lineHeight: 24, color: colors.ink }}>{order.sellerName} will text you to meet up.</Text>
         )}
         {order && order.items.length > 0 && (
           <View style={{ backgroundColor: colors.white, borderRadius: 16, paddingHorizontal: 12, marginTop: 12 }}>
@@ -41,11 +41,11 @@ export default function BuyerPaid() {
               >
                 <Image source={{ uri: item.photoUrl }} style={{ width: 48, height: 48, borderRadius: 10, backgroundColor: colors.line }} contentFit="cover" />
                 <View style={{ flex: 1 }}>
-                  <Text numberOfLines={1} style={{ fontFamily: fonts.semibold, fontSize: type.row, color: colors.ink }}>
+                  <Text numberOfLines={1} style={{ fontFamily: fonts.semibold, fontSize: type.label.fontSize, color: colors.ink }}>
                     {item.title}
                   </Text>
                   {detailLine([item.condition, item.size, item.brand]) !== "" && (
-                    <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: type.meta, color: colors.muted }}>
+                    <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: type.caption.fontSize, color: colors.muted }}>
                       {detailLine([item.condition, item.size, item.brand])}
                     </Text>
                   )}
@@ -54,8 +54,8 @@ export default function BuyerPaid() {
               </View>
             ))}
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", height: 52, borderTopWidth: 1, borderTopColor: colors.hairline }}>
-              <Text style={{ fontFamily: fonts.semibold, fontSize: type.row, color: colors.ink }}>Total</Text>
-              <Text style={{ fontFamily: fonts.display, fontSize: type.listPrice, color: colors.ink }}>{formatPrice(order.totalCents)}</Text>
+              <Text style={{ fontFamily: fonts.semibold, fontSize: type.label.fontSize, color: colors.ink }}>Total</Text>
+              <Text style={{ fontFamily: fonts.display, fontSize: 18, color: colors.ink }}>{formatPrice(order.totalCents)}</Text>
             </View>
           </View>
         )}

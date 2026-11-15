@@ -154,10 +154,12 @@ const TEST_TITLE = /^(QA|E2E|Zqlatency)|\(edited\)|bundle/i;
 const isFictional = (phone: string) => /^\+1(555|\d{3}555)/.test(phone);
 
 export const devCleanup = internalMutation({
-  args: { dryRun: v.boolean() },
-  handler: async (ctx, { dryRun }) => {
+  args: { dryRun: v.boolean(), alsoPhones: v.optional(v.array(v.string())) },
+  handler: async (ctx, { dryRun, alsoPhones }) => {
+    const extra = new Set(alsoPhones ?? []);
     const users = await ctx.db.query("users").collect();
-    const keepUser = (u: Doc<"users">) => SEED_PHONES.has(u.phone) || KEEP_NAMES.has(u.name) || !isFictional(u.phone);
+    const keepUser = (u: Doc<"users">) =>
+      !extra.has(u.phone) && (SEED_PHONES.has(u.phone) || KEEP_NAMES.has(u.name) || !isFictional(u.phone));
     const dropUsers = users.filter((u) => !keepUser(u));
     const dropUserIds = new Set<Id<"users">>(dropUsers.map((u) => u._id));
     const seedOwnerIds = new Set(users.filter((u) => SEED_PHONES.has(u.phone)).map((u) => u._id));
