@@ -27,7 +27,7 @@ type Draft = {
   aiGenerated: boolean;
 };
 
-export const LOCATION_NEEDED = "Location is needed so buyers nearby can find your garage.";
+export const LOCATION_NEEDED = "Location is needed so buyers nearby can find your yard.";
 
 class LocationUnavailable extends Error {
   constructor() {
@@ -186,7 +186,7 @@ export default function SellerReview() {
         setError(LOCATION_NEEDED);
         setLocationDenied(true);
       } else {
-        setError("Couldn't open your garage. Try again.");
+        setError("Couldn't open your yard. Try again.");
       }
       setOpening(false);
     }
@@ -236,7 +236,7 @@ export default function SellerReview() {
           {opening ? (
             <ActivityIndicator color={colors.cream} />
           ) : (
-            <Text style={styles.ctaText}>Open my garage ({approved.length} {approved.length === 1 ? "item" : "items"})</Text>
+            <Text style={styles.ctaText}>Open my yard ({approved.length} {approved.length === 1 ? "item" : "items"})</Text>
           )}
         </Pressable>
       </View>

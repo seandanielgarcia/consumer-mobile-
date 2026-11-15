@@ -58,7 +58,7 @@ export const setStatus = mutation({
     const item = await ctx.db.get(itemId);
     if (!item) throw new Error("Item not found");
     const garage = await ctx.db.get(item.garageId);
-    if (!garage || garage.ownerId !== ownerId) throw new Error("This item isn't in your garage");
+    if (!garage || garage.ownerId !== ownerId) throw new Error("This item isn't in your yard");
     if (!ALLOWED[status].includes(item.status)) throw new Error(`Can't move an item from ${item.status} to ${status}`);
     await ctx.db.patch(itemId, { status });
 

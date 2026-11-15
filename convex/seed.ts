@@ -135,7 +135,7 @@ export const demoOrder = internalMutation({
     )
       .filter((i) => i.status === "live")
       .slice(0, 2);
-    if (items.length === 0) throw new Error("No live items left in Hailey's garage");
+    if (items.length === 0) throw new Error("No live items left in Hailey's yard");
     for (const i of items) await ctx.db.patch(i._id, { status: "reserved" });
     return await ctx.db.insert("orders", {
       buyerId: buyer._id,

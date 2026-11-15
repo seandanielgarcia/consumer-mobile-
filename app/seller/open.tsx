@@ -73,7 +73,7 @@ export default function SellerOpen() {
           </Pressable>
         )}
       </View>
-      <Text style={styles.headline}>Your garage is open.</Text>
+      <Text style={styles.headline}>Your yard is open.</Text>
       <View style={styles.polaroids}>
         {items.slice(0, 3).map((item, index) => {
           const reserved = item.status === "reserved";
@@ -128,7 +128,7 @@ export default function SellerOpen() {
             accessibilityRole="button"
             onPress={() =>
               Linking.openURL(
-                `sms:+17796251378&body=${encodeURIComponent("hey keiki, i have a few things to add to my garage (K-FERUEU)")}`,
+                `sms:+17796251378&body=${encodeURIComponent("hey keiki, i have a few things to add to my yard (K-FERUEU)")}`,
               )
             }
           >
