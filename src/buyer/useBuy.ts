@@ -28,6 +28,7 @@ export function useBuy(garageId: Id<"garages">) {
         router.replace({ pathname: "/buyer/paid", params: { orderId } });
         return;
       }
+      setError("Payment didn't go through. Your items are held for 10 min.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Checkout failed.");
     }

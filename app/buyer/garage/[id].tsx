@@ -53,8 +53,11 @@ export default function BuyerGarage() {
 
   if (garage === null) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.cream, justifyContent: "center", alignItems: "center", padding: 20 }}>
+      <View style={{ flex: 1, backgroundColor: colors.cream, justifyContent: "center", alignItems: "center", padding: 20, gap: 16 }}>
         <Text style={{ fontFamily: fonts.body, fontSize: typeSize.row, color: colors.muted }}>This yard is gone.</Text>
+        <Pressable onPress={() => router.dismissTo("/buyer")} hitSlop={12} style={{ minHeight: 44, justifyContent: "center" }}>
+          <Text style={{ fontFamily: fonts.semibold, fontSize: typeSize.row, color: colors.brand }}>Back to browsing</Text>
+        </Pressable>
       </View>
     );
   }

@@ -29,6 +29,8 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.cream } }}>
         <Stack.Screen name="signin" options={{ presentation: "modal" }} />
         <Stack.Screen name="buyer/paid" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="seller/price" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="seller/open" options={{ gestureEnabled: false }} />
       </Stack>
     </ConvexProvider>
   );

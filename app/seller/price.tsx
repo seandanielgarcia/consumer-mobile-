@@ -4,6 +4,7 @@ import * as Location from "expo-location";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
+  Alert,
   ActivityIndicator,
   InputAccessoryView,
   Keyboard,
@@ -122,6 +123,7 @@ export default function SellerReview() {
   const [sheetText, setSheetText] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [undo, setUndo] = useState<number | null>(null);
+  const [history, setHistory] = useState<number[]>([]);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const user = useCurrentUser();
@@ -232,10 +234,21 @@ export default function SellerReview() {
     setOrder((prev) => [index, ...prev.filter((other) => other !== index)]);
   };
 
+  const goBack = () => {
+    Keyboard.dismiss();
+    const previous = [...history].reverse().find((index) => drafts[index].review === "approved");
+    if (previous !== undefined) return reopen(previous);
+    if (kept.length === 0) return router.dismissTo("/");
+    Alert.alert(`Discard ${kept.length} ${kept.length === 1 ? "item" : "items"}?`, undefined, [
+      { text: "Keep reviewing", style: "cancel" },
+      { text: "Discard", style: "destructive", onPress: () => router.dismissTo("/") },
+    ]);
+  };
+
   if (currentIndex === undefined) {
     return (
       <View style={styles.summaryScreen}>
-        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} hitSlop={12} style={styles.back}>
+        <Pressable onPress={goBack} hitSlop={12} style={styles.back}>
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
         <Text style={styles.headline}>Ready to go</Text>
@@ -322,6 +335,7 @@ export default function SellerReview() {
     Keyboard.dismiss();
     update(i, { review: "approved" });
     setUndo(i);
+    setHistory((prev) => [...prev.filter((index) => index !== i), i]);
   };
 
   const skip = () => {
@@ -350,7 +364,7 @@ export default function SellerReview() {
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={styles.topBar}>
-        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} hitSlop={12} style={styles.back} accessibilityRole="button">
+        <Pressable onPress={goBack} hitSlop={12} style={styles.back} accessibilityRole="button">
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
         <Text style={styles.counter}>
