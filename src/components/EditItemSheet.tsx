@@ -62,6 +62,7 @@ export function EditItemSheet({
   const [picker, setPicker] = useState<ChoiceField | null>(null);
   const [pickerText, setPickerText] = useState("");
   const priceFresh = useRef(false);
+  const priceSelection = useRef({ start: 0, end: 0 });
   const fields: ChoiceField[] = sizeRelevant(value)
     ? ["condition", "size", "brand", "color", "category"]
     : ["condition", "brand", "color", "category"];
@@ -115,11 +116,16 @@ export function EditItemSheet({
                 onFocus={() => {
                   priceFresh.current = true;
                 }}
+                onSelectionChange={(e) => {
+                  priceSelection.current = e.nativeEvent.selection;
+                }}
                 onChangeText={(text) => {
                   const previous = value.priceCents > 0 ? String(Math.round(value.priceCents / 100)) : "";
+                  const { start, end } = priceSelection.current;
+                  const allSelected = previous !== "" && start === 0 && end === previous.length;
                   const typed =
-                    priceFresh.current && previous && text.length === previous.length + 1 && text.startsWith(previous)
-                      ? text.slice(previous.length)
+                    priceFresh.current && !allSelected && text === previous + text.slice(-1) && text.length === previous.length + 1
+                      ? text.slice(-1)
                       : text;
                   priceFresh.current = false;
                   const dollars = parseInt(typed.replace(/\D/g, ""), 10);
