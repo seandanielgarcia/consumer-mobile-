@@ -1,12 +1,12 @@
-# AGENTS.md: yard sale (formerly Garage Sale)
+# AGENTS.md: yardsale (formerly Garage Sale)
 
-yard sale is an iOS app where people bulk-upload photos of things to sell, AI writes each listing, buyers within about 2 mi search and pick items, and they pay through Whop for local pickup. The source of truth is the handoff in Capy Drive: `garage-sale-handoff/PRD.md`, `garage-sale-handoff/DRIVERS.md`, and the mockups in `garage-sale-handoff/mockups/*.dc.html` (project drive). The product decisions recorded in this file override the PRD; otherwise, when this file and the PRD disagree, the PRD wins; when the PRD's prose and a mockup disagree, build the mockup and flag the difference to the requirement's driver.
+yardsale is an iOS app where people bulk-upload photos of things to sell, AI writes each listing, buyers within about 2 mi search and pick items, and they pay through Whop for local pickup. The source of truth is the handoff in Capy Drive: `garage-sale-handoff/PRD.md`, `garage-sale-handoff/DRIVERS.md`, and the mockups in `garage-sale-handoff/mockups/*.dc.html` (project drive). The product decisions recorded in this file override the PRD; otherwise, when this file and the PRD disagree, the PRD wins; when the PRD's prose and a mockup disagree, build the mockup and flag the difference to the requirement's driver.
 
 ## Product decisions since the PRD
 
 These override the PRD and the mockups.
 
-- **Name:** the product is "yard sale" (lowercase). User-facing text says "yard" instead of "garage" ("Your yard", "Open my yard", "Hailey's yard"). Code identifiers (`garages`, `garageId`) stay as they are. (Hailey)
+- **Name:** the product is "yardsale" (one word, lowercase). User-facing text says "yard" instead of "garage" ("Your yard", "Open my yard", "Hailey's yard"). Code identifiers (`garages`, `garageId`) stay as they are. (Hailey)
 - **Anything sells**, not just clothes. Size is optional and shown only when it applies; the AI also extracts category, brand, condition and colour. (Hailey, overriding PRD Decision 5)
 - **Review queue replaces the Price it list:** one item per screen with Approve, Edit and Skip, then a summary. (Hailey)
 - **Landing and Home:** signed-out or first-time users see the two-path landing ("Sell your stuff" / "Shop near you" over a polaroid stack); sign-in is asked for only at "Open my yard" or Buy. A seller with a yard gets Home as their yard: an editable grid using the review queue's Edit card, Reserved and Sold stickers, Sold and Put back per item, "Add more" (library or camera into the review queue) and "Shop near you". (Compass for Hailey)
