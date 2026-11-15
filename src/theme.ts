@@ -32,13 +32,6 @@ export const type = {
   body: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21 },
   label: { fontFamily: fonts.body, fontSize: 15 },
   caption: { fontFamily: fonts.body, fontSize: 13 },
-  hero: 40,
-  itemTitle: 22,
-  sentence: 17,
-  row: 15,
-  meta: 13,
-  listPrice: 18,
-  heroPrice: 32,
 } as const;
 
 export const primaryButton = {

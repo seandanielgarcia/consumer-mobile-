@@ -68,7 +68,7 @@ function LocationSheet({
       <Pressable style={{ flex: 1, backgroundColor: "rgba(17,17,17,0.35)" }} onPress={close} />
       <KeyboardAvoidingView behavior="padding">
         <View style={{ backgroundColor: colors.cream, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, gap: 14 }}>
-          <Text style={{ fontFamily: fonts.display, fontSize: type.itemTitle, color: colors.ink }}>Shop near…</Text>
+          <Text style={{ fontFamily: fonts.display, fontSize: type.title.fontSize, color: colors.ink }}>Shop near…</Text>
           <View style={{ flexDirection: "row", backgroundColor: colors.white, borderRadius: 999, borderWidth: 1, borderColor: colors.line, padding: 3 }}>
             {RADII.map((r) => (
               <Pressable
@@ -78,7 +78,7 @@ function LocationSheet({
                 accessibilityState={{ selected: radiusMiles === r }}
                 style={{ flex: 1, height: 38, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: radiusMiles === r ? colors.ink : "transparent" }}
               >
-                <Text style={{ fontFamily: fonts.semibold, fontSize: type.row, color: radiusMiles === r ? colors.cream : colors.ink }}>{r} mi</Text>
+                <Text style={{ fontFamily: fonts.semibold, fontSize: type.label.fontSize, color: radiusMiles === r ? colors.cream : colors.ink }}>{r} mi</Text>
               </Pressable>
             ))}
           </View>
@@ -161,7 +161,7 @@ export default function BuyerNearYou() {
           accessibilityLabel="Search items"
           autoCorrect={false}
           returnKeyType="search"
-          style={{ flex: 1, fontSize: type.row, fontFamily: fonts.body, color: colors.ink }}
+          style={{ flex: 1, fontSize: type.label.fontSize, fontFamily: fonts.body, color: colors.ink }}
         />
       </View>
 
@@ -172,7 +172,7 @@ export default function BuyerNearYou() {
       </ScrollView>
       {sizeOpen && (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {sizes.length === 0 && <Text style={{ fontFamily: fonts.body, fontSize: type.meta, color: colors.muted }}>No sizes in these results</Text>}
+          {sizes.length === 0 && <Text style={{ fontFamily: fonts.body, fontSize: type.caption.fontSize, color: colors.muted }}>No sizes in these results</Text>}
           {sizes.map((s) => (
             <Pill
               key={s}
@@ -190,12 +190,12 @@ export default function BuyerNearYou() {
       {results === undefined ? (
         <ActivityIndicator color={colors.ink} style={{ marginTop: 40 }} />
       ) : shown.length === 0 ? (
-        <Text style={{ fontFamily: fonts.body, fontSize: type.row, color: colors.muted, textAlign: "center", marginTop: 40 }}>
+        <Text style={{ fontFamily: fonts.body, fontSize: type.label.fontSize, color: colors.muted, textAlign: "center", marginTop: 40 }}>
           {q.trim() ? `Nothing matching "${q.trim()}" within ${radiusMiles} mi yet.` : `Nothing within ${radiusMiles} mi yet.`}
         </Text>
       ) : (
         <>
-          <Text style={{ fontFamily: fonts.body, fontSize: type.meta, color: colors.muted }}>
+          <Text style={{ fontFamily: fonts.body, fontSize: type.caption.fontSize, color: colors.muted }}>
             {shown.length} {shown.length === 1 ? "item" : "items"}
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 16 }}>

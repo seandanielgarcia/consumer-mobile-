@@ -34,7 +34,7 @@ export function ItemCard({ item, width, onPress, selected }: { item: CardItem; w
           </View>
         )}
       </View>
-      <Text style={{ fontFamily: fonts.display, fontSize: type.listPrice, color: colors.ink }}>{formatPrice(item.priceCents)}</Text>
+      <Text style={{ fontFamily: fonts.display, fontSize: 18, color: colors.ink }}>{formatPrice(item.priceCents)}</Text>
       <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 14, color: colors.ink }}>
         {item.title}
       </Text>
