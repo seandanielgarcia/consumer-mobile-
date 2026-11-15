@@ -47,11 +47,11 @@ export default function SellerOpen() {
         </View>
         {extra > 0 && <Text style={styles.moreLine}>+{extra} more in your yard</Text>}
       </View>
-      <Pressable style={styles.sharePill} accessibilityRole="button" onPress={() => shareYard(garageId, user?.name)}>
-        <Text style={styles.sharePillText}>Share my yard</Text>
-      </Pressable>
       <Pressable style={styles.donePill} accessibilityRole="button" onPress={() => router.dismissTo("/")}>
         <Text style={styles.donePillText}>Done</Text>
+      </Pressable>
+      <Pressable style={styles.sharePill} accessibilityRole="button" onPress={() => shareYard(garageId, user?.name)}>
+        <Text style={styles.sharePillText}>Share my yard with a friend</Text>
       </Pressable>
       <Pressable onPress={textKeiki} accessibilityRole="button" style={styles.keiki}>
         <Text style={styles.keikiText}>More later? Text Keiki a pic and a price.</Text>

@@ -191,12 +191,7 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
         </Pressable>
       </View>
       <Text style={styles.yardHeadline}>Your yard{counts ? ` · ${counts}` : ""}</Text>
-      <View style={styles.yardMetaRow}>
-        <Text style={[styles.yardMeta, styles.yardMetaText]}>{formatPlace(garage)}</Text>
-        <Pressable onPress={() => shareYard(garage._id, user.name)} hitSlop={8} accessibilityRole="button" style={styles.shareLink}>
-          <Text style={styles.shareLinkText}>Share my yard</Text>
-        </Pressable>
-      </View>
+      <Text style={styles.yardMeta}>{formatPlace(garage)}</Text>
       {error && !editing && <Text style={styles.error}>{error}</Text>}
       <FlatList
         data={items}
@@ -216,9 +211,14 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
         <Pressable style={styles.cta} onPress={pickFromLibrary} accessibilityRole="button">
           <Text style={styles.ctaText}>Add items</Text>
         </Pressable>
-        <Pressable onPress={pickFromCamera} hitSlop={8} style={styles.takePhoto} accessibilityRole="button">
-          <Text style={styles.takePhotoText}>Take photo</Text>
-        </Pressable>
+        <View style={styles.textActions}>
+          <Pressable onPress={pickFromCamera} hitSlop={8} style={styles.takePhoto} accessibilityRole="button">
+            <Text style={styles.takePhotoText}>Take photo</Text>
+          </Pressable>
+          <Pressable onPress={() => shareYard(garage._id, user.name)} hitSlop={8} style={styles.takePhoto} accessibilityRole="button">
+            <Text style={styles.takePhotoText}>Share my yard</Text>
+          </Pressable>
+        </View>
       </View>
 
       {editing && draft && (
@@ -351,10 +351,6 @@ const styles = StyleSheet.create({
   yardWordmark: { fontFamily: fonts.display, fontSize: 20, letterSpacing: -0.5, color: colors.brand },
   yardHeadline: { fontFamily: fonts.display, fontSize: 30, lineHeight: 34, letterSpacing: -1, color: colors.ink },
   yardMeta: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
-  yardMetaRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  yardMetaText: { flex: 1 },
-  shareLink: { minHeight: spacing.minButton, justifyContent: "center" },
-  shareLinkText: { fontFamily: fonts.medium, fontSize: 15, color: colors.brand },
   grid: { paddingTop: 8, paddingBottom: 12, gap: 14 },
   gridRow: { gap: 14 },
   card: { flex: 1, gap: 6 },
@@ -396,7 +392,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   ctaText: { fontFamily: fonts.semibold, fontSize: 17, color: colors.white },
-  takePhoto: { alignSelf: "center", minHeight: spacing.minButton, justifyContent: "center", marginTop: -4 },
+  textActions: { flexDirection: "row", justifyContent: "center", gap: 32, marginTop: -4 },
+  takePhoto: { minHeight: spacing.minButton, justifyContent: "center" },
   takePhotoText: { fontFamily: fonts.medium, fontSize: 16, color: colors.brand },
   shopPill: {
     height: 56,
