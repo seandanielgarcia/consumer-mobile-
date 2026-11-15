@@ -31,21 +31,21 @@ export function ItemCard({ item, width, onPress, selected }: { item: CardItem; w
         />
         {selected && (
           <View style={{ position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: 12, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: colors.white, fontSize: 14, fontFamily: fonts.semibold }}>✓</Text>
+            <Text style={{ color: colors.white, fontSize: 14, ...fonts.semibold }}>✓</Text>
           </View>
         )}
       </View>
-      <Text style={{ fontFamily: fonts.display, fontSize: typeSize.listPrice, color: colors.ink }}>{formatPrice(item.priceCents)}</Text>
-      <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 14, color: colors.ink }}>
+      <Text style={{ ...fonts.display, fontSize: typeSize.listPrice, color: colors.ink }}>{formatPrice(item.priceCents)}</Text>
+      <Text numberOfLines={1} style={{ ...fonts.body, fontSize: 14, color: colors.ink }}>
         {item.title}
       </Text>
       {detailLine([item.condition, item.size && `Size ${item.size}`, item.brand]) !== "" && (
-        <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted }}>
+        <Text numberOfLines={1} style={{ ...fonts.body, fontSize: 12, color: colors.muted }}>
           {detailLine([item.condition, item.size && `Size ${item.size}`, item.brand])}
         </Text>
       )}
       {(item.ownerName || item.distanceMi !== undefined) && (
-        <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted }}>
+        <Text numberOfLines={1} style={{ ...fonts.body, fontSize: 12, color: colors.muted }}>
           {detailLine([item.ownerName && `${item.ownerName}'s yard`, item.distanceMi !== undefined ? `${item.distanceMi} mi` : undefined])}
         </Text>
       )}

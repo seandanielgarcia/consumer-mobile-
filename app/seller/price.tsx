@@ -22,6 +22,7 @@ import {
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { getPickedPhotos } from "../../src/lib/pickedPhotos";
+import { useHeaderBack } from "../../src/lib/headerBack";
 import { requireUser, SignInCancelled, useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors, fonts, primaryButton, primaryButtonText, spacing, type } from "../../src/theme";
 
@@ -264,13 +265,16 @@ export default function SellerReview() {
     ]);
   };
 
+  useHeaderBack("Back", () => {
+    if (editingIndex === null) return discard();
+    Keyboard.dismiss();
+    setEditingIndex(null);
+  });
+
   if (editingIndex === null) {
     const cardWidth = (width - spacing.sidePad * 2 - 12) / 2;
     return (
       <View style={styles.summaryScreen}>
-        <Pressable onPress={discard} hitSlop={12} style={styles.back} accessibilityRole="button">
-          <Text style={styles.backText}>← Back</Text>
-        </Pressable>
         <Text style={styles.headline}>Your yard</Text>
         <Text style={styles.subline}>
           {pricing > 0
@@ -397,9 +401,7 @@ export default function SellerReview() {
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={styles.topBar}>
-        <Pressable onPress={done} hitSlop={12} style={styles.back} accessibilityRole="button">
-          <Text style={styles.backText}>← Back</Text>
-        </Pressable>
+        <View style={styles.topBarSide} />
         <Text style={styles.counter}>Edit item</Text>
         <Pressable onPress={done} disabled={!canApprove} hitSlop={12} accessibilityRole="button">
           <Text style={[styles.skip, !canApprove && styles.disabled]}>Done</Text>
@@ -589,32 +591,32 @@ const HAIRLINE = colors.hairline;
 const MUTED = colors.muted;
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.cream, paddingTop: 56 },
+  screen: { flex: 1, backgroundColor: colors.cream, paddingTop: 4 },
   summaryScreen: {
     flex: 1,
     backgroundColor: colors.cream,
-    paddingTop: 56,
+    paddingTop: 4,
     paddingHorizontal: spacing.sidePad,
     paddingBottom: 34,
     gap: 14,
   },
   flex: { flex: 1 },
   back: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center" },
-  backText: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
+  backText: { ...fonts.body, fontSize: 15, color: colors.muted },
   headline: { ...type.title, color: colors.ink },
+  topBarSide: { width: 44 },
   topBar: {
     height: 44,
-    paddingLeft: 16,
-    paddingRight: 60,
+    paddingHorizontal: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  counter: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
-  skip: { fontFamily: fonts.medium, fontSize: 15, color: colors.brand },
+  counter: { ...fonts.semibold, fontSize: 15, color: colors.ink },
+  skip: { ...fonts.medium, fontSize: 15, color: colors.brand },
   body: { padding: 16, gap: 12, paddingBottom: 24 },
   photo: { width: "100%", aspectRatio: 4 / 3, borderRadius: 16, backgroundColor: HAIRLINE },
-  caveat: { fontFamily: fonts.body, fontSize: 13, color: MUTED },
+  caveat: { ...fonts.body, fontSize: 13, color: MUTED },
   spark: { color: colors.brand, fontSize: 12 },
   title: { ...type.itemTitle, color: colors.ink, padding: 0, maxHeight: 60 },
   pricePill: {
@@ -625,21 +627,21 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   pricePillEmpty: { backgroundColor: "transparent", borderWidth: 1.5, borderStyle: "dashed", borderColor: colors.ink },
-  priceInput: { fontFamily: fonts.display, fontSize: 32, lineHeight: 36, color: colors.ink, padding: 0, minWidth: 60 },
+  priceInput: { ...fonts.display, fontSize: 32, lineHeight: 36, color: colors.ink, padding: 0, minWidth: 60 },
   priceInputEmpty: { fontSize: 20, lineHeight: 28, width: 110 },
   details: { backgroundColor: colors.white, borderRadius: 16, paddingHorizontal: 16 },
   row: { height: 48, flexDirection: "row", alignItems: "center", gap: 8 },
   rowDivider: { borderTopWidth: 1, borderTopColor: HAIRLINE },
   rowLabelWrap: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1 },
   requiredDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.brand },
-  rowLabel: { fontFamily: fonts.body, fontSize: 15, color: MUTED },
-  rowValue: { fontFamily: fonts.medium, fontSize: 15, color: colors.ink, maxWidth: "60%" },
-  rowAdd: { fontFamily: fonts.medium, fontSize: 15, color: colors.brand },
+  rowLabel: { ...fonts.body, fontSize: 15, color: MUTED },
+  rowValue: { ...fonts.medium, fontSize: 15, color: colors.ink, maxWidth: "60%" },
+  rowAdd: { ...fonts.medium, fontSize: 15, color: colors.brand },
   chevron: { fontSize: 20, color: MUTED, width: 16, textAlign: "center" },
   description: { gap: 4 },
-  descriptionLabel: { fontFamily: fonts.body, fontSize: 13, color: MUTED },
-  descriptionBody: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21, color: colors.ink },
-  more: { fontFamily: fonts.medium, fontSize: 15, color: colors.brand },
+  descriptionLabel: { ...fonts.body, fontSize: 13, color: MUTED },
+  descriptionBody: { ...fonts.body, fontSize: 15, lineHeight: 21, color: colors.ink },
+  more: { ...fonts.medium, fontSize: 15, color: colors.brand },
   skeleton: { gap: 12 },
   skeletonBar: { height: 28, borderRadius: 8, backgroundColor: HAIRLINE },
   bottomBar: {
@@ -652,12 +654,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   remove: { alignSelf: "center", minHeight: 36, justifyContent: "center" },
-  removeText: { fontFamily: fonts.body, fontSize: 14, color: MUTED },
+  removeText: { ...fonts.body, fontSize: 14, color: MUTED },
   approve: primaryButton,
   disabled: { opacity: 0.4 },
   approveText: primaryButtonText,
   keyboardDone: { alignSelf: "flex-end", minHeight: 32, justifyContent: "center" },
-  accessoryDone: { fontFamily: fonts.semibold, fontSize: 16, color: colors.brand },
+  accessoryDone: { ...fonts.semibold, fontSize: 16, color: colors.brand },
   scrim: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)" },
   sheet: {
     backgroundColor: colors.cream,
@@ -667,7 +669,7 @@ const styles = StyleSheet.create({
     paddingBottom: 34,
     gap: 4,
   },
-  sheetTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.ink, marginBottom: 8 },
+  sheetTitle: { ...fonts.display, fontSize: 22, color: colors.ink, marginBottom: 8 },
   sheetOption: {
     height: 48,
     flexDirection: "row",
@@ -676,7 +678,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: HAIRLINE,
   },
-  sheetOptionText: { fontFamily: fonts.body, fontSize: 16, color: colors.ink },
+  sheetOptionText: { ...fonts.body, fontSize: 16, color: colors.ink },
   check: { fontSize: 16, color: colors.brand },
   sheetInput: {
     height: 48,
@@ -685,20 +687,20 @@ const styles = StyleSheet.create({
     borderColor: colors.ink,
     backgroundColor: colors.white,
     paddingHorizontal: 12,
-    fontFamily: fonts.body,
+    ...fonts.body,
     fontSize: 16,
     color: colors.ink,
     marginBottom: 8,
   },
   sheetInputTall: { height: 120, paddingTop: 10, textAlignVertical: "top" },
-  muted: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
+  muted: { ...fonts.body, fontSize: 14, color: colors.muted },
   subline: { ...type.row, color: MUTED, marginTop: -6 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 12, paddingTop: 4, paddingBottom: 12 },
   card: { backgroundColor: colors.white, padding: 6, paddingBottom: 10, gap: 6, borderRadius: 4 },
   cardRemoved: { opacity: 0.45 },
   cardPhoto: { width: "100%", aspectRatio: 1, backgroundColor: HAIRLINE },
   cardSpinner: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(17,17,17,0.25)" },
-  cardTitle: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 18, color: colors.ink },
+  cardTitle: { ...fonts.semibold, fontSize: 14, lineHeight: 18, color: colors.ink },
   cardFix: { ...type.meta, color: colors.brand },
   sticker: {
     position: "absolute",
@@ -727,7 +729,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  sizeText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.white },
+  sizeText: { ...fonts.semibold, fontSize: 12, color: colors.white },
   toggle: {
     position: "absolute",
     top: 12,
@@ -742,7 +744,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   toggleOff: { backgroundColor: colors.white, borderColor: colors.ink },
-  toggleText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.white },
+  toggleText: { ...fonts.semibold, fontSize: 14, color: colors.white },
   toggleTextOff: { color: colors.ink },
-  error: { fontFamily: fonts.medium, fontSize: 14, color: colors.error, textAlign: "center" },
+  error: { ...fonts.medium, fontSize: 14, color: colors.error, textAlign: "center" },
 });

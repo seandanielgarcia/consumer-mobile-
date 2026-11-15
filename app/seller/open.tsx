@@ -139,15 +139,15 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.brand,
-    paddingTop: 60,
+    paddingTop: 8,
     paddingHorizontal: spacing.sidePad,
     paddingBottom: 34,
     gap: 20,
     justifyContent: "center",
   },
-  headline: { fontFamily: fonts.display, fontSize: 44, lineHeight: 43, letterSpacing: -1.5, color: colors.cream },
+  headline: { ...fonts.display, fontSize: 44, lineHeight: 43, letterSpacing: -1.5, color: colors.cream },
   metaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", minHeight: spacing.minButton },
-  meta: { fontFamily: fonts.body, fontSize: 15, color: colors.cream },
+  meta: { ...fonts.body, fontSize: 15, color: colors.cream },
   soldButton: {
     minHeight: spacing.minButton,
     justifyContent: "center",
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.cream,
   },
-  soldText: { fontFamily: fonts.semibold, fontSize: 15, color: colors.cream },
+  soldText: { ...fonts.semibold, fontSize: 15, color: colors.cream },
   polaroids: { flexDirection: "row", justifyContent: "center", gap: 10, paddingVertical: 12 },
   polaroid: { width: 108, minHeight: spacing.minButton, backgroundColor: colors.white, paddingTop: 6, paddingHorizontal: 6, paddingBottom: 8, gap: 6 },
   polaroidPhoto: { height: 132, backgroundColor: colors.line },
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   sticker: { paddingHorizontal: 8, height: 28, borderRadius: 8, borderWidth: 2, borderColor: colors.ink, justifyContent: "center" },
   stickerPrice: { backgroundColor: colors.tag },
   stickerReserved: { backgroundColor: colors.ink },
-  stickerText: { fontFamily: fonts.display, fontSize: 13, color: colors.ink },
+  stickerText: { ...fonts.display, fontSize: 13, color: colors.ink },
   stickerTextReserved: { color: colors.cream },
   moreButton: {
     minWidth: 32,
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  moreButtonText: { fontFamily: fonts.display, fontSize: 16, lineHeight: 18, color: colors.ink },
+  moreButtonText: { ...fonts.display, fontSize: 16, lineHeight: 18, color: colors.ink },
   more: {
     position: "absolute",
     top: -10,
@@ -191,8 +191,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  moreText: { fontFamily: fonts.display, fontSize: 15, color: colors.ink },
-  error: { fontFamily: fonts.medium, fontSize: 14, color: colors.cream },
+  moreText: { ...fonts.display, fontSize: 15, color: colors.ink },
+  error: { ...fonts.medium, fontSize: 14, color: colors.cream },
   keiki: { backgroundColor: colors.cream, borderRadius: 24, padding: 20, gap: 12 },
   keikiHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
   chatCircle: {
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  keikiTitle: { flex: 1, fontFamily: fonts.display, fontSize: 17, color: colors.ink },
+  keikiTitle: { flex: 1, ...fonts.display, fontSize: 17, color: colors.ink },
   secondaryPill: {
     height: 52,
     borderRadius: spacing.radius,
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  secondaryPillText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.ink },
+  secondaryPillText: { ...fonts.semibold, fontSize: 16, color: colors.ink },
   donePill: {
     height: spacing.cta,
     borderRadius: spacing.radius,
@@ -220,5 +220,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  donePillText: { fontFamily: fonts.semibold, fontSize: 18, color: colors.ink },
+  donePillText: { ...fonts.semibold, fontSize: 18, color: colors.ink },
 });

@@ -35,15 +35,15 @@ export default function BuyerPaid() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
-      <ScrollView contentContainerStyle={{ paddingTop: 72, paddingHorizontal: 16, paddingBottom: 20, gap: 12 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 16, paddingHorizontal: 16, paddingBottom: 20, gap: 12 }}>
         {(paid || pending) && (
           <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.tag, alignItems: "center", justifyContent: "center" }}>
-            {paid ? <Text style={{ fontFamily: fonts.display, fontSize: 26, color: colors.ink }}>✓</Text> : <ActivityIndicator color={colors.ink} />}
+            {paid ? <Text style={{ ...fonts.display, fontSize: 26, color: colors.ink }}>✓</Text> : <ActivityIndicator color={colors.ink} />}
           </View>
         )}
-        <Text style={{ fontFamily: fonts.display, fontSize: typeSize.hero, letterSpacing: -1, color: colors.ink }}>{heading}</Text>
+        <Text style={{ ...fonts.display, fontSize: typeSize.hero, letterSpacing: -1, color: colors.ink }}>{heading}</Text>
         {order && paid && (
-          <Text style={{ fontFamily: fonts.body, fontSize: typeSize.sentence, lineHeight: 24, color: colors.ink }}>{order.sellerName} will text you to meet up.</Text>
+          <Text style={{ ...fonts.body, fontSize: typeSize.sentence, lineHeight: 24, color: colors.ink }}>{order.sellerName} will text you to meet up.</Text>
         )}
         {order && order.items.length > 0 && (
           <View style={{ backgroundColor: colors.white, borderRadius: 16, paddingHorizontal: 12, marginTop: 12 }}>
@@ -54,21 +54,21 @@ export default function BuyerPaid() {
               >
                 <Image source={{ uri: item.photoUrl }} style={{ width: 48, height: 48, borderRadius: 10, backgroundColor: colors.line }} contentFit="cover" />
                 <View style={{ flex: 1 }}>
-                  <Text numberOfLines={1} style={{ fontFamily: fonts.semibold, fontSize: type.row.fontSize, color: colors.ink }}>
+                  <Text numberOfLines={1} style={{ ...fonts.semibold, fontSize: type.row.fontSize, color: colors.ink }}>
                     {item.title}
                   </Text>
                   {detailLine([item.condition, item.size && `Size ${item.size}`, item.brand]) !== "" && (
-                    <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: type.meta.fontSize, color: colors.muted }}>
+                    <Text numberOfLines={1} style={{ ...fonts.body, fontSize: type.meta.fontSize, color: colors.muted }}>
                       {detailLine([item.condition, item.size && `Size ${item.size}`, item.brand])}
                     </Text>
                   )}
                 </View>
-                <Text style={{ fontFamily: fonts.display, fontSize: 16, color: colors.ink }}>{formatPrice(item.priceCents)}</Text>
+                <Text style={{ ...fonts.display, fontSize: 16, color: colors.ink }}>{formatPrice(item.priceCents)}</Text>
               </View>
             ))}
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", height: 52, borderTopWidth: 1, borderTopColor: colors.hairline }}>
-              <Text style={{ fontFamily: fonts.semibold, fontSize: type.row.fontSize, color: colors.ink }}>Total</Text>
-              <Text style={{ fontFamily: fonts.display, fontSize: typeSize.listPrice, color: colors.ink }}>{formatPrice(order.totalCents)}</Text>
+              <Text style={{ ...fonts.semibold, fontSize: type.row.fontSize, color: colors.ink }}>Total</Text>
+              <Text style={{ ...fonts.display, fontSize: typeSize.listPrice, color: colors.ink }}>{formatPrice(order.totalCents)}</Text>
             </View>
           </View>
         )}
