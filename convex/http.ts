@@ -30,7 +30,6 @@ http.route({
     const orderId = event.data.metadata?.orderId;
     if (event.type === "payment.succeeded" && typeof orderId === "string") {
       await ctx.runMutation(internal.orders.markPaid, { orderId: orderId as Id<"orders"> });
-      // TODO: text the seller once Keiki outbound is wired up.
     }
     return new Response("OK", { status: 200 });
   }),

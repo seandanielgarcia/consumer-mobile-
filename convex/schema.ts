@@ -45,6 +45,7 @@ export default defineSchema({
     garageId: v.id("garages"),
     itemIds: v.array(v.id("items")),
     totalCents: v.number(),
+    sellerTextSent: v.optional(v.boolean()),
     whopCheckoutId: v.optional(v.string()),
     status: v.union(v.literal("pending"), v.literal("paid"), v.literal("picked_up"), v.literal("cancelled")),
   })

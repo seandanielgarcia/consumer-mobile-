@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { internal } from "./_generated/api";
+import { internalAction, internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 
 export const HOLD_MS = 10 * 60 * 1000;
@@ -55,7 +56,12 @@ export const createPending = mutation({
 
 export const markPaid = internalMutation({
   args: { orderId: v.id("orders") },
-  handler: (ctx, { orderId }) => markOrderPaid(ctx, orderId),
+  handler: async (ctx, { orderId }) => {
+    const payment = await markOrderPaid(ctx, orderId);
+    if (!payment.alreadyPaid && payment.unavailableItemIds.length === 0 && payment.sellerPhone) {
+      await ctx.scheduler.runAfter(0, internal.orders.textSeller, { orderId, phone: payment.sellerPhone });
+    }
+  },
 });
 
 export const confirmReturn = mutation({
@@ -81,9 +87,39 @@ export const getOrder = query({
       status: order.status,
       totalCents: order.totalCents,
       sellerName: seller?.name ?? "The seller",
+      sellerTextSent: order.sellerTextSent,
       items: items
         .filter((i) => i !== null)
         .map((i) => ({ _id: i._id, title: i.title, size: i.size, priceCents: i.priceCents, photoUrl: i.photoUrl })),
     };
+  },
+});
+
+export const textSeller = internalAction({
+  args: { orderId: v.id("orders"), phone: v.string() },
+  handler: async (ctx, { orderId, phone }) => {
+    const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER } = process.env;
+    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_FROM_NUMBER) return;
+    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`)}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        To: phone,
+        From: TWILIO_FROM_NUMBER,
+        Body: "An item from your Garage Sale was paid for. Open the app to check your garage.",
+      }).toString(),
+    });
+    if (!response.ok) throw new Error(`Seller text failed (${response.status}).`);
+    await ctx.runMutation(internal.orders.recordSellerText, { orderId });
+  },
+});
+
+export const recordSellerText = internalMutation({
+  args: { orderId: v.id("orders") },
+  handler: async (ctx, { orderId }) => {
+    await ctx.db.patch(orderId, { sellerTextSent: true });
   },
 });

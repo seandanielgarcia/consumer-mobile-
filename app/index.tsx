@@ -50,6 +50,15 @@ export default function SellerHome() {
             </Pressable>
           </View>
         )}
+        {user && mine && (
+          <Pressable
+            accessibilityRole="button"
+            style={styles.pickupsButton}
+            onPress={() => router.push("/seller/pickups")}
+          >
+            <Text style={styles.browseNear}>Manage pickups</Text>
+          </Pressable>
+        )}
         <Pressable style={styles.dropZone} onPress={pickPhotos} accessibilityRole="button">
           <View style={styles.cameraCircle}>
             <CameraIcon size={30} color={colors.ink} />
@@ -93,6 +102,7 @@ const styles = StyleSheet.create({
   thumbPhoto: { width: 56, height: 64 },
   thumbPrice: { fontFamily: fonts.display, fontSize: 13, color: colors.ink },
   browseNear: { fontFamily: fonts.semibold, fontSize: 14, color: colors.brand, textDecorationLine: "underline" },
+  pickupsButton: { minHeight: spacing.minButton, justifyContent: "center" },
   dropZone: {
     flex: 1,
     borderWidth: 2,
