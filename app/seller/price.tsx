@@ -253,7 +253,7 @@ export default function SellerReview() {
         </Text>
       </View>
       <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${(approved.length / Math.max(kept.length, 1)) * 100}%` }]} />
+        <View style={[styles.progressFill, { width: `${(position / Math.max(kept.length, 1)) * 100}%` }]} />
       </View>
       <ScrollView style={styles.flex} contentContainerStyle={styles.itemBody} keyboardShouldPersistTaps="handled">
         <View style={styles.photoFrame}>
