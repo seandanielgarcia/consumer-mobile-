@@ -118,7 +118,7 @@ export function EditItemSheet({
                 onChangeText={(text) => {
                   const previous = value.priceCents > 0 ? String(Math.round(value.priceCents / 100)) : "";
                   const typed =
-                    priceFresh.current && previous && text.length > previous.length && text.startsWith(previous)
+                    priceFresh.current && previous && text.length === previous.length + 1 && text.startsWith(previous)
                       ? text.slice(previous.length)
                       : text;
                   priceFresh.current = false;
