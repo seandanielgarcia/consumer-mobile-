@@ -19,7 +19,8 @@
       "expo-router",
       "expo-web-browser",
       "expo-image",
-      "expo-font"
+      "expo-font",
+      "expo-asset"
     ],
     "scheme": "garagesale",
     "platforms": [

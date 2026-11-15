@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "../convex/_generated/api";
 import { setPickedPhotos } from "../src/lib/pickedPhotos";
+import { loadSamplePhotos } from "../src/lib/samplePhotos";
 import { signOut, useCurrentUser } from "../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../src/theme";
 
@@ -19,6 +20,9 @@ export default function Landing() {
   const user = useCurrentUser();
   const mine = useQuery(api.garages.mine, user ? { ownerId: user.userId } : "skip");
   const samples = useQuery(api.items.sampleLive) ?? [];
+  const isDemoUser = useQuery(api.users.isDemoUser, user ? { userId: user.userId } : "skip");
+  const showSamplePhotos =
+    __DEV__ || isDemoUser === true || (!user && process.env.EXPO_PUBLIC_SHOW_SAMPLES !== "0");
 
   const pickPhotos = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -29,6 +33,11 @@ export default function Landing() {
     });
     if (result.canceled || result.assets.length === 0) return;
     setPickedPhotos(result.assets.map((asset) => asset.uri));
+    router.push("/seller/price");
+  };
+
+  const pickSamplePhotos = async () => {
+    setPickedPhotos(await loadSamplePhotos());
     router.push("/seller/price");
   };
 
@@ -51,6 +60,11 @@ export default function Landing() {
           <Pressable style={styles.button} onPress={pickPhotos} accessibilityRole="button">
             <Text style={styles.buttonText}>Sell your stuff</Text>
           </Pressable>
+          {showSamplePhotos && (
+            <Pressable onPress={pickSamplePhotos} hitSlop={8} style={styles.samples} accessibilityRole="button">
+              <Text style={[styles.sessionText, styles.signOut]}>Use sample photos</Text>
+            </Pressable>
+          )}
           <Pressable style={styles.button} onPress={() => router.push("/buyer")} accessibilityRole="button">
             <Text style={styles.buttonText}>Shop near you</Text>
           </Pressable>
@@ -112,6 +126,7 @@ const styles = StyleSheet.create({
     minHeight: spacing.minButton,
     paddingHorizontal: 4,
   },
+  samples: { alignSelf: "center", minHeight: 32, justifyContent: "center", marginTop: -4 },
   session: { flexDirection: "row", justifyContent: "center", alignItems: "center", minHeight: 44 },
   sessionText: { fontFamily: fonts.body, fontSize: 14, color: colors.cream },
   signOut: { textDecorationLine: "underline" },
