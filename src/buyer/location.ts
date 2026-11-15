@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 export type BuyerLocation = { lat: number; lng: number; label: string };
 
-const SF_FALLBACK: BuyerLocation = { lat: 37.78, lng: -122.41, label: "San Francisco" };
+export const SF_FALLBACK: BuyerLocation = { lat: 37.78, lng: -122.41, label: "San Francisco" };
 const round = (x: number) => Math.round(x * 100) / 100;
 
 let current: BuyerLocation | null = null;
@@ -19,7 +19,9 @@ function publish(location: BuyerLocation, gen: number) {
 
 async function labelFor(lat: number, lng: number, fallback: string) {
   const [place] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng }).catch(() => []);
-  return place?.district ?? place?.city ?? place?.subregion ?? fallback;
+  const city = place?.city ?? place?.subregion;
+  if (place?.district && city && place.district !== city) return `${place.district}, ${city}`;
+  return place?.district ?? city ?? fallback;
 }
 
 async function publishCoords(coords: { latitude: number; longitude: number }, gen: number, fallbackLabel: string) {

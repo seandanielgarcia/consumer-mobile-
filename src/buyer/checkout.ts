@@ -43,12 +43,17 @@ export async function startCheckout(
   buyerId: Id<"users">,
   garageId: Id<"garages">,
   itemIds: Id<"items">[],
+  onOrder: (orderId: Id<"orders">) => void,
 ): Promise<{ orderId: Id<"orders">; paid: boolean }> {
   const { orderId } = await convex.mutation(api.orders.createPending, { buyerId, garageId, itemIds });
   const returnUrl = Linking.createURL("buyer/paid", { queryParams: { garageId, items: itemIds.join(",") } });
+  onOrder(orderId);
   const { purchaseUrl } = (await convex.action(anyApi.whop.createOrderCheckout, { orderId, returnUrl })) as { purchaseUrl: string };
   const returned = await waitForReturn(purchaseUrl, returnUrl);
-  if (!returned) return { orderId, paid: false };
+  if (!returned) {
+    const status = (await convex.query(api.orders.getOrder, { orderId }).catch(() => null))?.status;
+    return { orderId, paid: status === "paid" || status === "picked_up" };
+  }
   await convex.mutation(api.orders.confirmReturn, { orderId }).catch(() => undefined);
   return { orderId, paid: await waitForPaid(convex, orderId) };
 }

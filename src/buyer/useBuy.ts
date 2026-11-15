@@ -1,7 +1,8 @@
-import { useConvex } from "convex/react";
+import { useConvex, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { router } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { requireUser, SignInCancelled } from "../lib/useCurrentUser";
 import { startCheckout } from "./checkout";
@@ -12,7 +13,16 @@ export function useBuy(garageId: Id<"garages">, onUnavailable?: (itemId: Id<"ite
   const convex = useConvex();
   const [buying, setBuying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<Id<"orders"> | null>(null);
   const checkingOut = useRef(false);
+  const order = useQuery(api.orders.getOrder, orderId ? { orderId } : "skip");
+  const orderPaid = order?.status === "paid" || order?.status === "picked_up";
+
+  useEffect(() => {
+    if (!orderPaid || !orderId) return;
+    checkingOut.current = true;
+    router.replace({ pathname: "/buyer/paid", params: { orderId } });
+  }, [orderPaid, orderId]);
 
   const buy = async (itemIds: Id<"items">[]) => {
     if (checkingOut.current || itemIds.length === 0) return;
@@ -29,9 +39,8 @@ export function useBuy(garageId: Id<"garages">, onUnavailable?: (itemId: Id<"ite
         return;
       }
 
-      const result = await startCheckout(convex, buyer, garageId, itemIds);
+      const result = await startCheckout(convex, buyer, garageId, itemIds, setOrderId);
       if (result.paid) {
-        router.replace({ pathname: "/buyer/paid", params: { orderId: result.orderId } });
         paid = true;
         return;
       }
@@ -52,5 +61,6 @@ export function useBuy(garageId: Id<"garages">, onUnavailable?: (itemId: Id<"ite
     }
   };
 
-  return { buy, buying, error, checkingOut };
+  const myOrderItemIds = order && order.status !== "cancelled" ? order.items.map((i) => i._id) : [];
+  return { buy, buying, error, checkingOut, myOrderItemIds };
 }
