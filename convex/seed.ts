@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { internalAction, internalMutation } from "./_generated/server";
+import { internalAction, internalMutation, type MutationCtx } from "./_generated/server";
+import type { Doc, Id } from "./_generated/dataModel";
 import { roundCoord } from "./lib/location";
 
 const SEED = [
@@ -143,5 +144,77 @@ export const demoOrder = internalMutation({
       totalCents: items.reduce((sum, i) => sum + i.priceCents, 0),
       status: "paid",
     });
+  },
+});
+
+// Demo reset (scripts/reset-demo.sh). Seed garages go back to all-live with their orders removed, and throwaway
+// sign-in users (phones starting +1555999 or +15550199) are deleted with their garages, items and orders.
+// Orders are only ever touched inside a seed or throwaway garage.
+const DEMO_SELLER_PHONES = SEED.map((g) => g.phone);
+const THROWAWAY_PHONE_PREFIXES = ["+1555999", "+15550199"];
+
+async function garagesOf(ctx: MutationCtx, ownerId: Id<"users">) {
+  return await ctx.db.query("garages").withIndex("by_owner", (q) => q.eq("ownerId", ownerId)).collect();
+}
+
+// Same cleanup as demoOrder: release the order's reserved items before the order goes away.
+async function deleteOrdersIn(ctx: MutationCtx, garageId: Id<"garages">) {
+  let deleted = 0;
+  const orders = await ctx.db.query("orders").withIndex("by_garage", (q) => q.eq("garageId", garageId)).collect();
+  for (const order of orders) {
+    for (const id of order.itemIds) {
+      const item = await ctx.db.get(id);
+      if (item?.status === "reserved") await ctx.db.patch(id, { status: "live" });
+    }
+    await ctx.db.delete(order._id);
+    deleted++;
+  }
+  return deleted;
+}
+
+export const resetDemo = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const counts = { itemsRelisted: 0, ordersDeleted: 0, usersDeleted: 0, garagesDeleted: 0, itemsDeleted: 0 };
+
+    for (const phone of DEMO_SELLER_PHONES) {
+      const user = await ctx.db.query("users").withIndex("by_phone", (q) => q.eq("phone", phone)).unique();
+      if (!user) continue;
+      for (const garage of await garagesOf(ctx, user._id)) {
+        counts.ordersDeleted += await deleteOrdersIn(ctx, garage._id);
+        const items = await ctx.db.query("items").withIndex("by_garage", (q) => q.eq("garageId", garage._id)).collect();
+        for (const item of items) {
+          if (item.status === "reserved" || item.status === "sold") {
+            await ctx.db.patch(item._id, { status: "live" });
+            counts.itemsRelisted++;
+          }
+        }
+      }
+    }
+
+    const throwaway: Doc<"users">[] = [];
+    for (const prefix of THROWAWAY_PHONE_PREFIXES) {
+      throwaway.push(
+        ...(await ctx.db
+          .query("users")
+          .withIndex("by_phone", (q) => q.gte("phone", prefix).lt("phone", prefix + "\uffff"))
+          .collect()),
+      );
+    }
+    for (const user of throwaway) {
+      for (const garage of await garagesOf(ctx, user._id)) {
+        counts.ordersDeleted += await deleteOrdersIn(ctx, garage._id);
+        const items = await ctx.db.query("items").withIndex("by_garage", (q) => q.eq("garageId", garage._id)).collect();
+        for (const item of items) {
+          await ctx.db.delete(item._id);
+          counts.itemsDeleted++;
+        }
+        await ctx.db.delete(garage._id);
+        counts.garagesDeleted++;
+      }
+      await ctx.db.delete(user._id);
+      counts.usersDeleted++;
+    }
+    return counts;
   },
 });
