@@ -604,7 +604,8 @@ const styles = StyleSheet.create({
   headline: { ...type.title, color: colors.ink },
   topBar: {
     height: 44,
-    paddingHorizontal: 16,
+    paddingLeft: 16,
+    paddingRight: 60,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",

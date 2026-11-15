@@ -70,15 +70,15 @@ export default function SignIn() {
     if (!done.current) cancelSignIn();
   }, []);
 
-  const finish = (userId: Id<"users">, firstName: string) => {
+  const finish = (userId: Id<"users">, firstName: string, phoneLabel: string) => {
     done.current = true;
     AsyncStorage.removeItem(PENDING_KEY).catch(() => {});
     if (router.canGoBack()) router.back();
-    setCurrentUser({ userId, name: firstName });
+    setCurrentUser({ userId, name: firstName, phone: phoneLabel });
   };
 
   useEffect(() => {
-    if (pending && verified) finish(pending.userId, pending.name);
+    if (pending && verified) finish(pending.userId, pending.name, pending.phone);
   }, [pending, verified]);
 
   const submit = async () => {
@@ -88,7 +88,7 @@ export default function SignIn() {
     try {
       const firstName = name.trim();
       const result = await startVerification({ phone: normalized, name: firstName });
-      if (result.verified) finish(result.userId, result.name);
+      if (result.verified) finish(result.userId, result.name, phone.trim());
       else setPending({ userId: result.userId, code: result.code ?? "", phone: phone.trim(), name: result.name, startedAt: Date.now() });
     } catch {
       setError("Couldn't save that. Try again.");

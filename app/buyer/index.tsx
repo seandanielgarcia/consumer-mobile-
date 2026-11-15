@@ -151,7 +151,7 @@ export default function BuyerNearYou() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.cream }} contentContainerStyle={{ paddingTop: 56, paddingHorizontal: 16, paddingBottom: 40, gap: 12 }} keyboardShouldPersistTaps="handled">
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingRight: 44 }}>
         <Pressable onPress={() => router.dismissTo("/")} hitSlop={12} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
           <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.muted }}>← Home</Text>
         </Pressable>

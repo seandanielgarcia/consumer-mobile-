@@ -213,12 +213,6 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
         <Pressable onPress={() => router.dismissTo("/")} accessibilityRole="link" accessibilityLabel="Home">
           <Text style={styles.yardWordmark}>yardsale</Text>
         </Pressable>
-        <View style={styles.session}>
-          <Text style={styles.yardSessionText}>{user.name ? `Hi ${user.name}` : "Signed in"} · </Text>
-          <Pressable onPress={signOut} hitSlop={8} accessibilityRole="button" style={styles.signOutButton}>
-            <Text style={[styles.yardSessionText, styles.signOut]}>Sign out</Text>
-          </Pressable>
-        </View>
       </View>
       <Text style={styles.yardHeadline}>Your yard{counts ? ` · ${counts}` : ""}</Text>
       <Text style={styles.yardMeta}>{garage.neighborhood} · visible to buyers nearby</Text>
@@ -389,7 +383,7 @@ const styles = StyleSheet.create({
 
   // Yard
   yard: { flex: 1, backgroundColor: colors.cream, paddingTop: spacing.topPadMin, paddingHorizontal: spacing.sidePad, paddingBottom: 34, gap: 8 },
-  yardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  yardHeader: { flexDirection: "row", alignItems: "center", minHeight: 44, paddingRight: 48 },
   yardWordmark: { fontFamily: fonts.display, fontSize: 20, letterSpacing: -0.5, color: colors.brand },
   yardSessionText: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
   signOutButton: {

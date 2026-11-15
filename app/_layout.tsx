@@ -3,6 +3,7 @@ import { Stack } from "expo-router";
 import { useFonts, BricolageGrotesque_800ExtraBold } from "@expo-google-fonts/bricolage-grotesque";
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from "@expo-google-fonts/inter";
 import { useEffect } from "react";
+import { AccountButton } from "../src/components/AccountButton";
 import { loadCurrentUser, useCurrentUserLoaded } from "../src/lib/useCurrentUser";
 import { colors } from "../src/theme";
 
@@ -32,6 +33,7 @@ export default function RootLayout() {
         <Stack.Screen name="seller/price" options={{ gestureEnabled: false }} />
         <Stack.Screen name="seller/open" options={{ gestureEnabled: false }} />
       </Stack>
+      <AccountButton />
     </ConvexProvider>
   );
 }
