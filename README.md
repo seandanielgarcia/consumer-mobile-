@@ -14,7 +14,7 @@ Snap your stuff, set a price, and your yard sale goes live to buyers nearby. Tex
 
 Install Expo Go on iPhone, then scan.
 
-Or open `exp://u.expo.dev/abb6ae99-54b9-42bc-b081-7146f18b9808/group/710650d9-c971-4ea0-8803-d414b96d264c` in Expo Go.
+Or open `exp://u.expo.dev/abb6ae99-54b9-42bc-b081-7146f18b9808?channel-name=demo&runtime-version=exposdk%3A58.0.0` in Expo Go.
 
 Backup (live dev server, until 6 PM PT): <img src="docs/expo-go-qr.png" width="100" alt="Backup Expo Go QR code"> `exp://vqezwjo-anonymous-8081.exp.direct`
 
