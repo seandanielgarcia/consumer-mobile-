@@ -3,7 +3,6 @@ import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "../convex/_generated/api";
-import { CameraIcon } from "../src/components/icons";
 import { setPickedPhotos } from "../src/lib/pickedPhotos";
 import { useCurrentUser } from "../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../src/theme";
@@ -27,6 +26,7 @@ export default function Landing() {
   return (
     <View style={styles.screen}>
       <Text style={styles.wordmark}>garage sale</Text>
+      <Text style={styles.tagline}>Share a photo and set a price, we'll take care of the rest</Text>
       <View style={styles.spacer} />
       {mine && mine.items.length > 0 && (
         <Pressable
@@ -37,15 +37,13 @@ export default function Landing() {
           <Text style={styles.garageRowText}>→</Text>
         </Pressable>
       )}
-      <Pressable style={styles.sell} onPress={pickPhotos} accessibilityRole="button">
-        <View style={styles.cameraCircle}>
-          <CameraIcon size={30} color={colors.ink} />
-        </View>
-        <Text style={styles.sellText}>Sell your stuff</Text>
+      <Pressable style={styles.button} onPress={pickPhotos} accessibilityRole="button">
+        <Text style={styles.buttonText}>Sell your stuff</Text>
       </Pressable>
-      <Pressable style={styles.shop} onPress={() => router.push("/buyer")} accessibilityRole="button">
-        <Text style={styles.shopText}>Shop near you</Text>
+      <Pressable style={styles.button} onPress={() => router.push("/buyer")} accessibilityRole="button">
+        <Text style={styles.buttonText}>Shop near you</Text>
       </Pressable>
+      <View style={styles.spacer} />
     </View>
   );
 }
@@ -69,30 +67,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   garageRowText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.cream },
-  sell: {
-    height: 180,
-    borderRadius: 28,
+  tagline: { fontFamily: fonts.body, fontSize: 17, lineHeight: 23, color: colors.cream },
+  button: {
+    height: 72,
+    borderRadius: 36,
     backgroundColor: colors.cream,
     alignItems: "center",
     justifyContent: "center",
-    gap: 14,
   },
-  cameraCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.tag,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sellText: { fontFamily: fonts.display, fontSize: 28, color: colors.ink },
-  shop: {
-    height: 72,
-    borderRadius: 36,
-    borderWidth: 2,
-    borderColor: colors.cream,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  shopText: { fontFamily: fonts.display, fontSize: 22, color: colors.cream },
+  buttonText: { fontFamily: fonts.display, fontSize: 24, color: colors.ink },
 });
