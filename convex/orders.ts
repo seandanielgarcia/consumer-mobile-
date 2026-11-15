@@ -1,6 +1,18 @@
 import { v } from "convex/values";
-import { internalMutation, mutation, query, type MutationCtx } from "./_generated/server";
+import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+
+export const HOLD_MS = 10 * 60 * 1000;
+
+export async function heldItemIds(ctx: QueryCtx, garageId: Id<"garages">, exceptBuyerId?: Id<"users">) {
+  const since = Date.now() - HOLD_MS;
+  const pending = await ctx.db
+    .query("orders")
+    .withIndex("by_garage", (q) => q.eq("garageId", garageId))
+    .filter((q) => q.and(q.eq(q.field("status"), "pending"), q.gt(q.field("_creationTime"), since)))
+    .collect();
+  return new Set(pending.filter((p) => p.buyerId !== exceptBuyerId).flatMap((p) => p.itemIds));
+}
 
 async function markOrderPaid(ctx: MutationCtx, orderId: Id<"orders">) {
   const order = await ctx.db.get(orderId);
@@ -16,7 +28,6 @@ async function markOrderPaid(ctx: MutationCtx, orderId: Id<"orders">) {
     if (item?.status === "live") await ctx.db.patch(itemId, { status: "reserved" });
     else unavailableItemIds.push(itemId);
   }
-  // TODO(SEA-3 E): what to do when an item was no longer live at payment time (hold vs refund) is Sean's call.
   await ctx.db.patch(orderId, { status: "paid" });
   return { ...result, unavailableItemIds };
 }
@@ -27,12 +38,14 @@ export const createPending = mutation({
     const ids = [...new Set(itemIds)];
     if (ids.length === 0) throw new Error("Pick at least one item");
     if (!(await ctx.db.get(buyerId))) throw new Error("Unknown buyer");
+    const held = await heldItemIds(ctx, garageId, buyerId);
     let totalCents = 0;
     for (const id of ids) {
       const item = await ctx.db.get(id);
       if (!item) throw new Error("An item no longer exists");
       if (item.garageId !== garageId) throw new Error("All items must come from one garage");
       if (item.status !== "live") throw new Error(`${item.title} is no longer available`);
+      if (held.has(id)) throw new Error(`Someone else is checking out ${item.title} right now`);
       totalCents += item.priceCents;
     }
     const orderId = await ctx.db.insert("orders", { buyerId, garageId, itemIds: ids, totalCents, status: "pending" });
