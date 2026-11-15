@@ -16,7 +16,6 @@ import type * as items from "../items.js";
 import type * as keiki from "../keiki.js";
 import type * as keikiHttp from "../keikiHttp.js";
 import type * as lib_location from "../lib/location.js";
-import type * as notify from "../notify.js";
 import type * as orders from "../orders.js";
 import type * as seed from "../seed.js";
 import type * as users from "../users.js";
@@ -37,7 +36,6 @@ declare const fullApi: ApiFromModules<{
   keiki: typeof keiki;
   keikiHttp: typeof keikiHttp;
   "lib/location": typeof lib_location;
-  notify: typeof notify;
   orders: typeof orders;
   seed: typeof seed;
   users: typeof users;
