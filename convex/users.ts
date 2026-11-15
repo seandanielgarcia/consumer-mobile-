@@ -5,7 +5,7 @@ const AVATAR_COLORS = ["#FFE14D", "#7EE0B5", "#FF8FB1", "#9DB4D6"];
 const CODE_TTL_MS = 10 * 60 * 1000;
 const RESEND_INTERVAL_MS = 60 * 1000;
 
-const isDemoPhone = (phone: string) => {
+export const isDemoPhone = (phone: string) => {
   const allowlist: string = process.env.DEMO_PHONES ?? "";
   return allowlist
     .split(",")

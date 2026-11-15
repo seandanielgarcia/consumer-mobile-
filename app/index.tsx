@@ -9,6 +9,7 @@ import type { Doc } from "../convex/_generated/dataModel";
 import { ItemEditFields, type ItemFields } from "../src/components/ItemEditFields";
 import { setPickedPhotos } from "../src/lib/pickedPhotos";
 import { loadSamplePhotos } from "../src/lib/samplePhotos";
+import { shareYard } from "../src/lib/shareYard";
 import { signOut, useCurrentUser } from "../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../src/theme";
 
@@ -221,7 +222,12 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
         </View>
       </View>
       <Text style={styles.yardHeadline}>Your yard{counts ? ` · ${counts}` : ""}</Text>
-      <Text style={styles.yardMeta}>{garage.neighborhood} · visible to buyers nearby</Text>
+      <View style={styles.yardMetaRow}>
+        <Text style={[styles.yardMeta, styles.yardMetaText]}>{garage.neighborhood} · visible to buyers nearby</Text>
+        <Pressable onPress={() => shareYard(garage._id, user.name)} accessibilityRole="button" style={styles.sharePill}>
+          <Text style={styles.sharePillText}>Share my yard</Text>
+        </Pressable>
+      </View>
       {error && !editing && <Text style={styles.error}>{error}</Text>}
       <FlatList
         data={items}
@@ -402,6 +408,18 @@ const styles = StyleSheet.create({
   },
   yardHeadline: { fontFamily: fonts.display, fontSize: 30, lineHeight: 34, letterSpacing: -1, color: colors.ink },
   yardMeta: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
+  yardMetaRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  yardMetaText: { flex: 1 },
+  sharePill: {
+    minHeight: spacing.minButton,
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    borderRadius: spacing.radius,
+    backgroundColor: colors.tag,
+    borderWidth: 2,
+    borderColor: colors.ink,
+  },
+  sharePillText: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
   grid: { paddingTop: 8, paddingBottom: 12, gap: 14 },
   gridRow: { gap: 14 },
   card: { flex: 1, gap: 6 },

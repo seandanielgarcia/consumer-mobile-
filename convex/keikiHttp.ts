@@ -1,6 +1,7 @@
 import { httpAction, type ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { HttpRouter } from "convex/server";
+import { renderYardPage } from "./yard";
 
 type Json = Record<string, unknown>;
 
@@ -71,6 +72,20 @@ export function registerKeikiRoutes(http: HttpRouter) {
       const appUrl = `${process.env.APP_LINK_BASE ?? "garagesale://"}buyer/item/${itemId}`;
       const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>yard sale</title></head><body style="font-family:-apple-system,sans-serif;text-align:center;padding:48px 24px"><p>Opening the item in yard sale…</p><p><a href="${appUrl}" style="display:inline-block;background:#000;color:#fff;padding:14px 24px;border-radius:999px;text-decoration:none">Open in yardsale</a></p><script>location.href=${JSON.stringify(appUrl)}</script></body></html>`;
       return new Response(html, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
+    }),
+  });
+
+  http.route({
+    pathPrefix: "/y/",
+    method: "GET",
+    handler: httpAction(async (ctx, request) => {
+      const garageId = new URL(request.url).pathname.slice("/y/".length);
+      const yard = /^[a-z0-9]{10,64}$/.test(garageId) ? await ctx.runQuery(internal.yard.yardPage, { garageId }) : null;
+      if (!yard) return new Response("Not found", { status: 404 });
+      return new Response(renderYardPage(yard, process.env.APP_LINK_BASE ?? "garagesale://"), {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
     }),
   });
 
