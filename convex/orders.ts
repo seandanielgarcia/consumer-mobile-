@@ -80,7 +80,7 @@ export const getOrder = query({
     return {
       status: order.status,
       totalCents: order.totalCents,
-      sellerName: seller?.name ?? "The seller",
+      sellerName: seller?.name?.split(" ")[0] ?? "The seller",
       items: items
         .filter((i) => i !== null)
         .map((i) => ({ _id: i._id, title: i.title, size: i.size, priceCents: i.priceCents, photoUrl: i.photoUrl })),

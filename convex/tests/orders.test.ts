@@ -98,7 +98,7 @@ describe("orders.getOrder", () => {
     expect(JSON.stringify(order)).not.toContain(sellerPhone);
   });
 
-  it.fails("returns only the seller's first name for a multi-word stored name", async () => {
+  it("returns only the seller's first name for a multi-word stored name", async () => {
     const { order } = await orderWithNamedSeller();
     expect(order?.sellerName).toBe("Maya");
   });
