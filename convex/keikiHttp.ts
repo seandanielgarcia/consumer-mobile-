@@ -38,6 +38,10 @@ function reply(body: Json) {
 
 function keikiRoute(handler: (ctx: ActionCtx, input: Json, context: Json, phones: string[]) => Promise<Json>) {
   return httpAction(async (ctx, request) => {
+    const token = process.env.KEIKI_TOOL_TOKEN;
+    if (token && new URL(request.url).searchParams.get("token") !== token) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+    }
     let body: Json;
     try {
       body = asObject(await request.json());
@@ -49,7 +53,12 @@ function keikiRoute(handler: (ctx: ActionCtx, input: Json, context: Json, phones
     const phones = [asString(context.phone), asString(context.userId), asString(request.headers.get("X-Orchid-User-Id"))]
       .filter((p): p is string => !!p);
     if (phones.length === 0) return reply({ error: "no_garage" });
-    return reply(await handler(ctx, input, context, phones));
+    try {
+      return reply(await handler(ctx, input, context, phones));
+    } catch (e) {
+      console.error("keiki tool failed", request.url, e);
+      return reply({ error: "internal_error" });
+    }
   });
 }
 

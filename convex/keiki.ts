@@ -43,8 +43,9 @@ async function itemInGarage(ctx: QueryCtx, phones: string[], itemId: string) {
   return { item, error: null };
 }
 
-function toCents(price: number) {
-  return Math.round(price * 100);
+function toCents(price: number): number | null {
+  const cents = Math.round(price * 100);
+  return Number.isSafeInteger(cents) && cents > 0 ? cents : null;
 }
 
 export const garageIdForPhone = internalQuery({
@@ -74,9 +75,15 @@ export const addItem = internalAction({
   handler: async (ctx, { phones, photoUrl, price }): Promise<ToolResult> => {
     const garageId = await ctx.runQuery(internal.keiki.garageIdForPhone, { phones });
     if (!garageId) return NO_GARAGE;
-    if (price !== undefined && !(price > 0)) return { error: "invalid_price" };
+    const askedCents = price === undefined ? undefined : toCents(price);
+    if (askedCents === null) return { error: "invalid_price" };
 
-    const photo = await fetch(photoUrl);
+    let photo: Response;
+    try {
+      photo = await fetch(photoUrl);
+    } catch {
+      return { error: "photo_fetch_failed" };
+    }
     if (!photo.ok) return { error: "photo_fetch_failed" };
     const storageId = await ctx.storage.store(await photo.blob());
     const storedUrl = await ctx.storage.getUrl(storageId);
@@ -91,8 +98,8 @@ export const addItem = internalAction({
       return { error: "ai_failed" };
     }
 
-    const live = price !== undefined;
-    const priceCents = live ? toCents(price) : listing.suggestedPriceCents;
+    const live = askedCents !== undefined;
+    const priceCents = askedCents ?? listing.suggestedPriceCents;
     const itemId = await ctx.runMutation(internal.keiki.insertItem, {
       garageId,
       storageId,
@@ -113,10 +120,10 @@ export const setPrice = internalMutation({
   handler: async (ctx, { phones, itemId, price }): Promise<ToolResult> => {
     const found = await itemInGarage(ctx, phones, itemId);
     if (!found.item) return found.error;
-    if (!(price > 0)) return { error: "invalid_price" };
+    const priceCents = toCents(price);
+    if (priceCents === null) return { error: "invalid_price" };
     const { item } = found;
     if (item.status !== "draft" && item.status !== "live") return { error: "item_not_editable", status: item.status };
-    const priceCents = toCents(price);
     await ctx.db.patch(item._id, { priceCents, status: "live" });
     return { item_id: item._id, title: item.title, price: priceCents / 100, status: "live" };
   },
