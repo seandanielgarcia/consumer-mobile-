@@ -63,6 +63,18 @@ function keikiRoute(handler: (ctx: ActionCtx, input: Json, context: Json, phones
 
 export function registerKeikiRoutes(http: HttpRouter) {
   http.route({
+    pathPrefix: "/i/",
+    method: "GET",
+    handler: httpAction(async (_ctx, request) => {
+      const itemId = new URL(request.url).pathname.slice("/i/".length);
+      if (!/^[a-z0-9]{10,64}$/.test(itemId)) return new Response("Not found", { status: 404 });
+      const appUrl = `garagesale://buyer/item/${itemId}`;
+      const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>yard sale</title></head><body style="font-family:-apple-system,sans-serif;text-align:center;padding:48px 24px"><p>Opening the item in yard sale…</p><p><a href="${appUrl}" style="display:inline-block;background:#000;color:#fff;padding:14px 24px;border-radius:999px;text-decoration:none">Open in yardsale</a></p><script>location.href=${JSON.stringify(appUrl)}</script></body></html>`;
+      return new Response(html, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
+    }),
+  });
+
+  http.route({
     path: "/keiki/add_item",
     method: "POST",
     handler: keikiRoute(async (ctx, input, context, phones) => {
