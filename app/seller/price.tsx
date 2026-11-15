@@ -222,7 +222,7 @@ export default function SellerPrice() {
                     onChangeText={(description) => update(index, { description })}
                     placeholder="What should buyers know?"
                     multiline
-                    style={[styles.description, styles.input]}
+                    style={[styles.description, styles.input, styles.descriptionInput]}
                   />
                   <Pressable onPress={() => setEditing(null)} hitSlop={8} style={styles.done}>
                     <Text style={styles.doneText}>Done</Text>
@@ -239,7 +239,7 @@ export default function SellerPrice() {
                   <Text style={styles.description} numberOfLines={2}>
                     {draft.description || "Tap to add a description"}
                   </Text>
-                  {draft.aiGenerated && <Text style={styles.hint}>filled in from your photo · tap to edit</Text>}
+                  {draft.aiGenerated && <Text style={styles.hint} numberOfLines={1}>filled in from your photo · tap to edit</Text>}
                 </Pressable>
               )}
             </View>
@@ -311,9 +311,10 @@ const styles = StyleSheet.create({
   details: { fontFamily: fonts.medium, fontSize: 13, color: colors.ink },
   hint: { fontFamily: fonts.body, fontSize: 11, color: colors.muted, opacity: 0.8 },
   input: { padding: 0, marginBottom: 4 },
-  detailInputs: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6 },
+  descriptionInput: { minHeight: 36 },
+  detailInputs: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 6, marginBottom: 6 },
   detailInput: {
-    minWidth: 64,
+    width: "48%",
     height: 30,
     paddingHorizontal: 10,
     borderRadius: 999,
