@@ -137,7 +137,7 @@ export default function BuyerNearYou() {
   const { width } = useWindowDimensions();
   const cardWidth = (width - 32 - 12) / 2;
 
-  const results = useQuery(api.buyer.search, location ? { q, lat: location.lat, lng: location.lng, radiusMiles, buyerId, now } : "skip");
+  const results = useQuery(api.buyer.search, { q, lat: location.lat, lng: location.lng, radiusMiles, buyerId, now });
   const sizes = useMemo(
     () => [...new Set((results ?? []).flatMap((r) => (r.size ? [r.size] : [])))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
     [results],
@@ -168,7 +168,7 @@ export default function BuyerNearYou() {
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-        <Pill label={location ? `${location.label} · ${radiusMiles} mi ▾` : "Finding you… ▾"} active={false} onPress={() => setSheetOpen(true)} />
+        <Pill label={`${location.label} · ${radiusMiles} mi ▾`} active={false} onPress={() => setSheetOpen(true)} />
         <Pill label={size ? `Size ${size} ▾` : "Size ▾"} active={!!size} onPress={() => setSizeOpen((o) => !o)} />
         <Pill label="Under $30" active={under30} onPress={() => setUnder30((u) => !u)} />
       </ScrollView>
