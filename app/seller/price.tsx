@@ -7,7 +7,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { getPickedPhotos } from "../../src/lib/pickedPhotos";
-import { useCurrentUser } from "../../src/lib/useCurrentUser";
+import { requireUser, SignInCancelled } from "../../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../../src/theme";
 
 type Draft = {
@@ -75,7 +75,6 @@ const parseDollars = (text: string) => {
 };
 
 export default function SellerReview() {
-  const user = useCurrentUser();
   const generateUploadUrl = useMutation(api.items.generateUploadUrl);
   const describePhoto = useAction(api.ai.describePhoto);
   const openWithItems = useMutation(api.garages.openWithItems);
@@ -159,16 +158,19 @@ export default function SellerReview() {
   };
 
   const openGarage = async () => {
-    if (!user) {
-      router.push({ pathname: "/signin", params: { next: "back" } });
+    setError(null);
+    let ownerId: Id<"users">;
+    try {
+      ownerId = await requireUser();
+    } catch (e) {
+      if (!(e instanceof SignInCancelled)) setError("Couldn't sign you in. Try again.");
       return;
     }
     setOpening(true);
-    setError(null);
     try {
       const { neighborhood, lat, lng } = await approximateLocation();
       const { garageId, itemIds, firstOpen } = await openWithItems({
-        ownerId: user.userId,
+        ownerId,
         neighborhood,
         lat,
         lng,

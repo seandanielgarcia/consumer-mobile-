@@ -1,19 +1,19 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery } from "convex/react";
 import * as Linking from "expo-linking";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { router } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { api } from "../convex/_generated/api";
 import type { Id } from "../convex/_generated/dataModel";
-import { setCurrentUser } from "../src/lib/useCurrentUser";
+import { cancelSignIn, setCurrentUser } from "../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../src/theme";
 
 const KEIKI_NUMBER = "+17796251378";
 const KEIKI_NUMBER_DISPLAY = "+1 779-625-1378";
 const PENDING_KEY = "garage-sale/pending-verification";
 
-type Pending = { userId: Id<"users">; code: string; phone: string };
+type Pending = { userId: Id<"users">; code: string; phone: string; name: string };
 
 const normalizePhone = (input: string) => {
   const digits = input.replace(/\D/g, "");
@@ -23,7 +23,6 @@ const normalizePhone = (input: string) => {
 };
 
 export default function SignIn() {
-  const { next } = useLocalSearchParams<{ next?: string }>();
   const startVerification = useMutation(api.users.startVerification);
   const devSkip = useMutation(api.users.devSkipVerification);
   const [name, setName] = useState("");
@@ -31,6 +30,7 @@ export default function SignIn() {
   const [pending, setPendingState] = useState<Pending | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const done = useRef(false);
   const verified = useQuery(api.users.isVerified, pending ? { userId: pending.userId } : "skip");
   const normalized = normalizePhone(phone);
   const canContinue = name.trim() !== "" && normalized !== null && !saving;
@@ -47,20 +47,30 @@ export default function SignIn() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (!pending || !verified) return;
+  useEffect(() => () => {
+    if (!done.current) cancelSignIn();
+  }, []);
+
+  const finish = (userId: Id<"users">, firstName: string) => {
+    done.current = true;
     AsyncStorage.removeItem(PENDING_KEY).catch(() => {});
-    setCurrentUser({ userId: pending.userId }).then(() =>
-      next === "back" && router.canGoBack() ? router.back() : router.replace("/seller/price"),
-    );
-  }, [pending, verified, next]);
+    if (router.canGoBack()) router.back();
+    setCurrentUser({ userId, name: firstName });
+  };
+
+  useEffect(() => {
+    if (pending && verified) finish(pending.userId, pending.name);
+  }, [pending, verified]);
 
   const submit = async () => {
     if (!normalized) return;
     setSaving(true);
     setError(null);
     try {
-      setPending({ ...(await startVerification({ phone: normalized, name: name.trim() })), phone: phone.trim() });
+      const firstName = name.trim();
+      const result = await startVerification({ phone: normalized, name: firstName });
+      if (result.verified) finish(result.userId, firstName);
+      else setPending({ userId: result.userId, code: result.code ?? "", phone: phone.trim(), name: firstName });
     } catch {
       setError("Couldn't save that. Try again.");
     }
@@ -85,7 +95,7 @@ export default function SignIn() {
   return (
     <KeyboardAvoidingView behavior="padding" style={styles.screen}>
       <Pressable onPress={() => (pending ? setPending(null) : router.back())} hitSlop={12} style={styles.back}>
-        <Text style={styles.backText}>← Back</Text>
+        <Text style={styles.backText}>{pending ? "← Back" : "Cancel"}</Text>
       </Pressable>
       {pending ? (
         <>
@@ -104,9 +114,8 @@ export default function SignIn() {
         </>
       ) : (
         <>
-          <Text style={styles.headline}>{"Who's selling?"}</Text>
-          <Text style={styles.subhead}>Buyers see your first name only.</Text>
           <View style={styles.fields}>
+            <Text style={styles.fieldLabel}>{"What's your first name?"}</Text>
             <TextInput
               value={name}
               onChangeText={setName}
@@ -118,6 +127,10 @@ export default function SignIn() {
               style={styles.input}
               autoFocus
             />
+            <Text style={styles.subhead}>Buyers see your first name only.</Text>
+          </View>
+          <View style={styles.fields}>
+            <Text style={styles.fieldLabel}>Your phone number</Text>
             <TextInput
               value={phone}
               onChangeText={setPhone}
@@ -162,15 +175,15 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.cream,
-    paddingTop: 56,
+    paddingTop: 24,
     paddingHorizontal: spacing.sidePad,
     paddingBottom: 34,
     gap: 16,
   },
   back: { alignSelf: "flex-start" },
   backText: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
-  headline: { fontFamily: fonts.display, fontSize: 34, lineHeight: 34, letterSpacing: -1, color: colors.ink },
-  subhead: { fontFamily: fonts.body, fontSize: 15, lineHeight: 20, color: colors.muted },
+  fieldLabel: { fontFamily: fonts.display, fontSize: 24, color: colors.ink },
+  subhead: { fontFamily: fonts.body, fontSize: 14, lineHeight: 18, color: colors.muted },
   fields: { gap: 10 },
   input: {
     height: 50,

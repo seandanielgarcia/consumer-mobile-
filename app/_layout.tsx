@@ -24,7 +24,9 @@ export default function RootLayout() {
   if (!loaded || !userLoaded) return null;
   return (
     <ConvexProvider client={convex}>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.cream } }} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.cream } }}>
+        <Stack.Screen name="signin" options={{ presentation: "modal" }} />
+      </Stack>
     </ConvexProvider>
   );
 }

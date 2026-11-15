@@ -39,7 +39,7 @@ export const startVerification = mutation({
       .unique();
     if (existing) {
       await ctx.db.patch(existing._id, { name, verified: false, ...verification });
-      return { userId: existing._id, code };
+      return { userId: existing._id, code, verified: false };
     }
     const userId = await ctx.db.insert("users", {
       phone,
@@ -48,7 +48,7 @@ export const startVerification = mutation({
       verified: false,
       ...verification,
     });
-    return { userId, code };
+    return { userId, code, verified: false };
   },
 });
 
