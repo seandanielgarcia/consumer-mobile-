@@ -13,7 +13,9 @@ const KEIKI_NUMBER = "+17796251378";
 const KEIKI_NUMBER_DISPLAY = "+1 779-625-1378";
 const PENDING_KEY = "garage-sale/pending-verification";
 
-type Pending = { userId: Id<"users">; code: string; phone: string; name: string };
+type Pending = { userId: Id<"users">; code: string; phone: string; name: string; startedAt: number };
+
+const PENDING_TTL_MS = 10 * 60 * 1000;
 
 const normalizePhone = (input: string) => {
   const digits = input.replace(/\D/g, "");
@@ -43,7 +45,11 @@ export default function SignIn() {
 
   useEffect(() => {
     AsyncStorage.getItem(PENDING_KEY)
-      .then((stored) => stored && setPendingState(JSON.parse(stored) as Pending))
+      .then((stored) => {
+        const restored = stored ? (JSON.parse(stored) as Pending) : null;
+        if (restored && Date.now() - (restored.startedAt ?? 0) < PENDING_TTL_MS) setPendingState(restored);
+        else AsyncStorage.removeItem(PENDING_KEY).catch(() => {});
+      })
       .catch(() => {});
   }, []);
 
@@ -70,7 +76,7 @@ export default function SignIn() {
       const firstName = name.trim();
       const result = await startVerification({ phone: normalized, name: firstName });
       if (result.verified) finish(result.userId, firstName);
-      else setPending({ userId: result.userId, code: result.code ?? "", phone: phone.trim(), name: firstName });
+      else setPending({ userId: result.userId, code: result.code ?? "", phone: phone.trim(), name: firstName, startedAt: Date.now() });
     } catch {
       setError("Couldn't save that. Try again.");
     }
