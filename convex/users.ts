@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 
 const AVATAR_COLORS = ["#FFE14D", "#7EE0B5", "#FF8FB1", "#9DB4D6"];
 const CODE_TTL_MS = 10 * 60 * 1000;
@@ -54,30 +54,5 @@ export const devSkipVerification = mutation({
   handler: async (ctx, { userId }) => {
     if (process.env.DEV_ALLOW_SKIP !== "true") throw new Error("Skipping verification is off");
     await ctx.db.patch(userId, { verified: true, verifyCode: undefined, verifyCodeExpiresAt: undefined });
-  },
-});
-
-export const isPremium = query({
-  args: { userId: v.id("users") },
-  handler: async (ctx, { userId }) => (await ctx.db.get(userId))?.isPremium === true,
-});
-
-export const checkoutBlocker = internalQuery({
-  args: { userId: v.id("users") },
-  handler: async (ctx, { userId }) => {
-    const user = await ctx.db.get(userId);
-    if (!user) return "Unknown user";
-    if (user.isPremium) return "Already premium";
-    return null;
-  },
-});
-
-export const setPremium = internalMutation({
-  args: { userId: v.string() },
-  handler: async (ctx, args) => {
-    const userId = ctx.db.normalizeId("users", args.userId);
-    if (!userId || !(await ctx.db.get(userId))) return false;
-    await ctx.db.patch(userId, { isPremium: true });
-    return true;
   },
 });
