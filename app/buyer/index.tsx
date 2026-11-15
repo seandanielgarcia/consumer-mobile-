@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
-import { formatPrice, itemLabel } from "../../src/buyer/format";
+import { detailLine, formatPrice } from "../../src/buyer/format";
 import { locateMe, locatePlace, useBuyerLocation } from "../../src/buyer/location";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors, fonts } from "../../src/theme";
@@ -188,20 +188,21 @@ export default function BuyerNearYou() {
           {shown.map((item) => (
             <Pressable
               key={item._id}
-              style={{ width: cardWidth, gap: 6 }}
-              onPress={() => router.push({ pathname: "/buyer/garage/[id]", params: { id: item.garageId, selected: item._id } })}
+              style={{ width: cardWidth, gap: 4 }}
+              onPress={() => router.push({ pathname: "/buyer/item/[id]", params: { id: item._id } })}
             >
-              <View style={{ height: 180, borderRadius: 14, overflow: "hidden", backgroundColor: colors.line }}>
-                <Image source={{ uri: item.photoUrl }} style={{ flex: 1 }} contentFit="cover" transition={150} />
-                <View style={{ position: "absolute", bottom: 8, left: 8, backgroundColor: colors.tag, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 6 }}>
-                  <Text style={{ fontFamily: fonts.display, fontSize: 17, color: colors.ink }}>{formatPrice(item.priceCents)}</Text>
-                </View>
-              </View>
-              <Text numberOfLines={1} style={{ fontFamily: fonts.semibold, fontSize: 15, color: colors.ink }}>
-                {itemLabel(item)}
+              <Image
+                source={{ uri: item.photoUrl }}
+                style={{ width: cardWidth, height: cardWidth, borderRadius: 14, backgroundColor: colors.line, marginBottom: 4 }}
+                contentFit="cover"
+                transition={150}
+              />
+              <Text style={{ fontFamily: fonts.display, fontSize: 18, color: colors.ink }}>{formatPrice(item.priceCents)}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 14, color: colors.ink }}>
+                {item.title}
               </Text>
-              <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted }}>
-                {item.ownerName}'s yard · {item.distanceMi} mi
+              <Text numberOfLines={1} style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted }}>
+                {detailLine([item.condition, item.size, item.brand, `${item.distanceMi} mi`])}
               </Text>
             </Pressable>
           ))}
