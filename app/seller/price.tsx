@@ -40,13 +40,13 @@ const DETAIL_PLACEHOLDERS: Record<DetailField, string> = {
 const sizeRelevant = (d: Draft) => d.size.trim() !== "" || /cloth|shoe|apparel|wear/i.test(d.category);
 
 const detailFields = (d: Draft): DetailField[] =>
-  sizeRelevant(d) ? ["brand", "size", "condition", "color"] : ["brand", "condition", "color"];
+  sizeRelevant(d) ? ["size", "brand", "condition", "color"] : ["brand", "condition", "color"];
 
-const detailLine = (d: Draft) =>
-  detailFields(d)
-    .map((field) => (field === "size" && d.size.trim() ? `Size ${d.size.trim()}` : d[field].trim()))
-    .filter(Boolean)
-    .join(" · ");
+const chipLabel = (d: Draft, field: DetailField) => {
+  const value = d[field].trim();
+  if (!value) return `+ ${DETAIL_PLACEHOLDERS[field].toLowerCase()}`;
+  return field === "size" ? `Size ${value}` : value;
+};
 
 export default function SellerPrice() {
   const user = useCurrentUser();
@@ -71,6 +71,7 @@ export default function SellerPrice() {
   );
   const [preset, setPreset] = useState<Preset>("ai");
   const [editing, setEditing] = useState<number | null>(null);
+  const [editingChip, setEditingChip] = useState<{ index: number; field: DetailField } | null>(null);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -206,17 +207,6 @@ export default function SellerPrice() {
                     style={[styles.title, styles.input]}
                     autoFocus
                   />
-                  <View style={styles.detailInputs}>
-                    {detailFields(draft).map((field) => (
-                      <TextInput
-                        key={field}
-                        value={draft[field]}
-                        onChangeText={(value) => update(index, { [field]: value })}
-                        placeholder={DETAIL_PLACEHOLDERS[field]}
-                        style={styles.detailInput}
-                      />
-                    ))}
-                  </View>
                   <TextInput
                     value={draft.description}
                     onChangeText={(description) => update(index, { description })}
@@ -229,18 +219,50 @@ export default function SellerPrice() {
                   </Pressable>
                 </>
               ) : (
-                <Pressable onPress={() => setEditing(index)} style={styles.textBlock}>
-                  <Text style={styles.title} numberOfLines={1}>
-                    {draft.title || (draft.status === "failed" ? "Couldn't upload this one" : "Tap to add a title")}
-                  </Text>
-                  <Text style={styles.details} numberOfLines={1}>
-                    {detailLine(draft) || "Add brand, condition, color"}
-                  </Text>
-                  <Text style={styles.description} numberOfLines={2}>
-                    {draft.description || "Tap to add a description"}
-                  </Text>
-                  {draft.aiGenerated && <Text style={styles.hint}>filled in from your photo · tap to edit</Text>}
-                </Pressable>
+                <View style={styles.textBlock}>
+                  <Pressable onPress={() => setEditing(index)}>
+                    <Text style={styles.title} numberOfLines={1}>
+                      {draft.title || (draft.status === "failed" ? "Couldn't upload this one" : "Tap to add a title")}
+                    </Text>
+                  </Pressable>
+                  {draft.status === "ready" && (
+                    <View style={styles.chips}>
+                      {detailFields(draft).map((field) =>
+                        editingChip?.index === index && editingChip.field === field ? (
+                          <TextInput
+                            key={field}
+                            value={draft[field]}
+                            onChangeText={(value) => update(index, { [field]: value })}
+                            onBlur={() => setEditingChip(null)}
+                            onSubmitEditing={() => setEditingChip(null)}
+                            placeholder={DETAIL_PLACEHOLDERS[field]}
+                            placeholderTextColor={colors.muted}
+                            returnKeyType="done"
+                            autoFocus
+                            style={[styles.chip, styles.chipInput]}
+                          />
+                        ) : (
+                          <Pressable
+                            key={field}
+                            onPress={() => setEditingChip({ index, field })}
+                            hitSlop={4}
+                            style={[styles.chip, !draft[field].trim() && styles.chipEmpty]}
+                          >
+                            <Text style={[styles.chipText, !draft[field].trim() && styles.chipTextEmpty]}>
+                              {chipLabel(draft, field)}
+                            </Text>
+                          </Pressable>
+                        ),
+                      )}
+                    </View>
+                  )}
+                  <Pressable onPress={() => setEditing(index)}>
+                    <Text style={styles.description} numberOfLines={2}>
+                      {draft.description || "Tap to add a description"}
+                    </Text>
+                    {draft.aiGenerated && <Text style={styles.hint}>filled in from your photo · tap to edit</Text>}
+                  </Pressable>
+                </View>
               )}
             </View>
             <TextInput
@@ -308,22 +330,21 @@ const styles = StyleSheet.create({
   textBlock: { gap: 4 },
   title: { fontFamily: fonts.semibold, fontSize: 16, color: colors.ink },
   description: { fontFamily: fonts.body, fontSize: 13, lineHeight: 17.5, color: colors.muted },
-  details: { fontFamily: fonts.medium, fontSize: 13, color: colors.ink },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 4 },
+  chip: {
+    height: 24,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+    backgroundColor: colors.cream,
+    justifyContent: "center",
+  },
+  chipEmpty: { backgroundColor: "transparent", borderWidth: 1, borderStyle: "dashed", borderColor: colors.line },
+  chipInput: { minWidth: 72, borderWidth: 1, borderColor: colors.ink, backgroundColor: colors.white, fontFamily: fonts.medium, fontSize: 12, color: colors.ink, paddingVertical: 0 },
+  chipText: { fontFamily: fonts.medium, fontSize: 12, color: colors.ink },
+  chipTextEmpty: { color: colors.muted },
   hint: { fontFamily: fonts.body, fontSize: 11, color: colors.muted, opacity: 0.8 },
   input: { padding: 0, marginBottom: 4 },
   descriptionInput: { minHeight: 36 },
-  detailInputs: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 6, marginBottom: 6 },
-  detailInput: {
-    width: "48%",
-    height: 30,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.line,
-    fontFamily: fonts.body,
-    fontSize: 13,
-    color: colors.ink,
-  },
   done: { alignSelf: "flex-start", minHeight: 28, justifyContent: "center" },
   doneText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.brand },
   price: {
