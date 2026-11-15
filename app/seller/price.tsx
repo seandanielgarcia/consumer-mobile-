@@ -1,5 +1,6 @@
 import { useAction, useMutation } from "convex/react";
 import { Image } from "expo-image";
+import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import * as Location from "expo-location";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -138,16 +139,17 @@ export default function SellerReview() {
     setDrafts((prev) => prev.map((d, i) => (i === index ? { ...d, ...patch } : d)));
 
   useEffect(() => {
-    drafts.forEach(async (draft, index) => {
+    const describe = async (uri: string, index: number) => {
       let storageId: Id<"_storage"> | undefined;
       try {
         const uploadUrl = await generateUploadUrl();
-        const blob = await (await fetch(draft.uri)).blob();
+        const blob = await (await fetch(uri)).blob();
         const res = await fetch(uploadUrl, {
           method: "POST",
-          headers: { "Content-Type": blob.type || "image/jpeg" },
+          headers: { "Content-Type": "image/jpeg" },
           body: blob,
         });
+        if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
         storageId = (await res.json()).storageId as Id<"_storage">;
         const listing = await describePhoto({ storageId });
         update(index, {
@@ -166,7 +168,19 @@ export default function SellerReview() {
       } catch {
         update(index, { status: storageId ? "ready" : "failed", storageId });
       }
-    });
+    };
+    (async () => {
+      for (const [index, draft] of drafts.entries()) {
+        try {
+          const rendered = await ImageManipulator.manipulate(draft.uri).resize({ width: 1600 }).renderAsync();
+          const { uri } = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: 0.7 });
+          update(index, { uri });
+          describe(uri, index);
+        } catch {
+          update(index, { status: "failed" });
+        }
+      }
+    })();
   }, []);
 
   useEffect(() => {
