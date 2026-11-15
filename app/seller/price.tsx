@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import * as Location from "expo-location";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { getPickedPhotos } from "../../src/lib/pickedPhotos";
@@ -41,30 +41,32 @@ const chipLabel = (d: Draft, field: ChipField) => {
 
 const sizeRelevant = (d: Draft) => d.size.trim() !== "" || /cloth|shoe|apparel|wear/i.test(d.category);
 
-const DEFAULT_LOCATION = { neighborhood: "Mission", lat: 37.76, lng: -122.42 };
+export const LOCATION_NEEDED = "Location is needed so buyers nearby can find your garage.";
+
+class LocationUnavailable extends Error {
+  constructor() {
+    super(LOCATION_NEEDED);
+  }
+}
 
 const withTimeout = <T,>(promise: Promise<T>, ms: number) =>
   Promise.race([promise, new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
 
+// No silent fallback: without permission or a fix we stop and tell the seller. Coordinates are rounded to
+// 0.01° before anything else sees them (AGENTS.md: no exact address, ever).
 async function approximateLocation() {
-  try {
-    const permission = await Location.requestForegroundPermissionsAsync();
-    if (!permission.granted) return DEFAULT_LOCATION;
-    const position =
-      (await withTimeout(Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }), 5000).catch(
-        () => null,
-      )) ?? (await Location.getLastKnownPositionAsync().catch(() => null));
-    if (!position) return DEFAULT_LOCATION;
-    const { latitude, longitude } = position.coords;
-    const [place] = await withTimeout(Location.reverseGeocodeAsync({ latitude, longitude }), 3000).catch(() => null) ?? [];
-    return {
-      neighborhood: place?.district ?? place?.subregion ?? "Nearby",
-      lat: Math.round(latitude * 100) / 100,
-      lng: Math.round(longitude * 100) / 100,
-    };
-  } catch {
-    return DEFAULT_LOCATION;
-  }
+  const permission = await Location.requestForegroundPermissionsAsync().catch(() => null);
+  if (!permission?.granted) throw new LocationUnavailable();
+  const position =
+    (await withTimeout(Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }), 5000).catch(
+      () => null,
+    )) ?? (await Location.getLastKnownPositionAsync().catch(() => null));
+  if (!position) throw new LocationUnavailable();
+  const lat = Math.round(position.coords.latitude * 100) / 100;
+  const lng = Math.round(position.coords.longitude * 100) / 100;
+  const [place] =
+    (await withTimeout(Location.reverseGeocodeAsync({ latitude: lat, longitude: lng }), 3000).catch(() => null)) ?? [];
+  return { neighborhood: place?.district ?? place?.subregion ?? "Nearby", lat, lng };
 }
 
 const dollars = (cents: number) => (cents > 0 ? `$${Math.round(cents / 100)}` : "$");
@@ -99,6 +101,7 @@ export default function SellerReview() {
   const [editingChip, setEditingChip] = useState<ChipField | null>(null);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [locationDenied, setLocationDenied] = useState(false);
 
   const update = (index: number, patch: Partial<Draft>) =>
     setDrafts((prev) => prev.map((d, i) => (i === index ? { ...d, ...patch } : d)));
@@ -159,6 +162,7 @@ export default function SellerReview() {
 
   const openGarage = async () => {
     setError(null);
+    setLocationDenied(false);
     let ownerId: Id<"users">;
     try {
       ownerId = await requireUser();
@@ -192,7 +196,12 @@ export default function SellerReview() {
         params: { garageId, picked: itemIds.join(","), first: firstOpen ? "1" : "0" },
       });
     } catch (e) {
-      setError("Couldn't open your garage. Try again.");
+      if (e instanceof LocationUnavailable) {
+        setError(LOCATION_NEEDED);
+        setLocationDenied(true);
+      } else {
+        setError("Couldn't open your garage. Try again.");
+      }
       setOpening(false);
     }
   };
@@ -227,6 +236,11 @@ export default function SellerReview() {
           )}
         </ScrollView>
         {error && <Text style={styles.error}>{error}</Text>}
+        {locationDenied && (
+          <Pressable onPress={() => Linking.openSettings()} style={styles.settings} accessibilityRole="button">
+            <Text style={styles.settingsText}>Open Settings</Text>
+          </Pressable>
+        )}
         <Pressable
           onPress={openGarage}
           disabled={approved.length === 0 || opening}
@@ -466,6 +480,17 @@ const styles = StyleSheet.create({
   editIcon: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
   editIconText: { fontSize: 18, color: colors.muted },
   error: { fontFamily: fonts.medium, fontSize: 14, color: "#B3261E", textAlign: "center" },
+  settings: {
+    alignSelf: "center",
+    minHeight: spacing.minButton,
+    paddingHorizontal: 20,
+    borderRadius: spacing.radius,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  settingsText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.ink },
   cta: {
     height: spacing.cta,
     borderRadius: 30,
