@@ -13,7 +13,7 @@ const KEIKI_NUMBER = "+17796251378";
 const KEIKI_NUMBER_DISPLAY = "+1 779-625-1378";
 const PENDING_KEY = "garage-sale/pending-verification";
 
-type Pending = { userId: Id<"users">; code: string };
+type Pending = { userId: Id<"users">; code: string; phone: string };
 
 const normalizePhone = (input: string) => {
   const digits = input.replace(/\D/g, "");
@@ -60,7 +60,7 @@ export default function SignIn() {
     setSaving(true);
     setError(null);
     try {
-      setPending(await startVerification({ phone: normalized, name: name.trim() }));
+      setPending({ ...(await startVerification({ phone: normalized, name: name.trim() })), phone: phone.trim() });
     } catch {
       setError("Couldn't save that. Try again.");
     }
@@ -90,7 +90,7 @@ export default function SignIn() {
       {pending ? (
         <>
           <Text style={styles.instruction}>
-            Text <Text style={styles.instructionStrong}>K-FERUEU verify {pending.code}</Text> to {KEIKI_NUMBER_DISPLAY}
+            Text from {pending.phone}: <Text style={styles.instructionStrong}>K-FERUEU verify {pending.code}</Text> → {KEIKI_NUMBER_DISPLAY}
           </Text>
           <View style={styles.waiting}>
             <ActivityIndicator color={colors.brand} size="small" />
