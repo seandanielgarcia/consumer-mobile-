@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery, type QueryCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import { describeClothingPhoto } from "./ai";
+import { describeItemPhoto } from "./ai";
 
 type ToolResult = Record<string, unknown>;
 
@@ -43,6 +43,17 @@ async function itemInGarage(ctx: QueryCtx, phones: string[], itemId: string) {
   return { item, error: null };
 }
 
+function missingFields(item: { category?: string; size?: string }, hasPrice: boolean): string[] {
+  const missing = hasPrice ? [] : ["price"];
+  if (/cloth|shoe|apparel|footwear/i.test(item.category ?? "") && !item.size) missing.push("size");
+  return missing;
+}
+
+function details(item: { title: string; category?: string; size?: string; brand?: string; condition?: string; color?: string; description: string }) {
+  const { title, category, size, brand, condition, color, description } = item;
+  return { title, category, size, brand, condition, color, description };
+}
+
 function toCents(price: number): number | null {
   const cents = Math.round(price * 100);
   return Number.isSafeInteger(cents) && cents > 0 ? cents : null;
@@ -58,7 +69,11 @@ export const insertItem = internalMutation({
     garageId: v.id("garages"),
     storageId: v.id("_storage"),
     title: v.string(),
-    size: v.string(),
+    category: v.optional(v.string()),
+    size: v.optional(v.string()),
+    brand: v.optional(v.string()),
+    condition: v.optional(v.string()),
+    color: v.optional(v.string()),
     description: v.string(),
     priceCents: v.number(),
     status: v.union(v.literal("draft"), v.literal("live")),
@@ -91,7 +106,7 @@ export const addItem = internalAction({
 
     let listing;
     try {
-      listing = await describeClothingPhoto(storedUrl);
+      listing = await describeItemPhoto(storedUrl);
     } catch (e) {
       await ctx.storage.delete(storageId);
       console.error("keiki add_item AI step failed", e);
@@ -103,29 +118,43 @@ export const addItem = internalAction({
     const itemId = await ctx.runMutation(internal.keiki.insertItem, {
       garageId,
       storageId,
-      title: listing.title,
-      size: listing.size,
-      description: listing.description,
+      ...details(listing),
       priceCents,
       status: live ? "live" : "draft",
     });
-    return live
-      ? { item_id: itemId, title: listing.title, size: listing.size, price: priceCents / 100, status: "live" }
-      : { item_id: itemId, title: listing.title, size: listing.size, suggested_price: priceCents / 100, status: "draft" };
+    return {
+      item_id: itemId,
+      ...details(listing),
+      ...(live ? { price: priceCents / 100 } : { suggested_price: priceCents / 100 }),
+      status: live ? "live" : "draft",
+      missing: missingFields(listing, live),
+    };
   },
 });
 
 export const setPrice = internalMutation({
-  args: { phones: v.array(v.string()), itemId: v.string(), price: v.number() },
-  handler: async (ctx, { phones, itemId, price }): Promise<ToolResult> => {
+  args: { phones: v.array(v.string()), itemId: v.string(), price: v.optional(v.number()), size: v.optional(v.string()) },
+  handler: async (ctx, { phones, itemId, price, size }): Promise<ToolResult> => {
     const found = await itemInGarage(ctx, phones, itemId);
     if (!found.item) return found.error;
-    const priceCents = toCents(price);
+    if (price === undefined && size === undefined) return { error: "nothing_to_update" };
+    const priceCents = price === undefined ? undefined : toCents(price);
     if (priceCents === null) return { error: "invalid_price" };
     const { item } = found;
     if (item.status !== "draft" && item.status !== "live") return { error: "item_not_editable", status: item.status };
-    await ctx.db.patch(item._id, { priceCents, status: "live" });
-    return { item_id: item._id, title: item.title, price: priceCents / 100, status: "live" };
+    const updated = {
+      ...item,
+      ...(size !== undefined && { size }),
+      ...(priceCents !== undefined && { priceCents, status: "live" as const }),
+    };
+    await ctx.db.patch(item._id, { size: updated.size, priceCents: updated.priceCents, status: updated.status });
+    return {
+      item_id: item._id,
+      ...details(updated),
+      price: updated.priceCents / 100,
+      status: updated.status,
+      missing: missingFields(updated, updated.status === "live"),
+    };
   },
 });
 
@@ -143,6 +172,7 @@ export const listItems = internalQuery({
       items: items.map((item) => ({
         item_id: item._id,
         title: item.title,
+        category: item.category,
         size: item.size,
         price: item.priceCents / 100,
         status: item.status,

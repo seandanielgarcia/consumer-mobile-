@@ -85,9 +85,10 @@ export function registerKeikiRoutes(http: HttpRouter) {
     handler: keikiRoute(async (ctx, input, _context, phones) => {
       const itemId = asString(input.item_id);
       const price = asPrice(input.price);
+      const size = asString(input.size);
       if (!itemId) return { error: "missing_item_id" };
-      if (price === undefined || !(price > 0)) return { error: "invalid_price" };
-      return await ctx.runMutation(internal.keiki.setPrice, { phones, itemId, price });
+      if (price !== undefined && !(price > 0)) return { error: "invalid_price" };
+      return await ctx.runMutation(internal.keiki.setPrice, { phones, itemId, price, size });
     }),
   });
 
