@@ -13,7 +13,7 @@ import { useCurrentUser } from "../../../src/lib/useCurrentUser";
 import { colors, fonts, typeSize } from "../../../src/theme";
 
 export default function BuyerGarage() {
-  const { id, selected } = useLocalSearchParams<{ id: string; selected?: string }>();
+  const { id, selected, notice: returnNotice } = useLocalSearchParams<{ id: string; selected?: string; notice?: string }>();
   const garageId = id as Id<"garages">;
   const location = useBuyerLocation();
   const buyerId = useCurrentUser()?.userId;
@@ -23,8 +23,8 @@ export default function BuyerGarage() {
     return () => clearInterval(timer);
   }, []);
   const garage = useQuery(api.buyer.garage, { garageId, lat: location.lat, lng: location.lng, buyerId, now });
-  const [picked, setPicked] = useState<Id<"items">[]>(selected ? [selected as Id<"items">] : []);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [picked, setPicked] = useState<Id<"items">[]>(selected ? (selected.split(",") as Id<"items">[]) : []);
+  const [notice, setNotice] = useState<string | null>(returnNotice ?? null);
   const titles = useRef(new Map<string, string>());
   const { buy: buyItems, buying, error, checkingOut } = useBuy(garageId);
   const buy = () => buyItems(pickedItems.map((i) => i._id));

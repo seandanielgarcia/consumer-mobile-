@@ -5,6 +5,8 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { requireUser, SignInCancelled } from "../lib/useCurrentUser";
 import { startCheckout } from "./checkout";
 
+export const PAYMENT_FAILED = "Payment didn't go through. Your items are held for 10 min.";
+
 export function useBuy(garageId: Id<"garages">) {
   const convex = useConvex();
   const [buying, setBuying] = useState(false);
@@ -23,12 +25,12 @@ export function useBuy(garageId: Id<"garages">) {
     setBuying(true);
     checkingOut.current = true;
     try {
-      const { orderId, returned } = await startCheckout(convex, buyer, garageId, itemIds);
-      if (returned) {
+      const { orderId, paid } = await startCheckout(convex, buyer, garageId, itemIds);
+      if (paid) {
         router.replace({ pathname: "/buyer/paid", params: { orderId } });
         return;
       }
-      setError("Payment didn't go through. Your items are held for 10 min.");
+      setError(PAYMENT_FAILED);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Checkout failed.");
     }
