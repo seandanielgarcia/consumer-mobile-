@@ -146,7 +146,7 @@ export default function BuyerNearYou() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.cream }} contentContainerStyle={{ paddingTop: 56, paddingHorizontal: 16, paddingBottom: 40, gap: 12 }} keyboardShouldPersistTaps="handled">
-      <Text style={{ fontFamily: fonts.display, fontSize: type.title, letterSpacing: -0.5, color: colors.ink }}>Near you</Text>
+      <Text style={{ fontFamily: fonts.display, fontSize: 28, letterSpacing: -0.5, color: colors.ink }}>Near you</Text>
 
       <View style={{ height: 44, borderRadius: 12, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14 }}>
         <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.ink} strokeWidth={2}>
