@@ -1,10 +1,11 @@
 import { useQuery } from "convex/react";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 import { formatPrice, itemLabel } from "../../src/buyer/format";
 import { locateMe, locatePlace, useBuyerLocation } from "../../src/buyer/location";
 import { colors, fonts } from "../../src/theme";
@@ -88,7 +89,7 @@ function LocationSheet({ visible, onClose }: { visible: boolean; onClose: () => 
           </View>
           {busy && <ActivityIndicator color={colors.ink} />}
           {error && <Text style={{ fontFamily: fonts.body, fontSize: 14, color: colors.muted }}>{error}</Text>}
-          <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted }}>We only use a rough area (about 1 km). What you type stays on this phone.</Text>
+          <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted }}>Only a rough area (about 1 km) is used.</Text>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -103,10 +104,16 @@ export default function BuyerNearYou() {
   const [under30, setUnder30] = useState(false);
   const [radiusMiles, setRadiusMiles] = useState(2);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 30000) * 30000);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Math.floor(Date.now() / 30000) * 30000), 30000);
+    return () => clearInterval(timer);
+  }, []);
+  const buyerId = process.env.EXPO_PUBLIC_DEV_USER_ID as Id<"users"> | undefined;
   const { width } = useWindowDimensions();
   const cardWidth = (width - 32 - 12) / 2;
 
-  const results = useQuery(api.buyer.search, location ? { q, lat: location.lat, lng: location.lng, radiusMiles } : "skip");
+  const results = useQuery(api.buyer.search, location ? { q, lat: location.lat, lng: location.lng, radiusMiles, buyerId, now } : "skip");
   const sizes = useMemo(
     () => [...new Set((results ?? []).flatMap((r) => (r.size ? [r.size] : [])))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
     [results],

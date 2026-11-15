@@ -17,7 +17,8 @@ export default function SellerOpen() {
   const pickedIds = picked ? picked.split(",") : [];
   const items = pickedIds.length
     ? pickedIds.flatMap((id) => live.filter((item) => item._id === id))
-    : live.slice(0, 3);
+    : live;
+  const extra = items.length - 3;
 
   return (
     <View style={styles.screen}>
@@ -28,19 +29,21 @@ export default function SellerOpen() {
           <View key={item._id} style={[styles.polaroid, { transform: [{ rotate: ROTATIONS[index] }] }]}>
             <Image source={{ uri: item.photoUrl }} style={styles.polaroidPhoto} contentFit="cover" />
             <Text style={styles.polaroidPrice}>${Math.round(item.priceCents / 100)}</Text>
+            {index === 2 && extra > 0 && (
+              <View style={styles.more}>
+                <Text style={styles.moreText}>+{extra}</Text>
+              </View>
+            )}
           </View>
         ))}
       </View>
-      <View style={styles.spacer} />
       {first === "1" && (
         <View style={styles.keiki}>
           <View style={styles.keikiHeader}>
             <View style={styles.chatCircle}>
               <ChatIcon size={20} color={colors.ink} />
             </View>
-            <Text style={styles.keikiTitle} numberOfLines={1}>
-              More later? Text Keiki
-            </Text>
+            <Text style={styles.keikiTitle}>More later? Text Keiki a pic and a price.</Text>
           </View>
           <Pressable
             style={styles.saveButton}
@@ -67,14 +70,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sidePad,
     paddingBottom: 34,
     gap: 20,
+    justifyContent: "center",
   },
   meta: { fontFamily: fonts.body, fontSize: 15, color: colors.cream },
   headline: { fontFamily: fonts.display, fontSize: 44, lineHeight: 43, letterSpacing: -1.5, color: colors.cream },
   polaroids: { flexDirection: "row", justifyContent: "center", gap: 10, paddingVertical: 12 },
-  polaroid: { width: 100, backgroundColor: colors.white, paddingTop: 6, paddingHorizontal: 6, paddingBottom: 10, gap: 6 },
-  polaroidPhoto: { height: 110, backgroundColor: colors.line },
+  polaroid: { width: 108, backgroundColor: colors.white, paddingTop: 6, paddingHorizontal: 6, paddingBottom: 10, gap: 6 },
+  polaroidPhoto: { height: 132, backgroundColor: colors.line },
   polaroidPrice: { fontFamily: fonts.display, fontSize: 15, color: colors.ink },
-  spacer: { flex: 1 },
+  more: {
+    position: "absolute",
+    top: -10,
+    right: -10,
+    minWidth: 36,
+    height: 36,
+    borderRadius: 18,
+    paddingHorizontal: 6,
+    backgroundColor: colors.tag,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  moreText: { fontFamily: fonts.display, fontSize: 15, color: colors.ink },
   keiki: { backgroundColor: colors.cream, borderRadius: 24, padding: 20, gap: 12 },
   keikiHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
   chatCircle: {

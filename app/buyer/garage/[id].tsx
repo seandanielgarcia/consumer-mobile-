@@ -13,7 +13,7 @@ import { useCurrentUser } from "../../../src/lib/useCurrentUser";
 import { colors, fonts } from "../../../src/theme";
 
 export default function BuyerGarage() {
-  const { id, selected, resume } = useLocalSearchParams<{ id: string; selected?: string; resume?: string }>();
+  const { id, selected } = useLocalSearchParams<{ id: string; selected?: string }>();
   const garageId = id as Id<"garages">;
   const location = useBuyerLocation();
   const convex = useConvex();
@@ -28,15 +28,15 @@ export default function BuyerGarage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
   const titles = useRef(new Map<string, string>());
-  const resumed = useRef(false);
+  const lastSelected = useRef(selected);
   const checkoutInProgress = useRef(false);
   const { width } = useWindowDimensions();
   const cardWidth = (width - 40 - 14) / 2;
 
   const removeUnavailable = useCallback((itemIds: Id<"items">[]) => {
     setPicked((current) => current.filter((id) => !itemIds.includes(id)));
-    const names = itemIds.map((id) => titles.current.get(id) ?? "an item");
-    setNotice(`Someone just bought ${names.join(" and ")}. We took ${names.length === 1 ? "it" : "them"} out of your cart.`);
+    const names = itemIds.map((id) => titles.current.get(id) ?? "An item");
+    setNotice(names.map((name) => `${name} just got picked up by someone else, so we took it out of your picks.`).join(" "));
   }, []);
 
   const checkout = useCallback(async (userId: Id<"users">, itemIds: Id<"items">[]) => {
@@ -51,7 +51,8 @@ export default function BuyerGarage() {
       if (error instanceof ConvexError && error.data?.code === "ITEM_UNAVAILABLE" && itemIds.includes(error.data.itemId)) {
         removeUnavailable([error.data.itemId]);
       } else {
-        setNotice(error instanceof Error ? error.message : "Checkout failed.");
+        const message = error instanceof ConvexError ? error.data?.message : undefined;
+        setNotice(typeof message === "string" ? message : "Something went wrong. Try again.");
       }
     } finally {
       checkoutInProgress.current = false;
@@ -60,17 +61,18 @@ export default function BuyerGarage() {
   }, [convex, garageId, removeUnavailable]);
 
   useEffect(() => {
+    if (selected === lastSelected.current) return;
+    lastSelected.current = selected;
+    setPicked((selected?.split(",").filter(Boolean) ?? []) as Id<"items">[]);
+  }, [selected]);
+
+  useEffect(() => {
     if (!garage) return;
     garage.items.forEach((item) => titles.current.set(item._id, item.title));
     const live = new Set(garage.items.map((item) => item._id));
     const unavailable = picked.filter((id) => !live.has(id));
-    if (resume === "1" && buyerId && !resumed.current) {
-      resumed.current = true;
-      router.setParams({ resume: "0" });
-      if (unavailable.length === 0) void checkout(buyerId, picked);
-    }
     if (unavailable.length > 0) removeUnavailable(unavailable);
-  }, [garage, picked, resume, buyerId, checkout, removeUnavailable]);
+  }, [garage, picked, removeUnavailable]);
 
   const pickedItems = garage?.items.filter((i) => picked.includes(i._id)) ?? [];
   const total = pickedItems.reduce((sum, i) => sum + i.priceCents, 0);
@@ -88,7 +90,7 @@ export default function BuyerGarage() {
     if (!buyerId) {
       router.push({
         pathname: "/signin",
-        params: { next: `/buyer/garage/${encodeURIComponent(garageId)}?selected=${encodeURIComponent(itemIds.join(","))}&resume=1` },
+        params: { next: `/buyer/garage/${encodeURIComponent(garageId)}?selected=${encodeURIComponent(itemIds.join(","))}` },
       });
       return;
     }
