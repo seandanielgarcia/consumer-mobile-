@@ -1,6 +1,6 @@
 # AGENTS.md: Garage Sale
 
-Garage Sale is an iOS app where people bulk-upload photos of clothes, AI writes each listing, buyers within about 2 mi search and pick items, and they pay through Whop for local pickup. The source of truth is the handoff in Capy Drive: `garage-sale-handoff/PRD.md`, `garage-sale-handoff/DRIVERS.md`, and the mockups in `garage-sale-handoff/mockups/*.dc.html` (project drive). When this file and the PRD disagree, the PRD wins; when the PRD's prose and a mockup disagree, build the mockup and flag the difference to the requirement's driver.
+Garage Sale is an iOS app where people bulk-upload photos of clothes, AI writes each listing, buyers within about 2 mi search and pick items, and they pay through Whop for local pickup. The source of truth is the handoff in Capy Drive: `garage-sale-handoff/PRD.md`, `garage-sale-handoff/DRIVERS.md`, and the mockups in `garage-sale-handoff/mockups/*.dc.html` (project drive). Sean's rulings recorded in this file override the PRD; otherwise, when this file and the PRD disagree, the PRD wins; when the PRD's prose and a mockup disagree, build the mockup and flag the difference to the requirement's driver.
 
 ## Stack
 
@@ -65,13 +65,13 @@ Money is always integer cents.
 ## Rules that must hold
 
 - **No exact address, ever.** Round coordinates to about 0.01° before they reach Convex; the app shows only the neighborhood and a rough distance ("about 1 mi"). This applies to the buyer's location too.
-- **Only `live` items appear in search**, within 2 mi (not adjustable), nearest first. Search matches title and description.
+- **Only `live` items appear in search**, within the radius the buyer picks (1, 2, 5 or 10 mi; default 2 mi; the server clamps to 10), nearest first. Search matches title and description.
 - **Reserving happens on the Whop `payment.succeeded` webhook**, not when the buyer taps Buy. The webhook sets the order to `paid`, its items to `reserved`, and texts the seller.
 - **Two buyers can't pay for the same item.** Check every item is still `live` when creating the order and again in the webhook. If an item became `reserved` while it sat in someone's selection, remove it and tell the buyer before checkout.
 - **One garage per checkout.**
 - The seller can mark an item `sold` after pickup, or put it back to `live`. No timers for MVP.
 - Clothes only: the AI prompt and the size filter assume clothing.
-- Sign-in is phone number only.
+- Sign-in is a phone number verified by a code (sent through Keiki), plus a first name.
 
 ## Whop checkout flow
 
@@ -93,7 +93,7 @@ Build to match the mockups exactly: Seller 1A Home → 2 Price it → 3 Garage o
 - Colors: brand blue `#2340FF`, cream `#FFF6E5`, price-tag yellow `#FFE14D`, ink `#111111`, muted text `#5A5245`. Keep them in one theme module, not inline.
 - Type: headings in Bricolage Grotesque 800, body in Inter.
 - Items look like polaroids with yellow price stickers.
-- Copy is fixed: home headline "Clear your closet. Sell to people around you." and the AI label "Written by AI · tap to edit". Don't rewrite copy.
+- Don't show any AI label (no "Written by AI · tap to edit"): AI-written fields just appear filled in and editable.
 
 ## Seed data
 
