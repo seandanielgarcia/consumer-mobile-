@@ -15,7 +15,11 @@ type Draft = {
   status: "loading" | "ready" | "failed";
   storageId?: Id<"_storage">;
   title: string;
+  category: string;
   size: string;
+  brand: string;
+  condition: string;
+  color: string;
   description: string;
   priceCents: number;
   suggestedPriceCents: number;
@@ -23,6 +27,26 @@ type Draft = {
 };
 
 type Preset = 1000 | 2000 | "ai" | null;
+
+type DetailField = "brand" | "size" | "condition" | "color";
+
+const DETAIL_PLACEHOLDERS: Record<DetailField, string> = {
+  brand: "Brand",
+  size: "Size",
+  condition: "Condition",
+  color: "Color",
+};
+
+const sizeRelevant = (d: Draft) => d.size.trim() !== "" || /cloth|shoe|apparel|wear/i.test(d.category);
+
+const detailFields = (d: Draft): DetailField[] =>
+  sizeRelevant(d) ? ["brand", "size", "condition", "color"] : ["brand", "condition", "color"];
+
+const detailLine = (d: Draft) =>
+  detailFields(d)
+    .map((field) => (field === "size" && d.size.trim() ? `Size ${d.size.trim()}` : d[field].trim()))
+    .filter(Boolean)
+    .join(" · ");
 
 export default function SellerPrice() {
   const user = useCurrentUser();
@@ -34,7 +58,11 @@ export default function SellerPrice() {
       uri,
       status: "loading",
       title: "",
+      category: "",
       size: "",
+      brand: "",
+      condition: "",
+      color: "",
       description: "",
       priceCents: 0,
       suggestedPriceCents: 0,
@@ -66,7 +94,11 @@ export default function SellerPrice() {
           status: "ready",
           storageId,
           title: listing.title,
-          size: listing.size,
+          category: listing.category,
+          size: listing.size ?? "",
+          brand: listing.brand ?? "",
+          condition: listing.condition,
+          color: listing.color,
           description: listing.description,
           priceCents: listing.suggestedPriceCents,
           suggestedPriceCents: listing.suggestedPriceCents,
@@ -91,7 +123,7 @@ export default function SellerPrice() {
 
   const openGarage = async () => {
     if (!user) {
-      setError("Sign in to open your garage.");
+      router.push("/signin");
       return;
     }
     setOpening(true);
@@ -101,7 +133,7 @@ export default function SellerPrice() {
       if (!permission.granted) throw new Error("Location is needed so buyers nearby can find your garage.");
       const { coords } = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       const [place] = await Location.reverseGeocodeAsync({ latitude: coords.latitude, longitude: coords.longitude });
-      const { garageId, firstOpen } = await openWithItems({
+      const { garageId, itemIds, firstOpen } = await openWithItems({
         ownerId: user.userId,
         neighborhood: place?.district ?? place?.subregion ?? "Nearby",
         lat: coords.latitude,
@@ -109,13 +141,20 @@ export default function SellerPrice() {
         items: uploaded.map((d) => ({
           storageId: d.storageId!,
           title: d.title.trim(),
-          size: d.size.trim(),
+          category: d.category.trim() || undefined,
+          size: d.size.trim() || undefined,
+          brand: d.brand.trim() || undefined,
+          condition: d.condition.trim() || undefined,
+          color: d.color.trim() || undefined,
           description: d.description.trim(),
           priceCents: d.priceCents,
           aiGenerated: d.aiGenerated,
         })),
       });
-      router.replace({ pathname: "/seller/open", params: { garageId, first: firstOpen ? "1" : "0" } });
+      router.replace({
+        pathname: "/seller/open",
+        params: { garageId, picked: itemIds.slice(0, 3).join(","), first: firstOpen ? "1" : "0" },
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't open your garage. Try again.");
       setOpening(false);
@@ -128,6 +167,7 @@ export default function SellerPrice() {
         <Text style={styles.backText}>← Back</Text>
       </Pressable>
       <Text style={styles.headline}>{"We wrote it.\nYou price it."}</Text>
+      <Text style={styles.subhead}>Share a photo and set a price, we'll take care of the rest.</Text>
       {drafts.length >= 2 && (
         <View style={styles.pillRow}>
           <Text style={styles.pillLabel}>Set all to</Text>
@@ -141,7 +181,7 @@ export default function SellerPrice() {
                 style={[styles.pill, selected && styles.pillSelected, !ready && styles.pillDisabled]}
               >
                 <Text style={[styles.pillText, selected && styles.pillTextSelected]}>
-                  {option === "ai" ? "AI suggests" : `$${option / 100}`}
+                  {option === "ai" ? "Suggested" : `$${option / 100}`}
                 </Text>
               </Pressable>
             );
@@ -166,24 +206,40 @@ export default function SellerPrice() {
                     style={[styles.title, styles.input]}
                     autoFocus
                   />
+                  <View style={styles.detailInputs}>
+                    {detailFields(draft).map((field) => (
+                      <TextInput
+                        key={field}
+                        value={draft[field]}
+                        onChangeText={(value) => update(index, { [field]: value })}
+                        placeholder={DETAIL_PLACEHOLDERS[field]}
+                        style={styles.detailInput}
+                      />
+                    ))}
+                  </View>
                   <TextInput
                     value={draft.description}
                     onChangeText={(description) => update(index, { description })}
-                    onBlur={() => setEditing(null)}
-                    placeholder="Size, color, condition"
+                    placeholder="What should buyers know?"
                     multiline
                     style={[styles.description, styles.input]}
                   />
+                  <Pressable onPress={() => setEditing(null)} hitSlop={8} style={styles.done}>
+                    <Text style={styles.doneText}>Done</Text>
+                  </Pressable>
                 </>
               ) : (
                 <Pressable onPress={() => setEditing(index)} style={styles.textBlock}>
                   <Text style={styles.title} numberOfLines={1}>
                     {draft.title || (draft.status === "failed" ? "Couldn't upload this one" : "Tap to add a title")}
                   </Text>
-                  <Text style={styles.description} numberOfLines={2}>
-                    {draft.description || "Tap to add size, color, condition"}
+                  <Text style={styles.details} numberOfLines={1}>
+                    {detailLine(draft) || "Add brand, condition, color"}
                   </Text>
-                  {/* TODO(SEA-3 A): whether the "Written by AI · tap to edit" label shows here is undecided. */}
+                  <Text style={styles.description} numberOfLines={2}>
+                    {draft.description || "Tap to add a description"}
+                  </Text>
+                  {draft.aiGenerated && <Text style={styles.hint}>filled in from your photo · tap to edit</Text>}
                 </Pressable>
               )}
             </View>
@@ -227,6 +283,7 @@ const styles = StyleSheet.create({
   back: { alignSelf: "flex-start" },
   backText: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
   headline: { fontFamily: fonts.display, fontSize: 34, lineHeight: 34, letterSpacing: -1, color: colors.ink },
+  subhead: { fontFamily: fonts.body, fontSize: 15, lineHeight: 20, color: colors.muted, marginTop: -6 },
   pillRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   pillLabel: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
   pill: {
@@ -251,7 +308,23 @@ const styles = StyleSheet.create({
   textBlock: { gap: 4 },
   title: { fontFamily: fonts.semibold, fontSize: 16, color: colors.ink },
   description: { fontFamily: fonts.body, fontSize: 13, lineHeight: 17.5, color: colors.muted },
+  details: { fontFamily: fonts.medium, fontSize: 13, color: colors.ink },
+  hint: { fontFamily: fonts.body, fontSize: 11, color: colors.muted, opacity: 0.8 },
   input: { padding: 0, marginBottom: 4 },
+  detailInputs: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6 },
+  detailInput: {
+    minWidth: 64,
+    height: 30,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.line,
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.ink,
+  },
+  done: { alignSelf: "flex-start", minHeight: 28, justifyContent: "center" },
+  doneText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.brand },
   price: {
     alignSelf: "center",
     width: 64,

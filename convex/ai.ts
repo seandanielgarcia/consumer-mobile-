@@ -3,22 +3,31 @@ import { action } from "./_generated/server";
 
 const MODEL = "gpt-5.4-mini";
 
-const PROMPT = `You write listings for a neighborhood garage sale app that sells clothes only.
-Look at the photo of one clothing item and return JSON:
-- title: short item name a buyer would search for, at most 4 words, with brand if visible (e.g. "Levi's 501 jeans").
-- size: the size if visible or a best guess (e.g. "28", "M", "S"); "One size" if unclear.
-- description: one or two short sentences starting with "Size <size>," (skip that when the size is "One size"), then color, material or fit, and condition (e.g. "Size 28, light wash, straight leg. Barely worn.").
-- suggestedPriceCents: a fair used garage-sale price in US cents, rounded to whole dollars.
-If the photo is not clothing, still describe the main item the same way.`;
+const PROMPT = `You write listings for a neighborhood garage sale app. People sell anything: clothes, furniture, books, kitchenware, toys, electronics, decor.
+Look at the photo of one item and return JSON:
+- title: short item name a buyer would search for, at most 4 words, with brand if visible (e.g. "Levi's 501 jeans", "IKEA floor lamp").
+- category: one or two plain words (e.g. "Clothing", "Shoes", "Furniture", "Books", "Kitchen", "Toys", "Electronics", "Decor").
+- size: the size only when it is visible or the item is normally sized (clothing, shoes); otherwise null.
+- brand: the brand only when visible or obvious; otherwise null.
+- condition: one of "New", "Like new", "Good", "Fair".
+- color: the main color in one or two words.
+- description: one or two short sentences on what it is, material or style, and condition (e.g. "Light wash, straight leg. Barely worn."). Don't repeat the size, brand or color.
+- suggestedPriceCents: a fair used garage-sale price in US cents, rounded to whole dollars.`;
 
 export type PhotoListing = {
   title: string;
-  size: string;
+  category: string;
+  size?: string;
+  brand?: string;
+  condition: string;
+  color: string;
   description: string;
   suggestedPriceCents: number;
 };
 
-export async function describeClothingPhoto(imageUrl: string): Promise<PhotoListing> {
+const nullableString = { type: ["string", "null"] };
+
+export async function describeItemPhoto(imageUrl: string): Promise<PhotoListing> {
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -40,10 +49,14 @@ export async function describeClothingPhoto(imageUrl: string): Promise<PhotoList
           schema: {
             type: "object",
             additionalProperties: false,
-            required: ["title", "size", "description", "suggestedPriceCents"],
+            required: ["title", "category", "size", "brand", "condition", "color", "description", "suggestedPriceCents"],
             properties: {
               title: { type: "string" },
-              size: { type: "string" },
+              category: { type: "string" },
+              size: nullableString,
+              brand: nullableString,
+              condition: { type: "string", enum: ["New", "Like new", "Good", "Fair"] },
+              color: { type: "string" },
               description: { type: "string" },
               suggestedPriceCents: { type: "integer" },
             },
@@ -54,15 +67,22 @@ export async function describeClothingPhoto(imageUrl: string): Promise<PhotoList
   });
   if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`);
   const data = await res.json();
-  const listing = JSON.parse(data.choices[0].message.content) as PhotoListing;
-  return { ...listing, suggestedPriceCents: Math.max(100, Math.round(listing.suggestedPriceCents / 100) * 100) };
+  const { size, brand, suggestedPriceCents, ...rest } = JSON.parse(data.choices[0].message.content);
+  return {
+    ...rest,
+    size: size?.trim() || undefined,
+    brand: brand?.trim() || undefined,
+    suggestedPriceCents: Math.max(100, Math.round(suggestedPriceCents / 100) * 100),
+  };
 }
+
+export const describeClothingPhoto = describeItemPhoto;
 
 export const describePhoto = action({
   args: { storageId: v.id("_storage") },
   handler: async (ctx, { storageId }): Promise<PhotoListing> => {
     const url = await ctx.storage.getUrl(storageId);
     if (!url) throw new Error("Photo not found");
-    return await describeClothingPhoto(url);
+    return await describeItemPhoto(url);
   },
 });
