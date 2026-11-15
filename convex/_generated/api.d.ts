@@ -8,7 +8,9 @@
  * @module
  */
 
+import type * as buyer from "../buyer.js";
 import type * as lib_location from "../lib/location.js";
+import type * as seed from "../seed.js";
 
 import type {
   ApiFromModules,
@@ -17,7 +19,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  buyer: typeof buyer;
   "lib/location": typeof lib_location;
+  seed: typeof seed;
 }>;
 
 /**
