@@ -136,8 +136,8 @@ export default function SellerPrice() {
       const { garageId, itemIds, firstOpen } = await openWithItems({
         ownerId: user.userId,
         neighborhood: place?.district ?? place?.subregion ?? "Nearby",
-        lat: coords.latitude,
-        lng: coords.longitude,
+        lat: Math.round(coords.latitude * 100) / 100,
+        lng: Math.round(coords.longitude * 100) / 100,
         items: uploaded.map((d) => ({
           storageId: d.storageId!,
           title: d.title.trim(),
