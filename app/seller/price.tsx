@@ -56,6 +56,7 @@ export default function SellerReview() {
       aiGenerated: false,
     })),
   );
+  const [focus, setFocus] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [opening, setOpening] = useState(false);
@@ -99,7 +100,12 @@ export default function SellerReview() {
   const kept = drafts.filter((d) => d.review !== "removed");
   const approved = kept.filter((d) => d.review === "approved");
   const pending = drafts.map((d, i) => ({ d, i })).filter(({ d }) => d.review === "pending");
-  const current = pending.find(({ d }) => d.status !== "loading") ?? pending[0];
+  const focused = pending.find(({ i }) => i === focus && drafts[i].status !== "loading");
+  const current = focused ?? pending.find(({ d }) => d.status !== "loading") ?? pending[0];
+
+  useEffect(() => {
+    if (current && current.d.status !== "loading" && current.i !== focus) setFocus(current.i);
+  }, [current?.i, current?.d.status, focus]);
 
   const advance = (patch: Partial<Draft>) => {
     if (!current) return;
@@ -215,7 +221,7 @@ export default function SellerReview() {
       </View>
       <ScrollView style={styles.flex} contentContainerStyle={styles.itemBody} keyboardShouldPersistTaps="handled">
         <View style={styles.photoFrame}>
-          <Image source={{ uri: d.uri }} style={styles.photo} contentFit="cover" />
+          <Image key={d.uri} source={{ uri: d.uri }} style={styles.photo} contentFit="cover" transition={0} />
           {!loading && !failed && (
             <View style={styles.sticker}>
               <TextInput
@@ -354,7 +360,7 @@ const styles = StyleSheet.create({
   photo: { width: "100%", aspectRatio: 1, backgroundColor: colors.line },
   sticker: { position: "absolute", left: 18, bottom: 22 },
   priceInput: {
-    minWidth: 96,
+    width: 110,
     height: 60,
     paddingHorizontal: 14,
     borderRadius: 12,
@@ -384,7 +390,7 @@ const styles = StyleSheet.create({
   chips: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
   chip: { height: 34, paddingHorizontal: 14, borderRadius: 999, backgroundColor: colors.white, justifyContent: "center" },
   chipEmpty: { backgroundColor: "transparent", borderWidth: 1, borderStyle: "dashed", borderColor: colors.muted },
-  chipInput: { minWidth: 96, borderWidth: 2, borderColor: colors.ink, fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
+  chipInput: { width: 120, borderWidth: 2, borderColor: colors.ink, fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
   chipText: { fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
   chipTextEmpty: { color: colors.muted },
   detailsToggle: { minHeight: 34, justifyContent: "center", paddingHorizontal: 4 },

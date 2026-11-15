@@ -37,14 +37,9 @@ export default function SellerOpen() {
             <View style={styles.chatCircle}>
               <ChatIcon size={20} color={colors.ink} />
             </View>
-            <Text style={styles.keikiTitle}>Find more stuff later?</Text>
-          </View>
-          <Text style={styles.keikiBody}>
-            Just text a pic and a price to Keiki. We'll add it to your garage. No need to open the app.
-          </Text>
-          <View style={styles.thread}>
-            <Text style={styles.bubbleOut}>[pic] lamp $15</Text>
-            <Text style={styles.bubbleIn}>Added to your garage.</Text>
+            <Text style={styles.keikiTitle} numberOfLines={1}>
+              More later? Text Keiki a pic + price
+            </Text>
           </View>
           <Pressable
             style={styles.saveButton}
@@ -87,31 +82,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  keikiTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.ink },
-  keikiBody: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21, color: "#3D372E" },
-  thread: { backgroundColor: colors.white, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 12, gap: 6 },
-  bubbleOut: {
-    alignSelf: "flex-end",
-    backgroundColor: "#0A7CFF",
-    color: colors.white,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    overflow: "hidden",
-    fontFamily: fonts.body,
-    fontSize: 14,
-  },
-  bubbleIn: {
-    alignSelf: "flex-start",
-    backgroundColor: "#E9E9EB",
-    color: colors.ink,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    overflow: "hidden",
-    fontFamily: fonts.body,
-    fontSize: 14,
-  },
+  keikiTitle: { flex: 1, fontFamily: fonts.display, fontSize: 17, color: colors.ink },
   saveButton: {
     height: 52,
     borderRadius: 26,
