@@ -168,7 +168,7 @@ export function EditItemSheet({
                 placeholder="Add"
                 placeholderTextColor={colors.brand}
                 multiline
-                style={styles.inputText}
+                style={[styles.inputText, styles.inputTallText]}
               />
             </View>
           </View>
@@ -256,6 +256,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   inputTall: { minHeight: 96, alignItems: "flex-start" },
+  inputTallText: { minHeight: 96, textAlignVertical: "top" },
   dollar: { fontFamily: fonts.medium, fontSize: 17, color: colors.ink, marginRight: 4 },
   inputText: { flex: 1, fontFamily: fonts.body, fontSize: 17, color: colors.ink, paddingVertical: 12 },
   rows: { backgroundColor: colors.white, borderRadius: 16, paddingHorizontal: 16 },
