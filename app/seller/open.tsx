@@ -1,5 +1,6 @@
 import { useQuery } from "convex/react";
 import { Image } from "expo-image";
+import * as Linking from "expo-linking";
 import { useLocalSearchParams } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "../../convex/_generated/api";
@@ -38,15 +39,17 @@ export default function SellerOpen() {
               <ChatIcon size={20} color={colors.ink} />
             </View>
             <Text style={styles.keikiTitle} numberOfLines={1}>
-              Add more later: text Keiki
+              More later? Text Keiki
             </Text>
           </View>
           <Pressable
             style={styles.saveButton}
             accessibilityRole="button"
-            onPress={() => {
-              // TODO(SEA-4): add Keiki's iMessage number to contacts once the number is known.
-            }}
+            onPress={() =>
+              Linking.openURL(
+                `sms:+17796251378&body=${encodeURIComponent("hey keiki, i have a few things to add to my garage (K-FERUEU)")}`,
+              )
+            }
           >
             <Text style={styles.saveText}>Save Keiki to contacts</Text>
           </Pressable>

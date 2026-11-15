@@ -71,8 +71,7 @@ export default function SignIn() {
       </Pressable>
       {pending ? (
         <>
-          <Text style={styles.headline}>Text us this code.</Text>
-          <Text style={styles.subhead}>One text from {phone} proves it's your number. We'll keep going as soon as it lands.</Text>
+          <Text style={styles.headline}>Text us this code</Text>
           <View style={styles.codeCard}>
             <Text style={styles.code}>{pending.code}</Text>
             <View style={styles.waiting}>
