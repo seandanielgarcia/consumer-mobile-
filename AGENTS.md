@@ -17,19 +17,22 @@ Three lanes never edit the same files. Stay in your lane; if you need a change i
 
 | Owner | Owns | Paths |
 | --- | --- | --- |
-| Capy | App screens, schema, seed data, AI photo step, item and order queries/mutations | `app/`, `components/`, `lib/`, `convex/schema.ts`, `convex/items.ts`, `convex/garages.ts`, `convex/orders.ts`, `convex/users.ts`, `convex/ai.ts`, `convex/seed.ts` |
-| Sean | Whop checkout endpoint, `payment.succeeded` webhook, Revyl QA | `convex/http.ts`, `convex/whop.ts` |
-| Hailey | Keiki agent, its tools and how it talks | `convex/keiki/` |
+| Capy | App screens, shared app code, schema, seed data, AI photo step, buyer search, item and order queries/mutations | `app/`, `src/` (`src/components/`, `src/lib/`, `src/buyer/`, `src/theme.ts`), `convex/schema.ts`, `convex/items.ts`, `convex/garages.ts`, `convex/buyer.ts`, `convex/orders.ts`, `convex/users.ts`, `convex/ai.ts`, `convex/seed.ts`, `convex/lib/`, `scripts/` |
+| Sean | Whop checkout endpoint, `payment.succeeded` webhook, Revyl QA | `convex/http.ts`, `convex/whop.ts`, `qa/` |
+| Hailey | Keiki agent, its tools and how it talks | `convex/keiki.ts`, `convex/keikiHttp.ts` |
 
-Mounting the Keiki routes in `convex/http.ts` is a one-line change that Sean approves.
+`convex/http.ts` mounts the Keiki routes with `registerKeikiRoutes(http)` from `convex/keikiHttp.ts`; changing that mount is Sean's call.
 
 ## Commands
 
-The repository starts empty. Once the Expo and Convex projects exist, keep this section current with the real commands. Expected:
-
-- `npx convex dev` runs and syncs the Convex backend against the shared dev deployment.
-- `npx expo start` runs the app.
+- `npm ci` installs dependencies.
 - `npx tsc --noEmit` typechecks; run it before every push.
+- `npx convex dev` runs and syncs the Convex backend against the shared dev deployment (`fleet-gnat-219`). It replaces every deployed function with your checkout's, so only push from a branch that contains everything currently deployed.
+- `npx expo start` runs the app; set `EXPO_PUBLIC_CONVEX_URL` from `.env.example`.
+- `scripts/seed.sh` uploads the seed photos and seeds the 3 demo garages.
+- `scripts/create-dev-user.sh [phone] [name]` creates a dev user and prints its id for `EXPO_PUBLIC_DEV_USER_ID`.
+
+Both scripts need `CONVEX_DEPLOY_KEY` set to the dev deploy key (`CONVEX_DEPLOY_KEY="$ConvexKey"` on Capy machines).
 
 ## Environment variables
 
@@ -39,9 +42,9 @@ Configured on the project's machines; never print, log, or commit their values, 
 | --- | --- |
 | `ConvexKey` | Convex deploy/CLI access to the shared dev deployment |
 | `OPENAI_API_KEY` | `convex/ai.ts` (set it as a Convex environment variable too) |
-| `WHOP_API_KEY` | Creating checkout configurations, server side |
-| `WHOP_WEBHOOK_SECRET` | Verifying `payment.succeeded` webhooks |
-| `WHOP_ENVIRONMENT` | `sandbox` or production; selects the Whop API host |
+| `WHOP_API_KEY` | Creating checkout configurations, server side (set on fleet-gnat-219) |
+| `WHOP_WEBHOOK_SECRET` | Verifying `payment.succeeded` webhooks (set on fleet-gnat-219) |
+| `WHOP_ENVIRONMENT` | `sandbox` or `production`; selects the Whop API host (set to `sandbox` on fleet-gnat-219) |
 | `KEIKI_API_KEY` | Keiki tools (added by Hailey when H5 is go) |
 
 Only `EXPO_PUBLIC_*` variables may be read in app code, and none of them may hold a secret.
