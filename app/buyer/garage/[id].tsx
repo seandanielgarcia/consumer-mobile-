@@ -27,6 +27,7 @@ export default function BuyerGarage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
   const titles = useRef(new Map<string, string>());
+  const checkingOut = useRef(false);
   const { width } = useWindowDimensions();
   const cardWidth = (width - 40 - 14) / 2;
 
@@ -35,7 +36,7 @@ export default function BuyerGarage() {
     garage.items.forEach((i) => titles.current.set(i._id, i.title));
     const live = new Set<string>(garage.items.map((i) => i._id));
     const gone = picked.filter((p) => !live.has(p));
-    if (gone.length === 0) return;
+    if (gone.length === 0 || checkingOut.current) return;
     setPicked(picked.filter((p) => live.has(p)));
     const names = gone.map((g) => titles.current.get(g) ?? "An item");
     setNotice(`${names.join(" and ")} just got picked up by someone else, so we took ${gone.length > 1 ? "them" : "it"} out of your picks.`);
@@ -58,14 +59,18 @@ export default function BuyerGarage() {
       return;
     }
     setBuying(true);
+    checkingOut.current = true;
     try {
-      const orderId = await startCheckout(convex, buyer, garageId, pickedItems.map((i) => i._id));
-      router.replace({ pathname: "/buyer/paid", params: { orderId } });
+      const { orderId, returned } = await startCheckout(convex, buyer, garageId, pickedItems.map((i) => i._id));
+      if (returned) {
+        router.replace({ pathname: "/buyer/paid", params: { orderId } });
+        return;
+      }
     } catch (e) {
       setNotice(e instanceof Error ? e.message : "Checkout failed.");
-    } finally {
-      setBuying(false);
     }
+    checkingOut.current = false;
+    setBuying(false);
   };
 
   if (garage === null) {

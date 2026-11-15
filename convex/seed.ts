@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internalAction, internalMutation } from "./_generated/server";
+import type { Doc, Id } from "./_generated/dataModel";
 import { roundCoord } from "./lib/location";
 
 const SEED = [
@@ -143,5 +144,59 @@ export const demoOrder = internalMutation({
       totalCents: items.reduce((sum, i) => sum + i.priceCents, 0),
       status: "paid",
     });
+  },
+});
+
+const SEED_PHONES = new Set(SEED.map((g) => g.phone));
+const SEED_TITLES = new Set(SEED.flatMap((g) => g.items.map((i) => i.title)));
+const KEEP_NAMES = new Set(["Sam", "Maya B"]);
+const TEST_TITLE = /^(QA|E2E|Zqlatency)|\(edited\)|bundle/i;
+const isFictional = (phone: string) => /^\+1\d{3}555/.test(phone);
+
+export const devCleanup = internalMutation({
+  args: { dryRun: v.boolean() },
+  handler: async (ctx, { dryRun }) => {
+    const users = await ctx.db.query("users").collect();
+    const keepUser = (u: Doc<"users">) => SEED_PHONES.has(u.phone) || KEEP_NAMES.has(u.name) || !isFictional(u.phone);
+    const dropUsers = users.filter((u) => !keepUser(u));
+    const dropUserIds = new Set<Id<"users">>(dropUsers.map((u) => u._id));
+    const seedOwnerIds = new Set(users.filter((u) => SEED_PHONES.has(u.phone)).map((u) => u._id));
+
+    const garages = await ctx.db.query("garages").collect();
+    const dropGarages = garages.filter((g) => dropUserIds.has(g.ownerId));
+    const dropGarageIds = new Set<Id<"garages">>(dropGarages.map((g) => g._id));
+    const seedGarageIds = new Set(garages.filter((g) => seedOwnerIds.has(g.ownerId)).map((g) => g._id));
+
+    const items = await ctx.db.query("items").collect();
+    const dropItems = items.filter(
+      (i) => dropGarageIds.has(i.garageId) || TEST_TITLE.test(i.title) || (seedGarageIds.has(i.garageId) && !SEED_TITLES.has(i.title)),
+    );
+    const dropItemIds = new Set<Id<"items">>(dropItems.map((i) => i._id));
+    const resetItems = items.filter((i) => !dropItemIds.has(i._id) && seedGarageIds.has(i.garageId) && i.status !== "live");
+
+    const orders = await ctx.db.query("orders").collect();
+    const dropOrders = orders.filter(
+      (o) => dropUserIds.has(o.buyerId) || dropGarageIds.has(o.garageId) || o.itemIds.some((id) => dropItemIds.has(id)),
+    );
+
+    const report = {
+      users: dropUsers.map((u) => `${u.name} ${u.phone}`),
+      garages: dropGarages.map((g) => `${users.find((u) => u._id === g.ownerId)?.name ?? "?"} · ${g.neighborhood}`),
+      items: dropItems.map((i) => `${i.title} (${i.status})`),
+      orders: dropOrders.map((o) => `${o._id} ${o.status} $${o.totalCents / 100}`),
+      resetToLive: resetItems.map((i) => `${i.title} (${i.status})`),
+    };
+    if (dryRun) return report;
+
+    const usedStorage = new Set(items.filter((i) => !dropItemIds.has(i._id) && i.storageId).map((i) => i.storageId!));
+    for (const o of dropOrders) await ctx.db.delete(o._id);
+    for (const i of dropItems) {
+      await ctx.db.delete(i._id);
+      if (i.storageId && !usedStorage.has(i.storageId)) await ctx.storage.delete(i.storageId).catch(() => {});
+    }
+    for (const i of resetItems) await ctx.db.patch(i._id, { status: "live" });
+    for (const g of dropGarages) await ctx.db.delete(g._id);
+    for (const u of dropUsers) await ctx.db.delete(u._id);
+    return report;
   },
 });
