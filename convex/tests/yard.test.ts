@@ -65,12 +65,12 @@ describe("yard-open text", () => {
     vi.useFakeTimers();
     vi.stubEnv("KEIKI_API_KEY", "test-key");
     vi.stubEnv("DEMO_PHONES", "+15550100001");
-    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+    const fetchMock = vi.fn(async (_url: string, _init: RequestInit) => new Response("{}", { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
     const { t, open } = await yardFixture(user);
     for (let i = 0; i < opens; i++) await open();
     await t.finishAllScheduledFunctions(vi.runAllTimers);
-    return fetchMock.mock.calls.map(([, init]) => JSON.parse((init as RequestInit).body as string));
+    return fetchMock.mock.calls.map(([, init]) => JSON.parse(init.body as string));
   }
 
   it("texts a verified seller once, on the first open", async () => {
