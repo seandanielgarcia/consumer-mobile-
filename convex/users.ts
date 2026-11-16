@@ -110,3 +110,17 @@ export const devSkipVerification = mutation({
     await ctx.db.patch(userId, { verified: true, verifyCode: undefined, verifyCodeExpiresAt: undefined });
   },
 });
+
+export const sellerContact = query({
+  args: { garageId: v.id("garages"), buyerId: v.optional(v.id("users")) },
+  handler: async (ctx, { garageId, buyerId }) => {
+    if (!buyerId) return null;
+    const buyer = await ctx.db.get(buyerId);
+    if (!buyer || buyer.verified !== true || buyer.verifyCode) return null;
+    const garage = await ctx.db.get(garageId);
+    if (!garage || garage.ownerId === buyerId) return null;
+    const seller = await ctx.db.get(garage.ownerId);
+    if (!seller?.phone) return null;
+    return { firstName: seller.name.trim().split(/\s+/)[0] || "the seller", phone: seller.phone };
+  },
+});
