@@ -2,11 +2,12 @@ import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
-import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { Keyboard, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import MapView, { Circle, Marker, type Region } from "react-native-maps";
 import type { Id } from "../../convex/_generated/dataModel";
 import { formatPlace } from "../lib/place";
-import { colors, shadows, sys } from "../theme";
+import { colors, shadows, surfaces, sys } from "../theme";
+import { mapScale, spreadYards } from "./spreadYards";
 import { pinFor } from "./pins";
 import { aboutMiles, formatPrice } from "./format";
 
@@ -25,26 +26,6 @@ export type MapYard = {
 
 const MILE_M = 1609.344;
 const DEG_PER_MILE = 1 / 69;
-
-export function spreadYards<T extends { garageId: string; lat: number; lng: number }>(yards: T[], radiusMiles: number): (T & { pinLat: number; pinLng: number })[] {
-  const groups = new Map<string, T[]>();
-  for (const yard of yards) {
-    const key = `${yard.lat},${yard.lng}`;
-    groups.set(key, [...(groups.get(key) ?? []), yard]);
-  }
-  return yards.map((yard) => {
-    const group = groups.get(`${yard.lat},${yard.lng}`)!;
-    if (group.length < 2) return { ...yard, pinLat: yard.lat, pinLng: yard.lng };
-    const i = [...group].sort((a, b) => a.garageId.localeCompare(b.garageId)).indexOf(yard);
-    const angle = (2 * Math.PI * i) / group.length - Math.PI / 2;
-    const fan = regionFor(yard.lat, yard.lng, radiusMiles).latitudeDelta / 13;
-    return {
-      ...yard,
-      pinLat: yard.lat + fan * Math.sin(angle),
-      pinLng: yard.lng + (fan * Math.cos(angle)) / Math.cos((yard.lat * Math.PI) / 180),
-    };
-  });
-}
 
 export function regionFor(lat: number, lng: number, radiusMiles: number): Region {
   const span = radiusMiles * 2 * DEG_PER_MILE * 1.25;
@@ -67,14 +48,20 @@ export function YardMap({
   const [selected, setSelected] = useState<Id<"garages"> | null>(null);
   const map = useRef<MapView>(null);
   const carousel = useRef<ComponentRef<typeof ScrollView>>(null);
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
+  const [mapSize, setMapSize] = useState({ width, height });
+  const [region, setRegion] = useState(() => regionFor(center.lat, center.lng, radiusMiles));
+  const { latitude, latitudeDelta, longitudeDelta } = region;
   const cardWidth = width - 56;
 
   useEffect(() => {
     map.current?.animateToRegion(regionFor(center.lat, center.lng, radiusMiles), 450);
   }, [center.lat, center.lng, radiusMiles]);
 
-  const pins = useMemo(() => spreadYards(yards, radiusMiles), [yards, radiusMiles]);
+  const pins = useMemo(() => {
+    const { longitudePerPixel, latitudePerPixel } = mapScale({ latitude, latitudeDelta, longitudeDelta }, mapSize);
+    return spreadYards(yards, longitudePerPixel, latitudePerPixel);
+  }, [yards, latitude, latitudeDelta, longitudeDelta, mapSize]);
 
   const ordered = useMemo(() => {
     if (!selected) return yards;
@@ -83,6 +70,7 @@ export function YardMap({
   }, [yards, selected]);
 
   const pick = (yard: MapYard & { pinLat: number; pinLng: number }) => {
+    Keyboard.dismiss();
     Haptics.selectionAsync().catch(() => {});
     setSelected(yard.garageId);
     carousel.current?.scrollTo({ x: 0, animated: true });
@@ -90,11 +78,14 @@ export function YardMap({
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1 }} onLayout={({ nativeEvent: { layout } }) => {
+      if (layout.width && layout.height) setMapSize({ width: layout.width, height: layout.height });
+    }}>
       <MapView
         ref={map}
         style={{ flex: 1 }}
         initialRegion={regionFor(center.lat, center.lng, radiusMiles)}
+        onRegionChangeComplete={setRegion}
         mapType="mutedStandard"
         showsPointsOfInterests={false}
         showsBuildings={false}
@@ -102,7 +93,10 @@ export function YardMap({
         showsCompass={false}
         pitchEnabled={false}
         rotateEnabled={false}
-        onPress={() => setSelected(null)}
+        onPress={() => {
+          Keyboard.dismiss();
+          setSelected(null);
+        }}
         mapPadding={{ top: topInset, right: 0, bottom: bottomInset, left: 0 }}
         accessibilityLabel={`Map of ${yards.length} yards within ${radiusMiles} miles`}
       >
@@ -113,7 +107,7 @@ export function YardMap({
         {pins.map((yard) => {
           const on = yard.garageId === selected;
           const pin = pinFor(yard.garageId);
-          const size = on ? 58 : 44;
+          const size = on ? 52 : 44;
           return (
             <Marker
               key={yard.garageId}
@@ -133,8 +127,8 @@ export function YardMap({
                   height: size,
                   borderRadius: size / 2,
                   backgroundColor: pin.bg,
-                  borderWidth: on ? 5 : 3,
-                  borderColor: on ? colors.mapInk : colors.white,
+                  borderWidth: on ? 3 : 2,
+                  borderColor: on ? colors.mapInk : colors.mapGround,
                   alignItems: "center",
                   justifyContent: "center",
                   ...shadows.pin,
@@ -168,6 +162,7 @@ export function YardMap({
                 accessibilityRole="button"
                 accessibilityLabel={`Open ${yard.ownerName}'s yard`}
                 style={({ pressed }) => ({
+                  ...surfaces.card,
                   width: cardWidth,
                   minHeight: 76,
                   transform: [{ scale: pressed ? 0.98 : 1 }],
@@ -176,9 +171,9 @@ export function YardMap({
                   gap: 12,
                   padding: 12,
                   borderRadius: 22,
-                  backgroundColor: colors.white,
-                  borderWidth: 2,
-                  borderColor: on ? colors.mapBlue : colors.white,
+                  backgroundColor: on ? colors.white : colors.mapGround,
+                  borderWidth: 1,
+                  borderColor: on ? colors.mapBlue : colors.hairline,
                   ...shadows.float,
                 })}
               >

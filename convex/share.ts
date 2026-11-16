@@ -21,7 +21,7 @@ export const yard = internalQuery({
       neighborhood: formatPlace(garage),
       items: items
         .filter((i) => i.status === "live")
-        .map((i) => ({ title: i.title, photoUrl: i.photoUrl, priceCents: i.priceCents })),
+        .map((i) => ({ itemId: i._id, title: i.title, photoUrl: i.photoUrl, priceCents: i.priceCents })),
     };
   },
 });
@@ -52,6 +52,26 @@ const escape = (s: string) =>
 const priceLabel = (cents: number) => `$${(cents / 100).toFixed(cents % 100 ? 2 : 0)}`;
 const headers = { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" };
 
+// Share pages may be opened by anyone, including people without an app build.
+// Use an explicit deployment setting, never a launch URL supplied by the request.
+function appLaunchUrl(route: string) {
+  const base = process.env.YARDSALE_APP_LINK_BASE?.trim();
+  if (base === "garagesale://") return base + route;
+  if (!base) return undefined;
+  try {
+    const url = new URL(base);
+    if (
+      (url.protocol === "exp:" || url.protocol === "exps:") && url.hostname &&
+      url.pathname === "/--/" && !url.username && !url.password && !url.search && !url.hash
+    ) {
+      return url.href + route;
+    }
+  } catch {
+    // Keep the share page available even when the launch URL is misconfigured.
+  }
+  return undefined;
+}
+
 function page(title: string, description: string, image: string | undefined, body: string, appUrl?: string) {
   return `<!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -67,6 +87,7 @@ p{margin:8px 0 0;font-size:12px;font-weight:600;letter-spacing:.12em;text-transf
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:4px 16px 120px}
 .grid.single{grid-template-columns:minmax(0,440px);justify-content:center}
 .card{position:relative;background:#fff;border-radius:22px;padding:8px 8px 12px;box-shadow:0 8px 24px rgba(27,27,58,.10)}
+.card-link{display:block;color:inherit;text-decoration:none}
 .card img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:16px;background:#D9D9EA}
 .price{position:absolute;left:14px;top:calc(100% - 44px);display:inline-block;padding:3px 9px;border:2px solid #1B1B3A;border-radius:8px;background:#B6F03A;font-weight:800;font-size:15px}
 .card .price{top:auto;bottom:46px}
@@ -98,7 +119,7 @@ export function registerShareRoutes(http: HttpRouter) {
 <a class="yard-link" href="/yard/${item.garageId}">See the yard</a>
 </div></main>`;
       // Render the link in Safari first; the native app is optional for the person opening it.
-      return new Response(page(item.title, description, item.photoUrl, body, `garagesale://buyer/item/${item.itemId}`), { headers });
+      return new Response(page(item.title, description, item.photoUrl, body, appLaunchUrl(`buyer/item/${item.itemId}`)), { headers });
     }),
   });
 
@@ -116,11 +137,11 @@ export function registerShareRoutes(http: HttpRouter) {
       const cards = yard.items
         .map(
           (i) =>
-            `<div class="card"><img src="${escape(i.photoUrl)}" alt=""><div class="price">${priceLabel(i.priceCents)}</div><div class="title">${escape(i.title)}</div></div>`,
+            `<a class="card card-link" href="/i/${i.itemId}"><img src="${escape(i.photoUrl)}" alt=""><div class="price">${priceLabel(i.priceCents)}</div><div class="title">${escape(i.title)}</div></a>`,
         )
         .join("");
       const body = `<header><h1>${escape(title)}</h1><p>${escape(description)}</p></header><div class="grid">${cards}</div>`;
-      return new Response(page(title, description, yard.items[0]?.photoUrl, body, `garagesale://buyer/garage/${yard.garageId}`), { headers });
+      return new Response(page(title, description, yard.items[0]?.photoUrl, body, appLaunchUrl(`buyer/garage/${yard.garageId}`)), { headers });
     }),
   });
 }
