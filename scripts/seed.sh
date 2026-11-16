@@ -6,7 +6,8 @@ files=$(npx -y tsx -e 'import { STOCK } from "./src/lib/stock"; console.log(STOC
 photos="{"
 for file in $files; do
   key=$(basename "$file" .jpg)
-  id=$(npx convex run seed:storePhoto "{\"base64\":\"$(base64 -w0 "assets/stock/$file")\"}" | tr -d '"[:space:]')
+  url=$(npx convex run items:generateUploadUrl | tr -d '"[:space:]')
+  id=$(curl -sf -X POST -H "Content-Type: image/jpeg" --data-binary "@assets/stock/$file" "$url" | sed -E 's/.*"storageId":"([^"]+)".*/\1/')
   photos+="\"$key\":\"$id\","
 done
 photos="${photos%,}}"
