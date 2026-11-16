@@ -3,7 +3,7 @@ import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActionSheetIOS, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "../convex/_generated/api";
 import type { Doc } from "../convex/_generated/dataModel";
 import { EditItemSheet, type EditableItem } from "../src/components/EditItemSheet";
@@ -31,6 +31,16 @@ async function pickFromLibrary() {
   if (result.canceled || result.assets.length === 0) return;
   setPickedPhotos(result.assets.map((asset) => asset.uri));
   router.push("/seller/price");
+}
+
+function addItems() {
+  ActionSheetIOS.showActionSheetWithOptions(
+    { options: ["Choose from library", "Take photo", "Cancel"], cancelButtonIndex: 2 },
+    (index) => {
+      if (index === 0) pickFromLibrary();
+      if (index === 1) pickFromCamera();
+    },
+  );
 }
 
 async function pickFromCamera() {
@@ -203,12 +213,12 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
         <Pressable style={styles.shopPill} onPress={() => router.push("/buyer")} accessibilityRole="button">
           <Text style={styles.shopPillText}>Shop near you</Text>
         </Pressable>
-        <Pressable style={styles.cta} onPress={pickFromLibrary} accessibilityRole="button">
+        <Pressable style={styles.cta} onPress={addItems} accessibilityRole="button">
           <Text style={styles.ctaText}>Add items</Text>
         </Pressable>
         <View style={styles.textActions}>
-          <Pressable onPress={pickFromCamera} hitSlop={8} style={styles.takePhoto} accessibilityRole="button">
-            <Text style={styles.takePhotoText}>Take photo</Text>
+          <Pressable onPress={() => router.push(`/buyer/garage/${garage._id}`)} hitSlop={8} style={styles.takePhoto} accessibilityRole="button">
+            <Text style={styles.takePhotoText}>View your yard</Text>
           </Pressable>
           <Pressable onPress={() => shareYard(garage._id, user.name)} hitSlop={8} style={styles.takePhoto} accessibilityRole="button">
             <Text style={styles.takePhotoText}>Share my yard</Text>
