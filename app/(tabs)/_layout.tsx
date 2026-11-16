@@ -1,9 +1,10 @@
 import { useQuery } from "convex/react";
 import { Tabs } from "expo-router";
+import { ActionSheetIOS } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
 import { useEntered } from "../../src/lib/entered";
-import { pickFromLibrary } from "../../src/lib/sell";
+import { pickFromCamera, pickFromLibrary } from "../../src/lib/sell";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors } from "../../src/theme";
 
@@ -58,7 +59,13 @@ export default function TabsLayout() {
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
-            pickFromLibrary();
+            ActionSheetIOS.showActionSheetWithOptions(
+              { options: ["Choose from library", "Take photo", "Cancel"], cancelButtonIndex: 2 },
+              (index) => {
+                if (index === 0) pickFromLibrary();
+                if (index === 1) pickFromCamera();
+              },
+            );
           },
         }}
       />
