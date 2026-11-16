@@ -56,8 +56,8 @@ export function AppHeader() {
         ) : (
           <View />
         )}
-        {!landing && (
-          <View style={[styles.wordmarkSlot, back ? styles.wordmarkCenter : styles.wordmarkLeft]} pointerEvents="box-none">
+        {!landing && !back && (
+          <View style={[styles.wordmarkSlot, styles.wordmarkLeft]} pointerEvents="box-none">
             <Pressable onPress={() => guardedLeave(() => router.dismissTo("/"))} hitSlop={8} accessibilityRole="link" accessibilityLabel="yardsale, Home">
               <Text style={[styles.wordmark, { color: onBrand ? colors.cream : colors.brand }]}>yardsale</Text>
             </Pressable>
@@ -108,7 +108,6 @@ const styles = StyleSheet.create({
   row: { height: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   wordmark: { ...fonts.wordmark, fontSize: 22, letterSpacing: -0.6 },
   wordmarkSlot: { position: "absolute", top: 0, bottom: 0, justifyContent: "center" },
-  wordmarkCenter: { left: 0, right: 0, alignItems: "center" },
   wordmarkLeft: { left: 0 },
   back: { minHeight: 44, justifyContent: "center", paddingRight: 12 },
   backText: { ...fonts.semibold, fontSize: 17 },
