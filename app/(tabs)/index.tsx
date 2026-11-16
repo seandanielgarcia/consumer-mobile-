@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
     ...shadows.pin,
   },
   sharePillPressed: { transform: [{ scale: 0.96 }], opacity: 0.9 },
-  sharePillText: { fontSize: 15, fontWeight: "800", color: colors.ink },
+  sharePillText: { ...fonts.semibold, fontSize: 15, color: colors.ink },
   buyerTexts: { alignSelf: "flex-start", minHeight: spacing.minButton, justifyContent: "center" },
   buyerTextsText: { ...fonts.semibold, fontSize: 15, color: colors.brand },
   shopPill: {
