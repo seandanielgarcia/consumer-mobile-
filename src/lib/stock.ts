@@ -27,7 +27,7 @@ export const STOCK: StockPhoto[] = [
   { file: "wide-leg-jeans.jpg", use: "seed", seller: "Maya", title: "Wide leg jeans", priceCents: 2500, size: "27", description: "Medium wash high waisted wide leg jeans, cropped at the ankle." },
   { file: "flannel-shirt.jpg", use: "seed", seller: "Maya", title: "Plaid flannel shirt", priceCents: 2000, size: "L", description: "Red and black buffalo plaid flannel button up shirt." },
   { file: "mom-jeans.jpg", use: "seed", seller: "Jon", title: "Mom jeans", priceCents: 1800, size: "28", description: "Light blue vintage mom jeans with a paper bag waist and tie belt." },
-  { file: "denim-jacket.jpg", use: "seed", seller: "Jon", title: "Denim trucker jacket", priceCents: 3500, size: "L", description: "Classic medium blue denim trucker jacket, nicely faded." },
+  { file: "corduroy-pants.jpg", use: "seed", seller: "Jon", title: "Corduroy pants", priceCents: 2400, size: "32", description: "Tan wide-wale corduroy pants, straight leg, soft and worn in." },
 
   // Priya, Inner Mission
   { file: "monstera-plant.jpg", use: "seed", seller: "Priya", title: "Monstera houseplant", priceCents: 1800, description: "Big healthy monstera in a terracotta pot, about 3 ft tall." },

@@ -2,7 +2,6 @@ import { STOCK } from "./stock";
 
 const IMAGES: Record<string, number> = {
   "black-skinny-jeans.jpg": require("../../assets/stock/black-skinny-jeans.jpg"),
-  "denim-jacket.jpg": require("../../assets/stock/denim-jacket.jpg"),
   "field-jacket.jpg": require("../../assets/stock/field-jacket.jpg"),
   "flannel-shirt.jpg": require("../../assets/stock/flannel-shirt.jpg"),
   "jacket.jpg": require("../../assets/stock/jacket.jpg"),

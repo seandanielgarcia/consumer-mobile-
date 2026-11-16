@@ -68,3 +68,4 @@ Seed-yard photos added for demo data, fetched through the Openverse API, resized
 | `wool-coat.jpg` | petitepanoply | CC BY-SA 2.0 | https://www.flickr.com/photos/63405864@N04/11543680116 |
 | `wristwatch.jpg` | Kurt:S | CC BY 2.0 | https://www.flickr.com/photos/28847016@N08/21838850705 |
 | `yoga-mat.jpg` | debtony | CC BY 2.0 | https://www.flickr.com/photos/72966361@N00/8373088886 |
+| `corduroy-pants.jpg` | anna carol from Rio de Janeiro, Brasil | CC BY 2.0 | https://commons.wikimedia.org/w/index.php?curid=12466683 |
