@@ -9,6 +9,7 @@ import { aboutMiles, formatPrice } from "../../../src/buyer/format";
 import { useBuyerLocation } from "../../../src/buyer/location";
 import { useBuy } from "../../../src/buyer/useBuy";
 import { useHeaderBack } from "../../../src/lib/headerBack";
+import { useCurrentUser } from "../../../src/lib/useCurrentUser";
 import { PrimaryButton } from "../../../src/components/PrimaryButton";
 import { colors, sys } from "../../../src/theme";
 
@@ -17,6 +18,8 @@ export default function BuyerItem() {
   const location = useBuyerLocation();
   const item = useQuery(api.buyer.item, location ? { itemId: id as Id<"items">, lat: location.lat, lng: location.lng } : "skip");
   const { buy, buying, error } = useBuy((item?.garage._id ?? "") as Id<"garages">);
+  const userId = useCurrentUser()?.userId;
+  const mine = useQuery(api.garages.mine, userId ? { ownerId: userId } : "skip");
   const back = () => router.dismissTo("/buyer");
   useHeaderBack("Nearby", back);
 
@@ -79,9 +82,11 @@ export default function BuyerItem() {
         {!!item.description.trim() && <Text style={sys.body}>{item.description}</Text>}
         {error && <Text style={{ ...sys.row, fontWeight: "500" }}>{error}</Text>}
       </ScrollView>
-      <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 34, backgroundColor: colors.cream, borderTopWidth: 1, borderTopColor: colors.hairline }}>
-        <PrimaryButton label={`Buy · ${formatPrice(item.priceCents)}`} onPress={() => buy([item._id])} loading={buying} />
-      </View>
+      {mine?.garage._id === item.garage._id ? null : (
+        <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 34, backgroundColor: colors.cream, borderTopWidth: 1, borderTopColor: colors.hairline }}>
+          <PrimaryButton label={`Buy · ${formatPrice(item.priceCents)}`} onPress={() => buy([item._id])} loading={buying} />
+        </View>
+      )}
     </View>
   );
 }
