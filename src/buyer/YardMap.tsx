@@ -164,7 +164,7 @@ export function YardMap({
                 style={({ pressed }) => ({
                   ...surfaces.card,
                   width: cardWidth,
-                  height: 64,
+                  minHeight: 64,
                   transform: [{ scale: pressed ? 0.98 : 1 }],
                   flexDirection: "row",
                   alignItems: "center",
@@ -180,20 +180,20 @@ export function YardMap({
                 })}
               >
                 <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: pin.bg, alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ fontSize: 20, fontWeight: "800", color: pin.fg }}>{yard.ownerName.charAt(0).toUpperCase()}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 20, fontWeight: "800", color: pin.fg }}>{yard.ownerName.charAt(0).toUpperCase()}</Text>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={{ ...sys.row, fontWeight: "700" }}>
+                  <Text maxFontSizeMultiplier={1.3} numberOfLines={1} style={{ ...sys.row, fontWeight: "700" }}>
                     {yard.ownerName}'s yard
                   </Text>
-                  <Text numberOfLines={1} style={sys.label}>
+                  <Text maxFontSizeMultiplier={1.3} numberOfLines={1} style={sys.label}>
                     {formatPlace(yard)} · {aboutMiles(yard.distanceMi)} · {yard.liveCount} {yard.liveCount === 1 ? "item" : "items"}
                   </Text>
                   {!!yard.description?.trim() && (
-                    <Text numberOfLines={1} style={sys.label}>{yard.description.trim()}</Text>
+                    <Text maxFontSizeMultiplier={1.3} numberOfLines={1} style={sys.label}>{yard.description.trim()}</Text>
                   )}
                 </View>
-                <Text style={{ fontSize: 22, color: colors.muted }} accessibilityElementsHidden>›</Text>
+                <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 22, color: colors.muted }} accessibilityElementsHidden>›</Text>
               </Pressable>
             );
           })}
