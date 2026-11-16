@@ -26,8 +26,8 @@ export function ItemCard({ item, width, onPress, selected }: { item: CardItem; w
       onPress={onPress}
       disabled={!onPress}
       style={({ pressed }) => ({ width, ...surfaces.card, padding: 8, paddingBottom: 12, gap: 2, borderWidth: 2, borderColor: selected ? colors.brand : colors.white, transform: [{ scale: pressed ? 0.98 : 1 }] })}
-      accessibilityRole={!onPress ? undefined : selected === undefined ? "button" : "checkbox"}
-      accessibilityState={selected === undefined ? undefined : { checked: selected }}
+      accessibilityRole={onPress ? "button" : undefined}
+      accessibilityHint={onPress ? "Opens item details" : undefined}
       accessibilityLabel={detailLine([formatPrice(item.priceCents), item.title, details, item.ownerName && `${item.ownerName}'s yard`, distance, place])}
     >
       <View style={{ marginBottom: 10 }}>

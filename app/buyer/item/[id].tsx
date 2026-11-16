@@ -13,7 +13,8 @@ import { pinFor } from "../../../src/buyer/pins";
 import { colors, shadows, spacing, surfaces, sys } from "../../../src/theme";
 
 export default function BuyerItem() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, fromYard } = useLocalSearchParams<{ id: string; fromYard?: string }>();
+  const canReturnToYard = fromYard === "1" && router.canGoBack();
   const location = useBuyerLocation();
   const item = useQuery(api.buyer.item, location ? { itemId: id as Id<"items">, lat: location.lat, lng: location.lng } : "skip");
   const userId = useCurrentUser()?.userId;
@@ -24,7 +25,7 @@ export default function BuyerItem() {
     return (
       <View style={{ flex: 1, backgroundColor: colors.cream }}>
         <View style={{ paddingHorizontal: 20 }}>
-          <EmptyState headline="This one's gone" line="Someone else got it first." action="Back to browsing" onAction={() => router.dismissTo("/buyer")} />
+          <EmptyState headline="This one's gone" line="Someone else got it first." action={canReturnToYard ? "Back to yard" : "Back to browsing"} onAction={() => canReturnToYard ? router.back() : router.dismissTo("/buyer")} />
         </View>
       </View>
     );
@@ -49,7 +50,10 @@ export default function BuyerItem() {
         </View>
         <Text style={sys.title}>{item.title}</Text>
         <Pressable
-          onPress={() => router.push({ pathname: "/buyer/garage/[id]", params: { id: item.garage._id, selected: item._id } })}
+          onPress={() => {
+            if (canReturnToYard) router.back();
+            else router.push({ pathname: "/buyer/garage/[id]", params: { id: item.garage._id, selected: item._id } });
+          }}
           accessibilityRole="button"
           style={{ flexDirection: "row", alignItems: "center", gap: 12, height: 68, paddingHorizontal: 12, ...surfaces.card }}
         >
