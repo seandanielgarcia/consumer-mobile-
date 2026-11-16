@@ -38,7 +38,7 @@ export default function BuyerGarage() {
   const buy = () => buyItems(pickedItems.map((i) => i._id));
   const { width } = useWindowDimensions();
   const cardWidth = (width - 40 - 12) / 2;
-  useHeaderBack("Back", () => (router.canGoBack() ? router.back() : router.replace("/buyer")));
+  useHeaderBack(() => (router.canGoBack() ? router.back() : router.replace("/buyer")));
 
   useEffect(() => {
     if (!garage) return;

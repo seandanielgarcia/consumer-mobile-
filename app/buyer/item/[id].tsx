@@ -18,7 +18,7 @@ export default function BuyerItem() {
   const item = useQuery(api.buyer.item, location ? { itemId: id as Id<"items">, lat: location.lat, lng: location.lng } : "skip");
   const { buy, buying, error } = useBuy((item?.garage._id ?? "") as Id<"garages">);
   const back = () => router.dismissTo("/buyer");
-  useHeaderBack("Nearby", back);
+  useHeaderBack(back);
 
   if (item === undefined) return <ActivityIndicator color={colors.ink} style={{ flex: 1, backgroundColor: colors.cream }} />;
   if (item === null) {

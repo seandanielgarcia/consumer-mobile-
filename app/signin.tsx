@@ -123,7 +123,7 @@ export default function SignIn() {
         </InputAccessoryView>
       )}
       <Pressable onPress={() => (pending ? setPending(null) : router.canGoBack() ? router.back() : router.replace("/"))} hitSlop={12} style={styles.back}>
-        <Text style={styles.backText}>{pending ? "← Back" : "Cancel"}</Text>
+        <Text style={styles.backText}>{pending ? "‹ Back" : "Close"}</Text>
       </Pressable>
       {pending ? (
         <>
