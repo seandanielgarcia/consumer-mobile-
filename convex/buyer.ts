@@ -84,12 +84,13 @@ export const search = query({
       return { listing, photoKey: hash ? `hash:${hash}` : `url:${listing.photoUrl}` };
     }));
     const seenPhotos = new Set<string>();
-    return listings.flatMap(({ listing, photoKey }) => {
-      const key = `${listing.garageId}:${photoKey}`;
-      if (seenPhotos.has(key)) return [];
-      seenPhotos.add(key);
-      return [listing];
-    }).sort((a, b) => a.distanceMi - b.distanceMi);
+    return listings
+      .sort((a, b) => a.listing.distanceMi - b.listing.distanceMi)
+      .flatMap(({ listing, photoKey }) => {
+        if (seenPhotos.has(photoKey)) return [];
+        seenPhotos.add(photoKey);
+        return [listing];
+      });
   },
 });
 
