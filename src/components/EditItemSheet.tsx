@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { useRef, useState } from "react";
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { colors, fonts, primaryButton, primaryButtonText, spacing, type } from "../theme";
 
 // The one Edit sheet (UI-RULES.md reference), shared by the Overview (app/seller/price.tsx) and the yard grid (app/index.tsx).
@@ -26,8 +26,8 @@ const LABELS: Record<ChoiceField, string> = {
 };
 
 const OPTIONS: Partial<Record<ChoiceField, string[]>> = {
-  condition: ["New", "Like new", "Good", "Fair"],
-  color: ["Black", "White", "Gray", "Blue", "Red", "Green", "Brown", "Beige", "Pink", "Multi"],
+  condition: ["New", "Like new", "Good", "Fair", "For parts"],
+  color: ["Black", "White", "Gray", "Blue", "Red", "Green", "Yellow", "Brown", "Beige", "Pink", "Multi"],
   category: ["Clothing", "Shoes", "Bags", "Home", "Electronics", "Toys", "Books", "Other"],
 };
 
@@ -61,7 +61,10 @@ export function EditItemSheet({
 }) {
   const [picker, setPicker] = useState<ChoiceField | null>(null);
   const [pickerText, setPickerText] = useState("");
+  const [freeText, setFreeText] = useState(false);
   const priceFresh = useRef(false);
+  const window = useWindowDimensions();
+  const [sheetHeight, setSheetHeight] = useState(window.height);
   const priceSelection = useRef({ start: 0, end: 0 });
   const fields: ChoiceField[] = sizeRelevant(value)
     ? ["condition", "size", "brand", "color", "category"]
@@ -70,6 +73,7 @@ export function EditItemSheet({
 
   const openPicker = (field: ChoiceField) => {
     setPickerText(value[field]);
+    setFreeText(false);
     setPicker(field);
   };
   const pick = (text?: string) => {
@@ -87,7 +91,12 @@ export function EditItemSheet({
 
   return (
     <Modal visible={visible} presentationStyle="pageSheet" animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAvoidingView
+        style={styles.screen}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={window.height - sheetHeight}
+        onLayout={(e) => setSheetHeight(e.nativeEvent.layout.height)}
+      >
         <View style={styles.header}>
           <Pressable onPress={onClose} hitSlop={12} style={styles.close} accessibilityRole="button">
             <Text style={styles.closeText}>Close</Text>
@@ -209,20 +218,27 @@ export function EditItemSheet({
           <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
             <View style={styles.picker}>
               <Text style={styles.pickerTitle}>{picker ? LABELS[picker] : ""}</Text>
-              {choices ? (
-                choices.map((option) => (
-                  <Pressable key={option} onPress={() => pick(option)} style={styles.option} accessibilityRole="button">
-                    <Text style={styles.optionText}>{option}</Text>
-                    {picker && value[picker] === option && <Text style={styles.check}>✓</Text>}
-                  </Pressable>
-                ))
+              {choices && !freeText ? (
+                <>
+                  {choices.map((option) => (
+                    <Pressable key={option} onPress={() => pick(option)} style={styles.option} accessibilityRole="button">
+                      <Text style={styles.optionText}>{option}</Text>
+                      {picker && value[picker] === option && <Text style={styles.check}>✓</Text>}
+                    </Pressable>
+                  ))}
+                  {picker === "color" && (
+                    <Pressable onPress={() => setFreeText(true)} style={styles.option} accessibilityRole="button">
+                      <Text style={styles.optionText}>Other…</Text>
+                    </Pressable>
+                  )}
+                </>
               ) : (
                 <>
                   <View style={styles.input}>
                     <TextInput
                       value={pickerText}
                       onChangeText={setPickerText}
-                      placeholder={picker === "size" ? "Size, like M or 32x30" : "Brand"}
+                      placeholder={picker === "size" ? "Size, like M or 32x30" : picker === "color" ? "Color" : "Brand"}
                       placeholderTextColor={colors.muted}
                       autoFocus
                       returnKeyType="done"
@@ -290,7 +306,7 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.4 },
   remove: { alignSelf: "center", minHeight: spacing.minButton, justifyContent: "center" },
   removeText: { ...fonts.medium, fontSize: 16, color: colors.destructive },
-  scrim: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)" },
+  scrim: { flex: 1, backgroundColor: colors.scrim },
   picker: { backgroundColor: colors.cream, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: spacing.sidePad, paddingBottom: 34, gap: 4 },
   pickerTitle: { ...fonts.semibold, fontSize: 20, color: colors.ink, marginBottom: 8 },
   option: { height: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: colors.hairline },
