@@ -11,7 +11,7 @@ Look at the photo of one item and return JSON:
 - brand: the brand only when visible or obvious; otherwise null.
 - condition: one of "New", "Like new", "Good", "Fair".
 - color: the main color in one or two words.
-- description: one or two short sentences on what it is, material or style, and condition (e.g. "Light wash, straight leg. Barely worn."). Don't repeat the size, brand or color.
+- description: Write one or two natural, concrete sentences that help a shopper decide. Lead with a visible detail such as the cut, texture, pattern, or a useful feature. Mention visible wear or damage if present. Don't repeat the title or invent materials, measurements, or wear history.
 - suggestedPriceCents: a fair used garage-sale price in US cents, rounded to whole dollars.`;
 
 export type PhotoListing = {

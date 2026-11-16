@@ -7,6 +7,7 @@ import { aboutMiles, detailLine, formatPrice } from "./format";
 export type CardItem = {
   title: string;
   photoUrl: string;
+  description?: string;
   priceCents: number;
   size?: string;
   condition?: string;
@@ -44,6 +45,9 @@ export function ItemCard({ item, width, onPress, selected }: { item: CardItem; w
         <Text numberOfLines={1} style={{ ...sys.label, paddingHorizontal: 4 }}>
           {details}
         </Text>
+      )}
+      {!!item.description?.trim() && (
+        <Text numberOfLines={2} style={{ ...sys.label, paddingHorizontal: 4, marginTop: 3 }}>{item.description.trim()}</Text>
       )}
       {(item.ownerName || distance) && (
         <View style={{ flexDirection: "row", paddingHorizontal: 4 }}>
