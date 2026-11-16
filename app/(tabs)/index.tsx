@@ -43,6 +43,7 @@ async function pickSamplePhotos() {
 export default function Home() {
   const user = useCurrentUser();
   const mine = useQuery(api.garages.mine, user ? { ownerId: user.userId } : "skip");
+  if (user && mine === undefined) return null;
   if (user && mine) return <Yard user={user} garage={mine.garage} />;
   return <Landing user={user} />;
 }
@@ -205,7 +206,7 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
           busy={busy}
           error={error}
           onSave={save}
-          onRemove={remove}
+          onRemove={editing.status === "reserved" ? undefined : remove}
           onClose={closeEdit}
         />
       )}
@@ -261,7 +262,7 @@ function YardCard({
           )}
           {sold && (
             <Pressable onPress={() => onStatus("live")} disabled={busy} style={styles.cardAction} accessibilityRole="button">
-              <Text style={styles.cardActionText}>Relist</Text>
+              <Text style={styles.cardActionText}>Put back</Text>
             </Pressable>
           )}
         </View>
@@ -327,7 +328,7 @@ const styles = StyleSheet.create({
   yardMeta: { ...fonts.body, fontSize: 15, color: colors.muted },
   grid: { paddingTop: 8, paddingBottom: 12, gap: 14 },
   gridRow: { gap: 14 },
-  card: { flex: 1, gap: 6 },
+  card: { flex: 1, maxWidth: "48%", gap: 6 },
   cardBody: { gap: 2 },
   cardPhoto: { width: "100%", aspectRatio: 1, borderRadius: 16, backgroundColor: colors.hairline, marginBottom: 6 },
   sizeBadge: {

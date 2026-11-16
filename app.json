@@ -20,7 +20,13 @@
       "expo-web-browser",
       "expo-image",
       "expo-font",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Save Keiki to your contacts."
+        }
+      ]
     ],
     "scheme": "garagesale",
     "platforms": [

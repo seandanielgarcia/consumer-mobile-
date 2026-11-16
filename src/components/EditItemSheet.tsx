@@ -56,7 +56,7 @@ export function EditItemSheet({
   busy?: boolean;
   error?: string | null;
   onSave: () => void;
-  onRemove: () => void;
+  onRemove?: () => void;
   onClose: () => void;
 }) {
   const [picker, setPicker] = useState<ChoiceField | null>(null);
@@ -209,9 +209,11 @@ export function EditItemSheet({
           >
             <Text style={styles.saveText}>{missing ? `Add ${missing} to save` : "Save"}</Text>
           </Pressable>
-          <Pressable onPress={confirmRemove} disabled={busy} hitSlop={8} style={styles.remove} accessibilityRole="button">
-            <Text style={styles.removeText}>Remove item</Text>
-          </Pressable>
+          {onRemove && (
+            <Pressable onPress={confirmRemove} disabled={busy} hitSlop={8} style={styles.remove} accessibilityRole="button">
+              <Text style={styles.removeText}>Remove item</Text>
+            </Pressable>
+          )}
         </View>
         <Modal visible={picker !== null} transparent animationType="slide" onRequestClose={() => pick()}>
           <Pressable style={styles.scrim} onPress={() => pick()} />
