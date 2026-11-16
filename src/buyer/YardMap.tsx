@@ -143,9 +143,10 @@ export function YardMap({
                 onPress={() => router.push({ pathname: "/buyer/garage/[id]", params: { id: yard.garageId } })}
                 accessibilityRole="button"
                 accessibilityLabel={`Open ${yard.ownerName}'s yard`}
-                style={{
+                style={({ pressed }) => ({
                   width: cardWidth,
                   minHeight: 76,
+                  transform: [{ scale: pressed ? 0.98 : 1 }],
                   flexDirection: "row",
                   alignItems: "center",
                   gap: 12,
@@ -155,7 +156,7 @@ export function YardMap({
                   borderWidth: 2,
                   borderColor: on ? colors.mapBlue : colors.white,
                   ...shadows.float,
-                }}
+                })}
               >
                 <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: pin.bg, alignItems: "center", justifyContent: "center" }}>
                   <Text style={{ fontSize: 20, fontWeight: "800", color: pin.fg }}>{yard.ownerName.charAt(0).toUpperCase()}</Text>
