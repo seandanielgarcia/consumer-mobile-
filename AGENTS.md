@@ -109,7 +109,7 @@ Build to match the mockups except where "Product decisions since the PRD" says o
 
 ## Seed data
 
-Three fake garages near YC (Mission / Hayes Valley area) with about 10 real clothing photos, in `convex/seed.ts`, so a search for "jeans" returns results. Seed rows use rounded coordinates like everything else.
+Nineteen seed yards across central San Francisco (Mission, Hayes Valley, Castro, SoMa, Potrero Hill and more), all within 2 mi of the default buyer location, with about 70 listings of anything (clothes with sizes, bikes, record players, plants, furniture). They live in `convex/seed.ts`, with photos listed in `src/lib/stock.ts` (CC-licensed, credits alongside). A search for "jeans" returns results. Seed rows use rounded coordinates like everything else.
 
 ## Done criteria (demo)
 
