@@ -220,7 +220,14 @@ export const verifyPhone = internalMutation({
   handler: async (ctx, { phones, code }): Promise<ToolResult> => {
     const user = await userForPhones(ctx, phones);
     if (!user) return { error: "no_user" };
-    if (!user.verifyCode || user.verifyCode !== code.trim()) return { error: "bad_code" };
+    const confirmation = code.trim();
+    const request = user.buyerTextsRequest;
+    if (request?.code === confirmation.padStart(4, "0")) {
+      if (request.expiresAt <= Date.now()) return { error: "expired" };
+      await ctx.db.patch(user._id, { allowBuyerTexts: request.allow, buyerTextsRequest: undefined });
+      return { ok: true, reply: request.allow ? "Buyer texts are on for your yard." : "Buyer texts are off for your yard." };
+    }
+    if (!user.verifyCode || user.verifyCode !== confirmation) return { error: "bad_code" };
     if (!user.verifyCodeExpiresAt || user.verifyCodeExpiresAt <= Date.now()) return { error: "expired" };
     await ctx.db.patch(user._id, { verified: true, verifyCode: undefined, verifyCodeExpiresAt: undefined });
     const garage = await ctx.db
