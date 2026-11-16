@@ -120,6 +120,7 @@ function Confirmation({ garageId, selection }: { garageId: Id<"garages">; select
                 {detailLine([item.condition, item.size && `Size ${item.size}`, item.brand]) !== "" && (
                   <Text numberOfLines={1} style={sys.label}>{detailLine([item.condition, item.size && `Size ${item.size}`, item.brand])}</Text>
                 )}
+                {!!item.description?.trim() && <Text numberOfLines={2} style={sys.label}>{item.description.trim()}</Text>}
               </View>
               <Text style={sys.price}>{formatPrice(item.priceCents)}</Text>
             </View>
