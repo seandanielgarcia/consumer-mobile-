@@ -1,20 +1,28 @@
+// The map style is the app style: lavender ground, navy ink, one bright blue, lime price stickers,
+// and pink/orange/navy as pin and status accents. White cards float on soft navy shadows.
+// `cream` keeps its name for the many call sites but is the lavender ground now.
 export const colors = {
-  brand: "#2340FF",
-  cream: "#FFF6E5",
-  tag: "#FFE14D",
-  ink: "#111111",
-  muted: "#5A5245",
-  line: "#CFC3AA",
-  hairline: "#EDE6D6",
+  brand: "#2A52F0",
+  cream: "#F3F2FA",
+  tag: "#B6F03A",
+  ink: "#1B1B3A",
+  muted: "#6E6F8F",
+  line: "#D9D9EA",
+  hairline: "#E6E6F2",
   white: "#FFFFFF",
-  surfaceMuted: "#F2F2F2",
+  surfaceMuted: "#ECEBF5",
   error: "#B3261E",
   destructive: "#D93025",
-  badge: "rgba(17,17,17,0.85)",
-  veil: "rgba(17,17,17,0.25)",
+  badge: "rgba(27,27,58,0.85)",
+  veil: "rgba(27,27,58,0.25)",
   frost: "rgba(255,255,255,0.7)",
-  scrim: "rgba(0,0,0,0.35)",
-  // Map (Search tab): lavender ground, navy ink, saturated pins
+  scrim: "rgba(27,27,58,0.4)",
+  shadow: "#1B1B3A",
+  // Accents (pins, status chips)
+  lime: "#B6F03A",
+  orange: "#FF7A1A",
+  pink: "#FF4FA3",
+  // Map (Search tab)
   mapGround: "#F3F2FA",
   mapInk: "#1B1B3A",
   mapBlue: "#2F5BFF",
@@ -42,6 +50,21 @@ export const spacing = {
   minButton: 44,
   cta: 60,
   radius: 999,
+  card: 22,
+  photo: 16,
+  field: 14,
+} as const;
+
+// Soft navy shadows: cards sit on the lavender ground, pins and floating controls lift a little more.
+export const shadows = {
+  card: { shadowColor: colors.shadow, shadowOpacity: 0.1, shadowRadius: 14, shadowOffset: { width: 0, height: 8 } },
+  float: { shadowColor: colors.shadow, shadowOpacity: 0.14, shadowRadius: 16, shadowOffset: { width: 0, height: 10 } },
+  pin: { shadowColor: colors.shadow, shadowOpacity: 0.22, shadowRadius: 6, shadowOffset: { width: 0, height: 4 } },
+} as const;
+
+export const surfaces = {
+  card: { backgroundColor: colors.white, borderRadius: spacing.card, ...shadows.card },
+  sticker: { backgroundColor: colors.tag, borderRadius: 8, borderWidth: 2, borderColor: colors.ink, paddingHorizontal: 8, height: 28, justifyContent: "center" },
 } as const;
 
 export const typeSize = {
@@ -84,9 +107,23 @@ export const primaryButton = {
   backgroundColor: colors.brand,
   alignItems: "center",
   justifyContent: "center",
+  ...shadows.float,
+  shadowOpacity: 0.18,
 } as const;
 
 export const primaryButtonText = { ...fonts.semibold, fontSize: 17, color: colors.white } as const;
 
-export const theme = { colors, fonts, spacing, type };
+export const secondaryButton = {
+  height: 56,
+  borderRadius: spacing.radius,
+  backgroundColor: colors.white,
+  borderWidth: 1.5,
+  borderColor: colors.ink,
+  alignItems: "center",
+  justifyContent: "center",
+} as const;
+
+export const secondaryButtonText = { ...fonts.semibold, fontSize: 17, color: colors.ink } as const;
+
+export const theme = { colors, fonts, spacing, type, shadows, surfaces };
 export default theme;

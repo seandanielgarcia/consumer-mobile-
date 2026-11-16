@@ -1,15 +1,16 @@
 import { Pressable, Text } from "react-native";
-import { colors, primaryButton, sys } from "../theme";
+import { secondaryButton, secondaryButtonText } from "../theme";
 
+// The white pill with a navy outline that sits next to a PrimaryButton.
 export function SecondaryButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
-      style={{ ...primaryButton, backgroundColor: "transparent", borderWidth: 1.5, borderColor: colors.ink, opacity: disabled ? 0.4 : 1 }}
+      style={({ pressed }) => ({ ...secondaryButton, opacity: disabled ? 0.4 : pressed ? 0.7 : 1 })}
     >
-      <Text style={{ ...sys.button, color: colors.ink }}>{label}</Text>
+      <Text style={secondaryButtonText}>{label}</Text>
     </Pressable>
   );
 }

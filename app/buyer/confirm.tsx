@@ -13,10 +13,10 @@ import { askToBuyText, firstName, textSeller } from "../../src/buyer/textSeller"
 import { useBuy } from "../../src/buyer/useBuy";
 import { PrimaryButton } from "../../src/components/PrimaryButton";
 import { SecondaryButton } from "../../src/components/SecondaryButton";
-import { useHeaderBack } from "../../src/lib/headerBack";
 import { formatPlace } from "../../src/lib/place";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
-import { colors, sys } from "../../src/theme";
+import { pinFor } from "../../src/buyer/pins";
+import { colors, shadows, surfaces, sys } from "../../src/theme";
 
 export default function BuyerConfirm() {
   const params = useLocalSearchParams<{ garageId: string; items: string }>();
@@ -36,7 +36,6 @@ export default function BuyerConfirm() {
     setNotice(gone.map((id) => `${titles.current.get(id) ?? "An item"} just got taken, so we removed it.`).join(" "));
   }, []);
   const { buy, buying, error, checkingOut, myOrderItemIds } = useBuy(garageId, (itemId) => drop([itemId]));
-  useHeaderBack(() => (router.canGoBack() ? router.back() : router.replace({ pathname: "/buyer/garage/[id]", params: { id: garageId } })));
 
   useEffect(() => {
     if (!garage) return;
@@ -70,12 +69,17 @@ export default function BuyerConfirm() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20, gap: 12 }}>
-        <Text style={sys.title}>Confirm</Text>
-        <View style={{ gap: 2 }}>
-          <Text style={{ ...sys.row, fontWeight: "600" }}>{seller}'s yard</Text>
-          <Text style={sys.label}>{formatPlace(garage)}</Text>
+        <Text style={{ ...sys.title, fontWeight: "800" }}>Confirm</Text>
+        <View style={{ ...surfaces.card, flexDirection: "row", alignItems: "center", gap: 12, padding: 12 }}>
+          <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: pinFor(garageId).bg, borderWidth: 3, borderColor: colors.white, alignItems: "center", justifyContent: "center", ...shadows.pin }}>
+            <Text style={{ fontSize: 18, fontWeight: "800", color: pinFor(garageId).fg }}>{seller.charAt(0).toUpperCase()}</Text>
+          </View>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={{ ...sys.row, fontWeight: "700" }}>{seller}'s yard</Text>
+            <Text style={{ ...sys.label, textTransform: "uppercase", letterSpacing: 1.2, fontSize: 11 }}>{formatPlace(garage)}</Text>
+          </View>
         </View>
-        <View style={{ backgroundColor: colors.white, borderRadius: 16, paddingHorizontal: 16 }}>
+        <View style={{ ...surfaces.card, paddingHorizontal: 16 }}>
           {items.map((item, i) => (
             <View key={item._id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: colors.hairline }}>
               <Image source={{ uri: item.photoUrl }} style={{ width: 48, height: 48, borderRadius: 10, backgroundColor: colors.line }} contentFit="cover" />
@@ -95,7 +99,7 @@ export default function BuyerConfirm() {
         </View>
         {(notice ?? error) && <Text style={{ ...sys.row, fontWeight: "500" }}>{notice ?? error}</Text>}
       </ScrollView>
-      <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 34, gap: 12, backgroundColor: colors.cream, borderTopWidth: 1, borderTopColor: colors.hairline }}>
+      <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 34, gap: 12, backgroundColor: colors.cream }}>
         {textable && <SecondaryButton label={`Text ${seller}`} onPress={text} disabled={texting || buying} />}
         <PrimaryButton label={`Pay ${formatPrice(total)}`} onPress={() => buy(items.map((i) => i._id))} loading={buying} />
       </View>

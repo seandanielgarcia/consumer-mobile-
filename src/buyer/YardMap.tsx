@@ -1,3 +1,4 @@
+import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
@@ -5,7 +6,8 @@ import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-na
 import MapView, { Circle, Marker, type Region } from "react-native-maps";
 import type { Id } from "../../convex/_generated/dataModel";
 import { formatPlace } from "../lib/place";
-import { colors, sys } from "../theme";
+import { colors, shadows, sys } from "../theme";
+import { pinFor } from "./pins";
 import { aboutMiles, formatPrice } from "./format";
 
 export type MapYard = {
@@ -21,18 +23,28 @@ export type MapYard = {
   photoUrls: string[];
 };
 
-// Pin palette: saturated, each pair passes 4.5:1 for the initial. Stable per yard.
-const PINS = [
-  { bg: colors.mapBlue, fg: colors.white },
-  { bg: colors.mapLime, fg: colors.mapInk },
-  { bg: colors.mapOrange, fg: colors.mapInk },
-  { bg: colors.mapPink, fg: colors.white },
-  { bg: colors.mapInk, fg: colors.white },
-];
-const pinFor = (id: string) => PINS[[...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % PINS.length];
-
 const MILE_M = 1609.344;
 const DEG_PER_MILE = 1 / 69;
+
+export function spreadYards<T extends { garageId: string; lat: number; lng: number }>(yards: T[], radiusMiles: number): (T & { pinLat: number; pinLng: number })[] {
+  const groups = new Map<string, T[]>();
+  for (const yard of yards) {
+    const key = `${yard.lat},${yard.lng}`;
+    groups.set(key, [...(groups.get(key) ?? []), yard]);
+  }
+  return yards.map((yard) => {
+    const group = groups.get(`${yard.lat},${yard.lng}`)!;
+    if (group.length < 2) return { ...yard, pinLat: yard.lat, pinLng: yard.lng };
+    const i = [...group].sort((a, b) => a.garageId.localeCompare(b.garageId)).indexOf(yard);
+    const angle = (2 * Math.PI * i) / group.length - Math.PI / 2;
+    const fan = regionFor(yard.lat, yard.lng, radiusMiles).latitudeDelta / 13;
+    return {
+      ...yard,
+      pinLat: yard.lat + fan * Math.sin(angle),
+      pinLng: yard.lng + (fan * Math.cos(angle)) / Math.cos((yard.lat * Math.PI) / 180),
+    };
+  });
+}
 
 export function regionFor(lat: number, lng: number, radiusMiles: number): Region {
   const span = radiusMiles * 2 * DEG_PER_MILE * 1.25;
@@ -62,16 +74,19 @@ export function YardMap({
     map.current?.animateToRegion(regionFor(center.lat, center.lng, radiusMiles), 450);
   }, [center.lat, center.lng, radiusMiles]);
 
+  const pins = useMemo(() => spreadYards(yards, radiusMiles), [yards, radiusMiles]);
+
   const ordered = useMemo(() => {
     if (!selected) return yards;
     const i = yards.findIndex((y) => y.garageId === selected);
     return i < 0 ? yards : [...yards.slice(i), ...yards.slice(0, i)];
   }, [yards, selected]);
 
-  const pick = (yard: MapYard) => {
+  const pick = (yard: MapYard & { pinLat: number; pinLng: number }) => {
+    Haptics.selectionAsync().catch(() => {});
     setSelected(yard.garageId);
     carousel.current?.scrollTo({ x: 0, animated: true });
-    map.current?.animateCamera({ center: { latitude: yard.lat, longitude: yard.lng } }, { duration: 350 });
+    map.current?.animateCamera({ center: { latitude: yard.pinLat, longitude: yard.pinLng } }, { duration: 350 });
   };
 
   return (
@@ -95,14 +110,14 @@ export function YardMap({
         <Marker coordinate={{ latitude: center.lat, longitude: center.lng }} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false} accessibilityLabel="Your search spot">
           <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.mapBlue, borderWidth: 4, borderColor: colors.white }} />
         </Marker>
-        {yards.map((yard) => {
+        {pins.map((yard) => {
           const on = yard.garageId === selected;
           const pin = pinFor(yard.garageId);
           const size = on ? 58 : 44;
           return (
             <Marker
               key={yard.garageId}
-              coordinate={{ latitude: yard.lat, longitude: yard.lng }}
+              coordinate={{ latitude: yard.pinLat, longitude: yard.pinLng }}
               anchor={{ x: 0.5, y: 0.5 }}
               onPress={(e) => {
                 e.stopPropagation();
@@ -122,10 +137,7 @@ export function YardMap({
                   borderColor: on ? colors.mapInk : colors.white,
                   alignItems: "center",
                   justifyContent: "center",
-                  shadowColor: colors.mapInk,
-                  shadowOpacity: 0.22,
-                  shadowRadius: 6,
-                  shadowOffset: { width: 0, height: 4 },
+                  ...shadows.pin,
                 }}
               >
                 <Text style={{ fontSize: on ? 24 : 18, fontWeight: "800", color: pin.fg }}>{yard.ownerName.charAt(0).toUpperCase()}</Text>
@@ -155,9 +167,10 @@ export function YardMap({
                 onPress={() => router.push({ pathname: "/buyer/garage/[id]", params: { id: yard.garageId } })}
                 accessibilityRole="button"
                 accessibilityLabel={`Open ${yard.ownerName}'s yard`}
-                style={{
+                style={({ pressed }) => ({
                   width: cardWidth,
                   minHeight: 76,
+                  transform: [{ scale: pressed ? 0.98 : 1 }],
                   flexDirection: "row",
                   alignItems: "center",
                   gap: 12,
@@ -166,11 +179,8 @@ export function YardMap({
                   backgroundColor: colors.white,
                   borderWidth: 2,
                   borderColor: on ? colors.mapBlue : colors.white,
-                  shadowColor: colors.mapInk,
-                  shadowOpacity: 0.14,
-                  shadowRadius: 14,
-                  shadowOffset: { width: 0, height: 8 },
-                }}
+                  ...shadows.float,
+                })}
               >
                 <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: pin.bg, alignItems: "center", justifyContent: "center" }}>
                   <Text style={{ fontSize: 20, fontWeight: "800", color: pin.fg }}>{yard.ownerName.charAt(0).toUpperCase()}</Text>

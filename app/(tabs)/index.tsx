@@ -14,7 +14,7 @@ import { shareYard } from "../../src/lib/shareYard";
 import { stockImages } from "../../src/lib/stockImages";
 import { markEntered } from "../../src/lib/entered";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
-import { colors, fonts, spacing } from "../../src/theme";
+import { colors, fonts, secondaryButton, secondaryButtonText, shadows, spacing, surfaces } from "../../src/theme";
 
 const POLAROID_POSITIONS = [
   { left: 8, top: 18, transform: [{ rotate: "-8deg" }] },
@@ -76,8 +76,8 @@ function Landing({ user }: { user: { userId: Doc<"users">["_id"]; name?: string 
           <Pressable style={styles.button} onPress={() => (markEntered(), pickFromLibrary())} accessibilityRole="button">
             <Text style={styles.buttonText}>Sell your stuff</Text>
           </Pressable>
-          <Pressable style={styles.button} onPress={() => (markEntered(), router.navigate("/buyer"))} accessibilityRole="button">
-            <Text style={styles.buttonText}>Shop near you</Text>
+          <Pressable style={styles.buttonSecondary} onPress={() => (markEntered(), router.navigate("/buyer"))} accessibilityRole="button">
+            <Text style={styles.buttonSecondaryText}>Shop near you</Text>
           </Pressable>
         </View>
         <View style={styles.landingLinks}>
@@ -134,6 +134,10 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
   const change = (item: Item, status: "sold" | "live") => run(() => setStatus({ itemId: item._id, ownerId: user.userId, status }));
 
   const openEdit = (item: Item) => {
+    if (item.status === "reserved") {
+      setError("Reserved items can't be edited until pickup. Mark it sold or put it back first.");
+      return;
+    }
     setError(null);
     setEditing(item);
     setDraft(toFields(item));
@@ -232,6 +236,9 @@ function YardCard({
       <Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel={`Edit ${item.title}`} style={styles.cardBody}>
         <View>
           <Image source={{ uri: item.photoUrl }} style={styles.cardPhoto} contentFit="cover" />
+          <View style={styles.priceSticker}>
+            <Text style={styles.cardPrice}>${Math.round(item.priceCents / 100)}</Text>
+          </View>
           {item.size && (
             <View style={styles.sizeBadge} accessible={false}>
               <Text style={styles.sizeText} numberOfLines={1}>
@@ -240,7 +247,6 @@ function YardCard({
             </View>
           )}
         </View>
-        <Text style={styles.cardPrice}>${Math.round(item.priceCents / 100)}</Text>
         <Text style={styles.cardTitle} numberOfLines={1}>
           {item.title}
         </Text>
@@ -275,7 +281,7 @@ const styles = StyleSheet.create({
   // Landing
   screen: {
     flex: 1,
-    backgroundColor: colors.brand,
+    backgroundColor: colors.cream,
     paddingHorizontal: spacing.sidePad,
     paddingBottom: 34,
     justifyContent: "center",
@@ -283,8 +289,8 @@ const styles = StyleSheet.create({
   block: { gap: 12 },
   buttons: { gap: 12, marginTop: 8 },
   stack: { height: 190, marginTop: 12 },
-  polaroid: { position: "absolute", width: 104, backgroundColor: colors.white, padding: 6, paddingBottom: 18 },
-  polaroidPhoto: { width: 92, height: 112, backgroundColor: colors.line },
+  polaroid: { position: "absolute", width: 104, backgroundColor: colors.white, borderRadius: 14, padding: 6, paddingBottom: 18, ...shadows.card },
+  polaroidPhoto: { width: 92, height: 112, borderRadius: 9, backgroundColor: colors.line },
   sticker: {
     position: "absolute",
     left: -6,
@@ -297,44 +303,45 @@ const styles = StyleSheet.create({
     backgroundColor: colors.tag,
     justifyContent: "center",
   },
-  stickerText: { ...fonts.display, fontSize: 15, color: colors.ink },
-  wordmark: { ...fonts.wordmark, fontSize: 44, letterSpacing: -1.5, color: colors.cream },
+  stickerText: { fontSize: 15, fontWeight: "800", color: colors.ink },
+  wordmark: { ...fonts.wordmark, fontSize: 44, letterSpacing: -1.5, color: colors.ink },
   landingLinks: { marginTop: 8, alignItems: "center", gap: 8 },
   linkButton: {
     minHeight: spacing.minButton,
     justifyContent: "center",
     paddingHorizontal: 16,
-    borderRadius: spacing.radius,
-    borderWidth: 2,
-    borderColor: colors.cream,
   },
-  sessionText: { ...fonts.body, fontSize: 14, color: colors.cream },
+  sessionText: { ...fonts.body, fontSize: 14, color: colors.muted },
   signOut: { ...fonts.semibold },
-  tagline: { ...fonts.body, fontSize: 17, lineHeight: 23, color: colors.cream },
+  tagline: { ...fonts.body, fontSize: 17, lineHeight: 23, color: colors.muted },
   button: {
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.cream,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.brand,
     alignItems: "center",
     justifyContent: "center",
+    ...shadows.float,
+    shadowOpacity: 0.2,
   },
-  buttonText: { ...fonts.semibold, fontSize: 24, color: colors.ink },
+  buttonText: { ...fonts.semibold, fontSize: 20, color: colors.white },
+  buttonSecondary: { ...secondaryButton, height: 64, borderRadius: 32 },
+  buttonSecondaryText: { ...secondaryButtonText, fontSize: 20 },
 
   // Yard
   yard: { flex: 1, backgroundColor: colors.cream, paddingTop: 4, paddingHorizontal: spacing.sidePad, paddingBottom: 34, gap: 8 },
   yardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   yardWordmark: { ...fonts.display, fontSize: 20, letterSpacing: -0.5, color: colors.brand },
-  yardHeadline: { ...fonts.display, fontSize: 30, lineHeight: 34, letterSpacing: -1, color: colors.ink },
-  yardMeta: { ...fonts.body, fontSize: 15, color: colors.muted },
+  yardHeadline: { ...fonts.wordmark, fontSize: 30, lineHeight: 34, letterSpacing: -1, color: colors.ink },
+  yardMeta: { ...fonts.semibold, fontSize: 11, letterSpacing: 1.6, textTransform: "uppercase", color: colors.muted },
   grid: { paddingTop: 8, paddingBottom: 12, gap: 14 },
   gridRow: { gap: 14 },
-  card: { flex: 1, maxWidth: "48%", gap: 6 },
-  cardBody: { gap: 2 },
-  cardPhoto: { width: "100%", aspectRatio: 1, borderRadius: 16, backgroundColor: colors.hairline, marginBottom: 6 },
+  card: { flex: 1, maxWidth: "48%", gap: 8 },
+  cardBody: { ...surfaces.card, padding: 8, paddingBottom: 12, gap: 2 },
+  cardPhoto: { width: "100%", aspectRatio: 1, borderRadius: spacing.photo, backgroundColor: colors.hairline, marginBottom: 8 },
   sizeBadge: {
     position: "absolute",
     right: 8,
-    bottom: 14,
+    bottom: 16,
     maxWidth: 80,
     height: 22,
     paddingHorizontal: 8,
@@ -343,17 +350,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   sizeText: { ...fonts.semibold, fontSize: 12, color: colors.white },
-  cardPrice: { ...fonts.display, fontSize: 17, lineHeight: 22, color: colors.ink },
-  cardTitle: { ...fonts.body, fontSize: 15, lineHeight: 20, color: colors.ink },
-  cardMeta: { ...fonts.medium, fontSize: 13, color: colors.muted },
-  cardReserved: { color: colors.brand },
+  priceSticker: { position: "absolute", left: 6, bottom: 14, ...surfaces.sticker },
+  cardPrice: { fontSize: 15, fontWeight: "800", color: colors.ink },
+  cardTitle: { ...fonts.semibold, fontSize: 15, lineHeight: 20, color: colors.ink, paddingHorizontal: 4 },
+  cardMeta: { ...fonts.medium, fontSize: 13, color: colors.muted, paddingHorizontal: 4 },
+  cardReserved: { color: colors.pink },
   cardActions: { flexDirection: "row", gap: 6 },
   cardAction: {
     flex: 1,
     minHeight: spacing.minButton,
     borderRadius: spacing.radius,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: colors.ink,
+    backgroundColor: colors.white,
     alignItems: "center",
     justifyContent: "center",
   },

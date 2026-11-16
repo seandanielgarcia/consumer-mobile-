@@ -1,6 +1,7 @@
 import { Image } from "expo-image";
 import { useRef, useState } from "react";
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useKeyboardInset } from "../lib/useKeyboardInset";
 import { colors, fonts, primaryButton, primaryButtonText, spacing, type } from "../theme";
 
 // The one Edit sheet (UI-RULES.md reference), shared by the Overview (app/seller/price.tsx) and the yard grid (app/index.tsx).
@@ -63,8 +64,7 @@ export function EditItemSheet({
   const [pickerText, setPickerText] = useState("");
   const [freeText, setFreeText] = useState(false);
   const priceFresh = useRef(false);
-  const window = useWindowDimensions();
-  const [sheetHeight, setSheetHeight] = useState(window.height);
+  const keyboardInset = useKeyboardInset();
   const priceSelection = useRef({ start: 0, end: 0 });
   const fields: ChoiceField[] = sizeRelevant(value)
     ? ["condition", "size", "brand", "color", "category"]
@@ -91,12 +91,7 @@ export function EditItemSheet({
 
   return (
     <Modal visible={visible} presentationStyle="pageSheet" animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.screen}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={window.height - sheetHeight}
-        onLayout={(e) => setSheetHeight(e.nativeEvent.layout.height)}
-      >
+      <View style={[styles.screen, { paddingBottom: keyboardInset }]}>
         <View style={styles.header}>
           <Pressable onPress={onClose} hitSlop={12} style={styles.close} accessibilityRole="button">
             <Text style={styles.closeText}>Close</Text>
@@ -261,7 +256,7 @@ export function EditItemSheet({
             </View>
           </KeyboardAvoidingView>
         </Modal>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -274,17 +269,17 @@ const styles = StyleSheet.create({
   closeText: { ...fonts.medium, fontSize: 17, color: colors.brand },
   headerTitle: { ...fonts.semibold, fontSize: 17, color: colors.ink },
   body: { paddingHorizontal: spacing.sidePad, paddingBottom: 20, gap: 12 },
-  photo: { width: "100%", aspectRatio: 4 / 3, borderRadius: 16, backgroundColor: colors.hairline },
+  photo: { width: "100%", aspectRatio: 4 / 3, borderRadius: spacing.photo, backgroundColor: colors.hairline },
   sticker: { position: "absolute", left: 12, bottom: 12, paddingHorizontal: 10, height: 32, borderRadius: 8, backgroundColor: colors.tag, justifyContent: "center" },
   stickerText: { ...fonts.display, fontSize: 18, color: colors.ink },
   note: { ...type.meta, color: colors.muted },
   field: { gap: 6 },
   label: { ...fonts.medium, fontSize: 13, color: colors.muted },
   input: {
-    minHeight: 48,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.hairline,
+    minHeight: 52,
+    borderRadius: spacing.field,
+    borderWidth: 1.5,
+    borderColor: colors.line,
     backgroundColor: colors.white,
     paddingHorizontal: 14,
     flexDirection: "row",
@@ -294,7 +289,7 @@ const styles = StyleSheet.create({
   inputTallText: { minHeight: 96, textAlignVertical: "top" },
   dollar: { ...fonts.medium, fontSize: 17, color: colors.ink, marginRight: 4 },
   inputText: { flex: 1, ...fonts.body, fontSize: 17, color: colors.ink, paddingVertical: 12 },
-  rows: { backgroundColor: colors.white, borderRadius: 16, paddingHorizontal: 16 },
+  rows: { backgroundColor: colors.white, borderRadius: spacing.card, paddingHorizontal: 16 },
   row: { height: 48, flexDirection: "row", alignItems: "center", gap: 8 },
   rowDivider: { borderTopWidth: 1, borderTopColor: colors.hairline },
   rowLabel: { flex: 1, ...fonts.body, fontSize: 16, color: colors.ink },
@@ -309,7 +304,7 @@ const styles = StyleSheet.create({
   remove: { alignSelf: "center", minHeight: spacing.minButton, justifyContent: "center" },
   removeText: { ...fonts.medium, fontSize: 16, color: colors.destructive },
   scrim: { flex: 1, backgroundColor: colors.scrim },
-  picker: { backgroundColor: colors.cream, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: spacing.sidePad, paddingBottom: 34, gap: 4 },
+  picker: { backgroundColor: colors.cream, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: spacing.sidePad, paddingBottom: 34, gap: 4 },
   pickerTitle: { ...fonts.semibold, fontSize: 20, color: colors.ink, marginBottom: 8 },
   option: { height: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: colors.hairline },
   optionText: { ...fonts.body, fontSize: 17, color: colors.ink },

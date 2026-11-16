@@ -1,4 +1,5 @@
 import { useConvex, useQuery } from "convex/react";
+import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -11,7 +12,7 @@ import { PAYMENT_FAILED } from "../../src/buyer/useBuy";
 import { pickupText, textSeller } from "../../src/buyer/textSeller";
 import { PrimaryButton } from "../../src/components/PrimaryButton";
 import { SecondaryButton } from "../../src/components/SecondaryButton";
-import { colors, sys } from "../../src/theme";
+import { colors, surfaces, sys } from "../../src/theme";
 
 export default function BuyerPaid() {
   const { orderId, garageId, items } = useLocalSearchParams<{ orderId?: string; garageId?: string; items?: string }>();
@@ -36,6 +37,9 @@ export default function BuyerPaid() {
   }
 
   const paid = order?.status === "paid" || order?.status === "picked_up";
+  useEffect(() => {
+    if (paid) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+  }, [paid]);
   const pending = order?.status === "pending";
   const text = async () => {
     if (!order?.garageId) return;
@@ -50,7 +54,7 @@ export default function BuyerPaid() {
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
       <ScrollView contentContainerStyle={{ paddingTop: 16, paddingHorizontal: 20, paddingBottom: 20, gap: 12 }}>
         {(paid || pending) && (
-          <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.tag, alignItems: "center", justifyContent: "center" }}>
+          <View style={{ ...surfaces.card, width: 64, height: 64, borderRadius: 32, backgroundColor: paid ? colors.lime : colors.white, borderWidth: 3, borderColor: colors.white, alignItems: "center", justifyContent: "center" }}>
             {paid ? <Text style={{ ...sys.title, lineHeight: 32 }}>✓</Text> : <ActivityIndicator color={colors.ink} />}
           </View>
         )}
@@ -59,7 +63,7 @@ export default function BuyerPaid() {
           <Text style={sys.sentence}>{order.sellerName} will text you to set up pickup.</Text>
         )}
         {order && order.items.length > 0 && (
-          <View style={{ backgroundColor: colors.white, borderRadius: 16, paddingHorizontal: 16, marginTop: 12 }}>
+          <View style={{ ...surfaces.card, paddingHorizontal: 16, marginTop: 12 }}>
             {order.items.map((item, i) => (
               <View
                 key={item._id}

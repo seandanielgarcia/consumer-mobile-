@@ -8,7 +8,7 @@ import { saveKeikiToContacts, textKeiki } from "../../src/lib/keiki";
 import { formatPlace } from "../../src/lib/place";
 import { shareYard } from "../../src/lib/shareYard";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
-import { colors, fonts, spacing } from "../../src/theme";
+import { colors, fonts, primaryButton, primaryButtonText, secondaryButton, secondaryButtonText, shadows, spacing } from "../../src/theme";
 
 const ROTATIONS = ["-5deg", "2deg", "-1deg"];
 
@@ -68,18 +68,18 @@ export default function SellerOpen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.brand,
+    backgroundColor: colors.cream,
     paddingTop: 8,
     paddingHorizontal: spacing.sidePad,
     paddingBottom: 34,
     gap: 12,
   },
   content: { flex: 1, justifyContent: "center", gap: 20 },
-  headline: { ...fonts.display, fontSize: 44, lineHeight: 43, letterSpacing: -1.5, color: colors.cream },
-  meta: { ...fonts.body, fontSize: 17, color: colors.cream, marginTop: -8 },
+  headline: { ...fonts.wordmark, fontSize: 40, lineHeight: 42, letterSpacing: -1.5, color: colors.ink },
+  meta: { ...fonts.semibold, fontSize: 12, letterSpacing: 1.6, textTransform: "uppercase", color: colors.muted, marginTop: -8 },
   polaroids: { flexDirection: "row", justifyContent: "center", gap: 10, paddingVertical: 12 },
-  polaroid: { width: 108, backgroundColor: colors.white, padding: 6, paddingBottom: 20 },
-  polaroidPhoto: { height: 132, backgroundColor: colors.line },
+  polaroid: { width: 108, backgroundColor: colors.white, borderRadius: 14, padding: 6, paddingBottom: 20, ...shadows.card },
+  polaroidPhoto: { height: 132, borderRadius: 9, backgroundColor: colors.line },
   sticker: {
     position: "absolute",
     left: -4,
@@ -92,27 +92,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.tag,
     justifyContent: "center",
   },
-  stickerText: { ...fonts.display, fontSize: 13, color: colors.ink },
-  moreLine: { ...fonts.body, fontSize: 15, color: colors.cream, textAlign: "center" },
-  sharePill: {
-    height: 56,
-    borderRadius: spacing.radius,
-    borderWidth: 1.5,
-    borderColor: colors.cream,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sharePillText: { ...fonts.semibold, fontSize: 17, color: colors.cream },
-  donePill: {
-    height: 56,
-    borderRadius: spacing.radius,
-    backgroundColor: colors.cream,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  donePillText: { ...fonts.semibold, fontSize: 17, color: colors.ink },
+  stickerText: { fontSize: 13, fontWeight: "800", color: colors.ink },
+  moreLine: { ...fonts.body, fontSize: 15, color: colors.muted, textAlign: "center" },
+  sharePill: secondaryButton,
+  sharePillText: secondaryButtonText,
+  donePill: primaryButton,
+  donePillText: primaryButtonText,
   keikiCard: { alignItems: "center" },
   keiki: { minHeight: spacing.minButton, alignItems: "center", justifyContent: "center" },
-  keikiSave: { ...fonts.semibold, fontSize: 15, color: colors.cream },
-  keikiText: { ...fonts.medium, fontSize: 15, color: colors.cream, textDecorationLine: "underline" },
+  keikiSave: { ...fonts.semibold, fontSize: 15, color: colors.brand },
+  keikiText: { ...fonts.medium, fontSize: 15, color: colors.ink, textDecorationLine: "underline" },
 });

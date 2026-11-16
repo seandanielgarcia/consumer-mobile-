@@ -7,18 +7,17 @@ import {
   ActivityIndicator,
   InputAccessoryView,
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
-  useWindowDimensions,
   View,
 } from "react-native";
 import { api } from "../convex/_generated/api";
 import type { Id } from "../convex/_generated/dataModel";
 import { cancelSignIn, setCurrentUser } from "../src/lib/useCurrentUser";
+import { useKeyboardInset } from "../src/lib/useKeyboardInset";
 import { colors, fonts, primaryButton, primaryButtonText, spacing, sys, type } from "../src/theme";
 
 const KEIKI_NUMBER = "+17796251378";
@@ -48,8 +47,7 @@ export default function SignIn() {
   const [error, setError] = useState<string | null>(null);
   const done = useRef(false);
   const phoneInput = useRef<React.ComponentRef<typeof TextInput>>(null);
-  const window = useWindowDimensions();
-  const [sheetHeight, setSheetHeight] = useState(window.height);
+  const keyboardInset = useKeyboardInset();
   const verified = useQuery(api.users.isVerified, pending ? { userId: pending.userId } : "skip");
   const normalized = normalizePhone(phone);
   const missing = name.trim() === "" ? "Add your first name" : normalized === null ? "Add your phone number" : "";
@@ -117,12 +115,7 @@ export default function SignIn() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={window.height - sheetHeight}
-      onLayout={(e) => setSheetHeight(e.nativeEvent.layout.height)}
-      style={styles.flex}
-    >
+    <View style={[styles.flex, { paddingBottom: keyboardInset }]}>
       <View style={styles.screen}>
         {Platform.OS === "ios" && (
           <InputAccessoryView nativeID={PHONE_ACCESSORY}>
@@ -225,7 +218,7 @@ export default function SignIn() {
           </Pressable>
         )}
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -247,10 +240,10 @@ const styles = StyleSheet.create({
   subhead: { ...fonts.body, fontSize: 14, lineHeight: 18, color: colors.muted },
   fields: { gap: 8 },
   input: {
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.hairline,
+    height: 52,
+    borderRadius: spacing.field,
+    borderWidth: 1.5,
+    borderColor: colors.line,
     backgroundColor: colors.white,
     paddingHorizontal: 14,
     ...fonts.body,
@@ -260,8 +253,8 @@ const styles = StyleSheet.create({
   instructionBlock: { gap: 10, alignItems: "flex-start" },
   label: { ...fonts.semibold, fontSize: 15, color: colors.muted },
   codeChip: {
-    backgroundColor: colors.tag,
-    borderRadius: 14,
+    backgroundColor: colors.lime,
+    borderRadius: 16,
     borderWidth: 2,
     borderColor: colors.ink,
     paddingVertical: 12,
