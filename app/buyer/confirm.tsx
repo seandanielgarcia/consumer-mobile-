@@ -13,7 +13,6 @@ import { askToBuyText, firstName, textSeller } from "../../src/buyer/textSeller"
 import { useBuy } from "../../src/buyer/useBuy";
 import { PrimaryButton } from "../../src/components/PrimaryButton";
 import { SecondaryButton } from "../../src/components/SecondaryButton";
-import { useHeaderBack } from "../../src/lib/headerBack";
 import { formatPlace } from "../../src/lib/place";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors, sys } from "../../src/theme";
@@ -36,7 +35,6 @@ export default function BuyerConfirm() {
     setNotice(gone.map((id) => `${titles.current.get(id) ?? "An item"} just got taken, so we removed it.`).join(" "));
   }, []);
   const { buy, buying, error, checkingOut, myOrderItemIds } = useBuy(garageId, (itemId) => drop([itemId]));
-  useHeaderBack(() => (router.canGoBack() ? router.back() : router.replace({ pathname: "/buyer/garage/[id]", params: { id: garageId } })));
 
   useEffect(() => {
     if (!garage) return;

@@ -7,7 +7,6 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { EmptyState } from "../../../src/buyer/EmptyState";
 import { aboutMiles, formatPrice } from "../../../src/buyer/format";
 import { useBuyerLocation } from "../../../src/buyer/location";
-import { useHeaderBack } from "../../../src/lib/headerBack";
 import { useCurrentUser } from "../../../src/lib/useCurrentUser";
 import { PrimaryButton } from "../../../src/components/PrimaryButton";
 import { colors, sys } from "../../../src/theme";
@@ -18,15 +17,13 @@ export default function BuyerItem() {
   const item = useQuery(api.buyer.item, location ? { itemId: id as Id<"items">, lat: location.lat, lng: location.lng } : "skip");
   const userId = useCurrentUser()?.userId;
   const mine = useQuery(api.garages.mine, userId ? { ownerId: userId } : "skip");
-  const back = () => router.dismissTo("/buyer");
-  useHeaderBack(back);
 
   if (item === undefined) return <ActivityIndicator color={colors.ink} style={{ flex: 1, backgroundColor: colors.cream }} />;
   if (item === null) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.cream }}>
         <View style={{ paddingHorizontal: 20 }}>
-          <EmptyState headline="This one's gone" line="Someone else got it first." action="Back to browsing" onAction={back} />
+          <EmptyState headline="This one's gone" line="Someone else got it first." action="Back to browsing" onAction={() => router.dismissTo("/buyer")} />
         </View>
       </View>
     );
