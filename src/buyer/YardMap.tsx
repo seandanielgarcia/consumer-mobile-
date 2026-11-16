@@ -5,7 +5,8 @@ import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-na
 import MapView, { Circle, Marker, type Region } from "react-native-maps";
 import type { Id } from "../../convex/_generated/dataModel";
 import { formatPlace } from "../lib/place";
-import { colors, sys } from "../theme";
+import { colors, shadows, sys } from "../theme";
+import { pinFor } from "./pins";
 import { aboutMiles, formatPrice } from "./format";
 
 export type MapYard = {
@@ -20,16 +21,6 @@ export type MapYard = {
   minPriceCents: number;
   photoUrls: string[];
 };
-
-// Pin palette: saturated, each pair passes 4.5:1 for the initial. Stable per yard.
-const PINS = [
-  { bg: colors.mapBlue, fg: colors.white },
-  { bg: colors.mapLime, fg: colors.mapInk },
-  { bg: colors.mapOrange, fg: colors.mapInk },
-  { bg: colors.mapPink, fg: colors.white },
-  { bg: colors.mapInk, fg: colors.white },
-];
-const pinFor = (id: string) => PINS[[...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % PINS.length];
 
 const MILE_M = 1609.344;
 const DEG_PER_MILE = 1 / 69;
@@ -122,10 +113,7 @@ export function YardMap({
                   borderColor: on ? colors.mapInk : colors.white,
                   alignItems: "center",
                   justifyContent: "center",
-                  shadowColor: colors.mapInk,
-                  shadowOpacity: 0.22,
-                  shadowRadius: 6,
-                  shadowOffset: { width: 0, height: 4 },
+                  ...shadows.pin,
                 }}
               >
                 <Text style={{ fontSize: on ? 24 : 18, fontWeight: "800", color: pin.fg }}>{yard.ownerName.charAt(0).toUpperCase()}</Text>
@@ -166,10 +154,7 @@ export function YardMap({
                   backgroundColor: colors.white,
                   borderWidth: 2,
                   borderColor: on ? colors.mapBlue : colors.white,
-                  shadowColor: colors.mapInk,
-                  shadowOpacity: 0.14,
-                  shadowRadius: 14,
-                  shadowOffset: { width: 0, height: 8 },
+                  ...shadows.float,
                 }}
               >
                 <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: pin.bg, alignItems: "center", justifyContent: "center" }}>

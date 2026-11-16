@@ -7,6 +7,7 @@ import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
 import { guardedLeave, useHeaderBackState } from "../lib/headerBack";
 import { requireUser, signOut, useCurrentUser } from "../lib/useCurrentUser";
+import { pinFor } from "../buyer/pins";
 import { colors, fonts, spacing } from "../theme";
 
 function PersonCircleIcon({ size, color }: { size: number; color: string }) {
@@ -28,8 +29,7 @@ export function AppHeader() {
   const back = useHeaderBackState();
 
   const landing = pathname === "/" && !garage;
-  const onBrand = landing || pathname.startsWith("/buyer/garage") || pathname === "/seller/open";
-  const ink = onBrand ? colors.cream : colors.ink;
+  const pin = user ? pinFor(user.userId) : null;
 
   const press = () => {
     if (user) return setOpen(true);
@@ -47,11 +47,11 @@ export function AppHeader() {
     });
 
   return (
-    <View style={[styles.bar, { paddingTop: insets.top, backgroundColor: onBrand ? colors.brand : colors.cream }]}>
+    <View style={[styles.bar, { paddingTop: insets.top, backgroundColor: colors.cream }]}>
       <View style={styles.row}>
         {back ? (
           <Pressable onPress={back.onPress} hitSlop={8} style={styles.back} accessibilityRole="button" accessibilityLabel="Back">
-            <Text style={[styles.backText, { color: onBrand ? colors.cream : colors.brand }]}>‹ Back</Text>
+            <Text style={styles.backText}>‹ Back</Text>
           </Pressable>
         ) : (
           <View />
@@ -59,17 +59,17 @@ export function AppHeader() {
         {!landing && !back && (
           <View style={[styles.wordmarkSlot, styles.wordmarkLeft]} pointerEvents="box-none">
             <Pressable onPress={() => guardedLeave(() => router.dismissTo("/"))} hitSlop={8} accessibilityRole="link" accessibilityLabel="yardsale, Home">
-              <Text style={[styles.wordmark, { color: onBrand ? colors.cream : colors.brand }]}>yardsale</Text>
+              <Text style={styles.wordmark}>yardsale</Text>
             </Pressable>
           </View>
         )}
         <Pressable onPress={press} style={styles.account} accessibilityRole="button" accessibilityLabel={user ? "Account" : "Sign in"}>
           {user ? (
-            <View style={[styles.avatar, { backgroundColor: colors.tag }]}>
-              <Text style={styles.initial}>{(user.name ?? "?").charAt(0).toUpperCase()}</Text>
+            <View style={[styles.avatar, { backgroundColor: pin?.bg ?? colors.tag }]}>
+              <Text style={[styles.initial, { color: pin?.fg ?? colors.ink }]}>{(user.name ?? "?").charAt(0).toUpperCase()}</Text>
             </View>
           ) : (
-            <PersonCircleIcon size={32} color={ink} />
+            <PersonCircleIcon size={32} color={colors.ink} />
           )}
         </Pressable>
       </View>
@@ -112,20 +112,20 @@ export function AppHeader() {
 const styles = StyleSheet.create({
   bar: { paddingHorizontal: spacing.sidePad - 4 },
   row: { height: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  wordmark: { ...fonts.wordmark, fontSize: 22, letterSpacing: -0.6 },
+  wordmark: { ...fonts.wordmark, fontSize: 22, letterSpacing: -0.6, color: colors.ink },
   wordmarkSlot: { position: "absolute", top: 0, bottom: 0, justifyContent: "center" },
   wordmarkLeft: { left: 0 },
   back: { minHeight: 44, justifyContent: "center", paddingRight: 12 },
-  backText: { ...fonts.semibold, fontSize: 17 },
+  backText: { ...fonts.semibold, fontSize: 17, color: colors.brand },
   account: { width: 44, height: 44, alignItems: "flex-end", justifyContent: "center" },
-  avatar: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  initial: { ...fonts.semibold, fontSize: 15, color: colors.ink },
+  avatar: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, borderColor: colors.white, alignItems: "center", justifyContent: "center", shadowColor: colors.shadow, shadowOpacity: 0.18, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+  initial: { fontSize: 15, fontWeight: "800", color: colors.ink },
   sheet: { flex: 1, backgroundColor: colors.cream, paddingHorizontal: spacing.sidePad, paddingBottom: 40, gap: 12 },
   sheetHeader: { height: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   close: { minWidth: 56, minHeight: 44, justifyContent: "center" },
   closeText: { ...fonts.semibold, fontSize: 17, color: colors.brand },
   sheetTitle: { ...fonts.semibold, fontSize: 17, color: colors.ink },
-  card: { backgroundColor: colors.white, borderRadius: 16, padding: 16, gap: 4 },
+  card: { backgroundColor: colors.white, borderRadius: spacing.card, padding: 16, gap: 4, shadowColor: colors.shadow, shadowOpacity: 0.1, shadowRadius: 14, shadowOffset: { width: 0, height: 8 } },
   label: { ...fonts.medium, fontSize: 13, color: colors.muted },
   value: { ...fonts.body, fontSize: 17, color: colors.ink },
   divider: { height: 1, backgroundColor: colors.hairline, marginVertical: 10 },
