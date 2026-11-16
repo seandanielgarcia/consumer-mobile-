@@ -86,20 +86,22 @@ export function AppHeader({ landing = false, onBack }: { landing?: boolean; onBa
             <Text style={styles.label}>Phone</Text>
             <Text style={styles.value}>{user?.phone || "—"}</Text>
           </View>
-          <Pressable onPress={goYard} style={styles.row} accessibilityRole="button">
-            <Text style={styles.value}>{garage ? "Your yard" : "Home"}</Text>
-            <Text style={styles.chevron}>›</Text>
-          </Pressable>
-          <Pressable onPress={() => leave(() => router.push("/buyer/purchases"))} style={styles.row} accessibilityRole="button">
-            <Text style={styles.value}>My purchases</Text>
-            <Text style={styles.chevron}>›</Text>
-          </Pressable>
-          {garage && (
-            <Pressable onPress={() => leave(() => router.push(`/buyer/garage/${garage.garage._id}`))} style={styles.row} accessibilityRole="button">
-              <Text style={styles.value}>View as buyer</Text>
+          <View style={styles.menu}>
+            <Pressable onPress={goYard} style={({ pressed }) => [styles.menuRow, pressed && styles.menuPressed]} accessibilityRole="button">
+              <Text style={styles.menuText}>{garage ? "Your yard" : "Home"}</Text>
               <Text style={styles.chevron}>›</Text>
             </Pressable>
-          )}
+            <Pressable onPress={() => leave(() => router.push("/buyer/purchases"))} style={({ pressed }) => [styles.menuRow, pressed && styles.menuPressed]} accessibilityRole="button">
+              <Text style={styles.menuText}>My purchases</Text>
+              <Text style={styles.chevron}>›</Text>
+            </Pressable>
+            {garage && (
+              <Pressable onPress={() => leave(() => router.push(`/buyer/garage/${garage.garage._id}`))} style={({ pressed }) => [styles.menuRow, pressed && styles.menuPressed]} accessibilityRole="button">
+                <Text style={styles.menuText}>View as buyer</Text>
+                <Text style={styles.chevron}>›</Text>
+              </Pressable>
+            )}
+          </View>
           <View style={styles.flex} />
           <Pressable onPress={doSignOut} hitSlop={8} style={styles.signOut} accessibilityRole="button">
             <Text style={styles.signOutText}>Sign out</Text>
@@ -130,6 +132,10 @@ const styles = StyleSheet.create({
   label: { ...fonts.medium, fontSize: 13, color: colors.muted },
   value: { ...fonts.body, fontSize: 17, color: colors.ink },
   divider: { height: 1, backgroundColor: colors.hairline, marginVertical: 10 },
+  menu: { backgroundColor: colors.white, borderRadius: spacing.card, padding: 6, gap: 3 },
+  menuRow: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderRadius: 16, paddingHorizontal: 14 },
+  menuPressed: { backgroundColor: colors.surfaceMuted },
+  menuText: { ...fonts.semibold, fontSize: 16, color: colors.ink },
   chevron: { fontSize: 22, color: colors.muted },
   flex: { flex: 1 },
   signOut: { alignSelf: "center", minHeight: 44, justifyContent: "center" },

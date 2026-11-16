@@ -79,6 +79,7 @@ export default function BuyerPaid() {
                       {detailLine([item.condition, item.size && `Size ${item.size}`, item.brand])}
                     </Text>
                   )}
+                  {!!item.description?.trim() && <Text numberOfLines={2} style={sys.label}>{item.description.trim()}</Text>}
                 </View>
                 <Text style={sys.price}>{formatPrice(item.priceCents)}</Text>
               </View>

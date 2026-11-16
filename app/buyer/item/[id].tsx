@@ -49,6 +49,7 @@ export default function BuyerItem() {
           </View>
         </View>
         <Text style={sys.title}>{item.title}</Text>
+        {!!item.description.trim() && <Text style={sys.body}>{item.description.trim()}</Text>}
         <Pressable
           onPress={() => {
             if (canReturnToYard) router.back();
@@ -81,7 +82,6 @@ export default function BuyerItem() {
             ))}
           </View>
         )}
-        {!!item.description.trim() && <Text style={sys.body}>{item.description}</Text>}
       </ScrollView>
       {mine?.garage._id === item.garage._id ? null : (
         <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 34, backgroundColor: colors.cream }}>

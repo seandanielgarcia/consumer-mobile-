@@ -104,6 +104,7 @@ describe("Keiki item links", () => {
     expect(response.headers.get("content-type")).toContain("text/html");
     const html = await response.text();
     expect(html).toContain("Silk top");
+    expect(html).toContain('<p class="description">Fixture</p>');
     expect(html).toContain("example.test/item.jpg");
     expect(html).toContain("$1");
     expect(html).not.toContain("location.href");
@@ -122,6 +123,7 @@ describe("Keiki item links", () => {
     const html = await yard.text();
     expect(html).toContain(`href="${base}buyer/garage/${garageId}"`);
     expect(html).toContain(`href="/i/${firstId}"`);
+    expect(html).toContain('<p class="description">Fixture</p>');
   });
 
   it("keeps yard listings browsable without an app launch URL", async () => {

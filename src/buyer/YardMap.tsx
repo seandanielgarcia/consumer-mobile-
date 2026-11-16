@@ -22,6 +22,7 @@ export type MapYard = {
   liveCount: number;
   minPriceCents: number;
   photoUrls: string[];
+  description?: string;
 };
 
 const MILE_M = 1609.344;
@@ -187,6 +188,9 @@ export function YardMap({
                   <Text numberOfLines={1} style={sys.label}>
                     {formatPlace(yard)} · {aboutMiles(yard.distanceMi)} · {yard.liveCount} {yard.liveCount === 1 ? "item" : "items"} from {formatPrice(yard.minPriceCents)}
                   </Text>
+                  {!!yard.description?.trim() && (
+                    <Text numberOfLines={1} style={sys.label}>{yard.description.trim()}</Text>
+                  )}
                 </View>
                 <View style={{ flexDirection: "row", gap: 4 }}>
                   {yard.photoUrls.slice(0, 2).map((uri) => (

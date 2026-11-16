@@ -222,8 +222,8 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
     <View style={[styles.yard, { paddingTop: 8, paddingBottom: 0 }]}>
       <View style={styles.yardHeaderRow}>
         <View style={styles.yardHeaderText}>
-          <Text style={styles.yardHeadline}>Your yard{items?.length ? ` · ${counts}` : ""}</Text>
-          <Text style={styles.yardMeta}>{formatPlace(garage)}</Text>
+          <Text style={styles.yardHeadline}>Your yard</Text>
+          <Text style={styles.yardMeta}>{formatPlace(garage)}{items?.length ? ` · ${counts}` : ""}</Text>
         </View>
         {!!items?.length && (
           <Pressable
@@ -325,6 +325,7 @@ function YardCard({
         <Text style={[styles.cardMeta, reserved && styles.cardReserved]} numberOfLines={1}>
           {reserved ? "Reserved" : sold ? "Sold" : item.condition || " "}
         </Text>
+        {!!item.description.trim() && <Text numberOfLines={2} style={styles.cardMeta}>{item.description.trim()}</Text>}
       </Pressable>
       {(reserved || sold) && (
         <View style={styles.cardActions}>
@@ -462,20 +463,11 @@ const styles = StyleSheet.create({
   yardHeaderRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   yardHeaderText: { flex: 1, gap: 4 },
   sharePill: {
-    height: spacing.minButton,
-    paddingLeft: 14,
-    paddingRight: 16,
-    borderRadius: spacing.radius,
-    backgroundColor: colors.lime,
-    borderWidth: 2,
-    borderColor: colors.white,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    ...shadows.pin,
+    minHeight: spacing.minButton, paddingHorizontal: 13, borderRadius: spacing.radius,
+    backgroundColor: colors.surfaceMuted, flexDirection: "row", alignItems: "center", gap: 6,
   },
-  sharePillPressed: { transform: [{ scale: 0.96 }], opacity: 0.9 },
-  sharePillText: { ...fonts.semibold, fontSize: 15, color: colors.ink },
+  sharePillPressed: { opacity: 0.7 },
+  sharePillText: { ...fonts.semibold, fontSize: 14, color: colors.ink },
   buyerTexts: { alignSelf: "flex-start", minHeight: spacing.minButton, justifyContent: "center" },
   buyerTextsText: { ...fonts.semibold, fontSize: 15, color: colors.brand },
   shopPill: {

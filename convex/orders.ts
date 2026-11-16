@@ -107,6 +107,7 @@ export const getOrder = query({
         .map((i) => ({
           _id: i._id,
           title: i.title,
+          description: i.description,
           size: i.size,
           condition: i.condition,
           brand: i.brand,
