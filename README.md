@@ -29,3 +29,11 @@ Coming soon.
 3. Buyers nearby find it and pay with Whop. Text Keiki a pic to add more.
 
 **Stack:** Expo (iOS), Convex, OpenAI vision, Whop, Keiki.
+
+### Shared yard and item links
+
+Shared HTTPS links open in Safari. Tap an item on the yard page to read its listing. The page shows **Open in yardsale app** only when the Convex deployment has a `YARDSALE_APP_LINK_BASE` value.
+
+- For an installed yardsale build, set it to `garagesale://`.
+- For an Expo Go demo, set it to the running project's link plus `/--/`, for example `exp://192.168.1.10:8084/--/`. The phone needs a route to that Metro server and the same Expo account as the CLI on iOS.
+- Leave it unset for public browser previews when a compatible app build is unavailable.
