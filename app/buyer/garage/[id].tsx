@@ -52,7 +52,6 @@ export default function BuyerGarage() {
   const total = pickedItems.reduce((sum, i) => sum + i.priceCents, 0);
 
   const allPicked = !!garage && garage.items.length > 0 && pickedItems.length === garage.items.length;
-  const everythingCents = garage?.items.reduce((sum, i) => sum + i.priceCents, 0) ?? 0;
   const pickAll = () => {
     setNotice(null);
     setPicked(allPicked ? [] : (garage?.items.map((i) => i._id) ?? []));
@@ -109,36 +108,68 @@ export default function BuyerGarage() {
         ) : (
           <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 20 }}>
             {isOwner && <Text style={{ ...sys.label, width: "100%" }}>This is how buyers see your yard</Text>}
-            {!isOwner && garage.items.length > 1 && (
-              <Pressable
-                onPress={pickAll}
-                accessibilityRole="button"
-                style={{ width: "100%", height: 48, justifyContent: "center", alignItems: "center", borderRadius: 999, borderWidth: 1.5, borderColor: colors.ink, backgroundColor: colors.white }}
-              >
-                <Text style={{ ...sys.button, fontSize: 15, color: colors.ink }}>
-                  {allPicked ? "Clear picks" : `Pick all ${garage.items.length} · ${formatPrice(everythingCents)}`}
-                </Text>
-              </Pressable>
+            {!isOwner && (
+              <View style={{ width: "100%", flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <Text style={{ ...sys.label, flex: 1 }}>Tap an item for details or + to pick it.</Text>
+                {garage.items.length > 1 && (
+                  <Pressable
+                    onPress={pickAll}
+                    accessibilityRole="button"
+                    style={({ pressed }) => ({
+                      minHeight: 44, justifyContent: "center", paddingHorizontal: 14,
+                      borderRadius: 999, backgroundColor: colors.surfaceMuted, opacity: pressed ? 0.7 : 1,
+                    })}
+                  >
+                    <Text style={{ ...sys.label, color: colors.ink }}>{allPicked ? "Clear picks" : "Pick all"}</Text>
+                  </Pressable>
+                )}
+              </View>
             )}
-            {garage.items.map((item) => (
-              <ItemCard
-                key={item._id}
-                item={item}
-                width={cardWidth}
-                selected={isOwner ? undefined : picked.includes(item._id)}
-                onPress={isOwner ? undefined : () => toggle(item._id)}
-              />
-            ))}
+            {garage.items.map((item) => {
+              const inPicks = picked.includes(item._id);
+              return (
+                <View key={item._id} style={{ width: cardWidth }}>
+                  <ItemCard
+                    item={item}
+                    width={cardWidth}
+                    selected={!isOwner && inPicks}
+                    onPress={() => router.push({ pathname: "/buyer/item/[id]", params: { id: item._id, fromYard: "1" } })}
+                  />
+                  {!isOwner && (
+                    <Pressable
+                      onPress={() => toggle(item._id)}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: inPicks }}
+                      accessibilityLabel={`Pick ${item.title}`}
+                      style={({ pressed }) => ({
+                        position: "absolute", top: 9, right: 9, width: 44, height: 44,
+                        alignItems: "center", justifyContent: "center",
+                        transform: [{ scale: pressed ? 0.92 : 1 }],
+                      })}
+                    >
+                      <View style={{
+                        width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: colors.white,
+                        backgroundColor: inPicks ? colors.lime : colors.white,
+                        alignItems: "center", justifyContent: "center", ...shadows.pin,
+                      }}>
+                        <Text style={{ ...sys.button, fontSize: inPicks ? 15 : 21, lineHeight: 24, color: colors.ink }}>
+                          {inPicks ? "✓" : "+"}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  )}
+                </View>
+              );
+            })}
           </View>
         )}
       </ScrollView>
 
-      {!isOwner && (
-        <View style={{ paddingTop: 12, paddingHorizontal: 20, paddingBottom: 34, backgroundColor: colors.cream }}>
+      {!isOwner && pickedItems.length > 0 && (
+        <View style={{ paddingTop: 12, paddingHorizontal: 20, paddingBottom: 34, backgroundColor: colors.cream, borderTopWidth: 1, borderTopColor: colors.hairline }}>
           <PrimaryButton
-            label={pickedItems.length ? `Buy ${pickedItems.length} · ${formatPrice(total)}` : "Tap items to pick"}
+            label={`Buy ${pickedItems.length} · ${formatPrice(total)}`}
             onPress={buy}
-            disabled={pickedItems.length === 0}
           />
         </View>
       )}
