@@ -7,7 +7,7 @@ import MapView, { Circle, Marker, type Region } from "react-native-maps";
 import type { Id } from "../../convex/_generated/dataModel";
 import { formatPlace } from "../lib/place";
 import { colors, shadows, surfaces, sys } from "../theme";
-import { spreadYards } from "./spreadYards";
+import { mapScale, spreadYards } from "./spreadYards";
 import { pinFor } from "./pins";
 import { aboutMiles, formatPrice } from "./format";
 
@@ -51,17 +51,17 @@ export function YardMap({
   const { width, height } = useWindowDimensions();
   const [mapSize, setMapSize] = useState({ width, height });
   const [region, setRegion] = useState(() => regionFor(center.lat, center.lng, radiusMiles));
-  const { latitudeDelta, longitudeDelta } = region;
+  const { latitude, latitudeDelta, longitudeDelta } = region;
   const cardWidth = width - 56;
 
   useEffect(() => {
     map.current?.animateToRegion(regionFor(center.lat, center.lng, radiusMiles), 450);
   }, [center.lat, center.lng, radiusMiles]);
 
-  const pins = useMemo(
-    () => spreadYards(yards, longitudeDelta / mapSize.width, latitudeDelta / mapSize.height),
-    [yards, latitudeDelta, longitudeDelta, mapSize.width, mapSize.height],
-  );
+  const pins = useMemo(() => {
+    const { longitudePerPixel, latitudePerPixel } = mapScale({ latitude, latitudeDelta, longitudeDelta }, mapSize);
+    return spreadYards(yards, longitudePerPixel, latitudePerPixel);
+  }, [yards, latitude, latitudeDelta, longitudeDelta, mapSize]);
 
   const ordered = useMemo(() => {
     if (!selected) return yards;

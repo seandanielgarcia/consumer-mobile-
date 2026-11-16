@@ -1,4 +1,13 @@
-const PIN_GAP = 55;
+export const PIN_GAP = 55;
+
+export function mapScale(
+  region: { latitude: number; latitudeDelta: number; longitudeDelta: number },
+  size: { width: number; height: number },
+) {
+  const cos = Math.cos((region.latitude * Math.PI) / 180);
+  const longitudePerPixel = Math.max(region.longitudeDelta / size.width, region.latitudeDelta / (size.height * cos));
+  return { longitudePerPixel, latitudePerPixel: longitudePerPixel * cos };
+}
 
 export function spreadYards<T extends { garageId: string; lat: number; lng: number }>(
   yards: T[],
