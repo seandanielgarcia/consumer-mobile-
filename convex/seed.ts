@@ -140,7 +140,7 @@ const SEED = [
     avatarColor: "#BDE0FE",
     neighborhood: "Union Square",
     city: "San Francisco",
-    lat: 37.788,
+    lat: 37.784,
     lng: -122.4075,
     items: seedItems("Luca"),
   },
@@ -150,7 +150,7 @@ const SEED = [
     avatarColor: "#CDB4DB",
     neighborhood: "Lower Nob Hill",
     city: "San Francisco",
-    lat: 37.786,
+    lat: 37.784,
     lng: -122.415,
     items: seedItems("Tomás"),
   },
@@ -375,7 +375,9 @@ export const devCleanup = internalMutation({
       (i) =>
         !protect(i) &&
         !held.items.has(i._id) &&
-        (dropGarageIds.has(i.garageId) || TEST_TITLE.test(i.title) || (seedGarageIds.has(i.garageId) && !SEED_TITLES.has(i.title))),
+        (dropGarageIds.has(i.garageId) ||
+          (TEST_TITLE.test(i.title) && !(seedGarageIds.has(i.garageId) && SEED_TITLES.has(i.title))) ||
+          (seedGarageIds.has(i.garageId) && !SEED_TITLES.has(i.title))),
     );
     const dropItemIds = new Set<Id<"items">>(dropItems.map((i) => i._id));
 
