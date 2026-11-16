@@ -20,23 +20,43 @@ import { colors, sys } from "../../src/theme";
 
 export default function BuyerConfirm() {
   const params = useLocalSearchParams<{ garageId: string; items: string }>();
-  const garageId = params.garageId as Id<"garages">;
+  const garageId = typeof params.garageId === "string" && /^[a-z0-9]{32}$/.test(params.garageId)
+    ? params.garageId as Id<"garages">
+    : null;
+  if (!garageId || typeof params.items !== "string" || !params.items) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.cream, paddingHorizontal: 20 }}>
+        <EmptyState headline="Nothing selected" line="Pick something you'd like to buy." action="Back to browsing" onAction={() => router.dismissTo("/buyer")} />
+      </View>
+    );
+  }
+  return <Confirmation garageId={garageId} selection={params.items} />;
+}
+
+function Confirmation({ garageId, selection }: { garageId: Id<"garages">; selection: string }) {
   const convex = useConvex();
   const location = useBuyerLocation();
   const buyerId = useCurrentUser()?.userId;
-  const [now] = useState(() => Math.floor(Date.now() / 30000) * 30000);
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 30000) * 30000);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Math.floor(Date.now() / 30000) * 30000), 30000);
+    return () => clearInterval(timer);
+  }, []);
   const textable = useQuery(api.users.sellerTextable, { garageId });
   const garage = useQuery(api.buyer.garage, { garageId, lat: location.lat, lng: location.lng, buyerId, now });
-  const [itemIds, setItemIds] = useState(() => (params.items ?? "").split(",").filter(Boolean) as Id<"items">[]);
+  const [itemIds, setItemIds] = useState(() => selection.split(",").filter(Boolean) as Id<"items">[]);
   const [notice, setNotice] = useState<string | null>(null);
+  const [textProblem, setTextProblem] = useState<string | null>(null);
   const [texting, setTexting] = useState(false);
+  const openingMessages = useRef(false);
   const titles = useRef(new Map<string, string>());
   const drop = useCallback((gone: Id<"items">[]) => {
     setItemIds((current) => current.filter((id) => !gone.includes(id)));
     setNotice(gone.map((id) => `${titles.current.get(id) ?? "An item"} just got taken, so we removed it.`).join(" "));
   }, []);
   const { buy, buying, error, checkingOut, myOrderItemIds } = useBuy(garageId, (itemId) => drop([itemId]));
-  useHeaderBack(() => (router.canGoBack() ? router.back() : router.replace({ pathname: "/buyer/garage/[id]", params: { id: garageId } })));
+  const back = () => router.canGoBack() ? router.back() : router.replace({ pathname: "/buyer/garage/[id]", params: { id: garageId } });
+  useHeaderBack(back);
 
   useEffect(() => {
     if (!garage) return;
@@ -49,11 +69,12 @@ export default function BuyerConfirm() {
   if (garage === undefined) return <ActivityIndicator color={colors.ink} style={{ flex: 1, backgroundColor: colors.cream }} />;
 
   const items = garage?.items.filter((i) => itemIds.includes(i._id)) ?? [];
+  if (buying && items.length === 0) return <ActivityIndicator color={colors.ink} style={{ flex: 1, backgroundColor: colors.cream }} />;
   if (!garage || items.length === 0) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.cream, paddingHorizontal: 20 }}>
         {notice && <Text style={{ ...sys.row, marginTop: 12 }}>{notice}</Text>}
-        <EmptyState headline="Nothing left to buy" line="These items aren't available anymore." action="Back to browsing" onAction={() => router.dismissTo("/buyer")} />
+        <EmptyState headline="Nothing left to buy" line="These items aren't available anymore." action={garage ? "Back to your picks" : "Back to browsing"} onAction={garage ? back : () => router.dismissTo("/buyer")} />
       </View>
     );
   }
@@ -61,10 +82,21 @@ export default function BuyerConfirm() {
   const total = items.reduce((sum, i) => sum + i.priceCents, 0);
   const seller = firstName(garage.ownerName);
   const text = async () => {
+    if (openingMessages.current || checkingOut.current) return;
+    openingMessages.current = true;
     setTexting(true);
-    const problem = await textSeller(convex, garageId, (name) => askToBuyText(name, items.map((i) => i.title), total, garage.neighborhood));
-    setTexting(false);
-    setNotice(problem);
+    setTextProblem(null);
+    try {
+      setTextProblem(await textSeller(convex, garageId, (name) => askToBuyText(name, items.map((i) => i.title), total, garage.neighborhood)));
+    } finally {
+      openingMessages.current = false;
+      setTexting(false);
+    }
+  };
+  const pay = () => {
+    if (openingMessages.current) return;
+    setTextProblem(null);
+    void buy(items.map((i) => i._id));
   };
 
   return (
@@ -93,11 +125,18 @@ export default function BuyerConfirm() {
             <Text style={sys.price}>{formatPrice(total)}</Text>
           </View>
         </View>
-        {(notice ?? error) && <Text style={{ ...sys.row, fontWeight: "500" }}>{notice ?? error}</Text>}
+        {notice && <Text style={{ ...sys.row, fontWeight: "500" }}>{notice}</Text>}
+        {(textProblem ?? error) && <Text style={{ ...sys.row, fontWeight: "500" }}>{textProblem ?? error}</Text>}
       </ScrollView>
       <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 34, gap: 12, backgroundColor: colors.cream, borderTopWidth: 1, borderTopColor: colors.hairline }}>
-        {textable && <SecondaryButton label={`Text ${seller}`} onPress={text} disabled={texting || buying} />}
-        <PrimaryButton label={`Pay ${formatPrice(total)}`} onPress={() => buy(items.map((i) => i._id))} loading={buying} />
+        {textable ? (
+          <>
+            <PrimaryButton label={`Text ${seller}`} onPress={text} loading={texting} disabled={buying} />
+            <SecondaryButton label={buying ? "Opening checkout…" : `Pay ${formatPrice(total)} online`} onPress={pay} disabled={buying || texting} />
+          </>
+        ) : (
+          <PrimaryButton label={`Pay ${formatPrice(total)}`} onPress={pay} loading={buying} disabled={textable === undefined} />
+        )}
       </View>
     </View>
   );

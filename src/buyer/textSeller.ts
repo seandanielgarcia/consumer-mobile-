@@ -20,8 +20,12 @@ export async function textSeller(convex: ConvexReactClient, garageId: Id<"garage
   } catch (error) {
     return error instanceof SignInCancelled ? null : "Couldn't sign you in. Try again.";
   }
-  const contact = await convex.query(api.users.sellerContact, { garageId, buyerId }).catch(() => null);
-  if (!contact) return "Couldn't reach the seller. Try again.";
-  await Linking.openURL(`sms:${contact.phone}&body=${encodeURIComponent(body(contact.firstName))}`).catch(() => undefined);
-  return null;
+  try {
+    const contact = await convex.query(api.users.sellerContact, { garageId, buyerId });
+    if (!contact) return "This seller isn't accepting texts right now.";
+    await Linking.openURL(`sms:${contact.phone}&body=${encodeURIComponent(body(contact.firstName))}`);
+    return null;
+  } catch {
+    return "Couldn't open Messages. Try again.";
+  }
 }

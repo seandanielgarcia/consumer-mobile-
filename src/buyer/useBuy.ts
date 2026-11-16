@@ -1,7 +1,7 @@
 import { useConvex, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
-import { router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useRef, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { requireUser, SignInCancelled } from "../lib/useCurrentUser";
@@ -21,11 +21,11 @@ export function useBuy(garageId: Id<"garages">, onUnavailable?: (itemId: Id<"ite
   const status = useQuery(api.orders.getOrder, orderId ? { orderId } : "skip");
   const orderPaid = status?.status === "paid" || status?.status === "picked_up";
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     if (!orderPaid || !orderId) return;
     checkingOut.current = true;
     router.replace({ pathname: "/buyer/paid", params: { orderId } });
-  }, [orderPaid, orderId]);
+  }, [orderPaid, orderId]));
 
   const buy = async (itemIds: Id<"items">[]) => {
     if (checkingOut.current || itemIds.length === 0) return;

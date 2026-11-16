@@ -18,7 +18,7 @@ export default function BuyerItem() {
   const item = useQuery(api.buyer.item, location ? { itemId: id as Id<"items">, lat: location.lat, lng: location.lng } : "skip");
   const userId = useCurrentUser()?.userId;
   const mine = useQuery(api.garages.mine, userId ? { ownerId: userId } : "skip");
-  const back = () => router.dismissTo("/buyer");
+  const back = () => router.canGoBack() ? router.back() : router.replace("/buyer");
   useHeaderBack(back);
 
   if (item === undefined) return <ActivityIndicator color={colors.ink} style={{ flex: 1, backgroundColor: colors.cream }} />;
@@ -26,7 +26,7 @@ export default function BuyerItem() {
     return (
       <View style={{ flex: 1, backgroundColor: colors.cream }}>
         <View style={{ paddingHorizontal: 20 }}>
-          <EmptyState headline="This one's gone" line="Someone else got it first." action="Back to browsing" onAction={back} />
+          <EmptyState headline="This one's gone" line="Someone else got it first." action="Back to browsing" onAction={() => router.dismissTo("/buyer")} />
         </View>
       </View>
     );
