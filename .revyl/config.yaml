@@ -1,0 +1,29 @@
+project:
+    id: 1cd9fcbc-7bdc-457a-9337-cecc25fc88fe
+session:
+    idle_timeout_seconds: 1800
+build:
+    framework: expo
+    env:
+        EXPO_PUBLIC_CONVEX_URL: https://fleet-gnat-219.convex.cloud
+        EXPO_PUBLIC_SHOW_SAMPLES: "1"
+    profiles:
+        preview:
+            ios:
+                app_id: ad04c08f-425d-4809-b184-8af8996b0434
+                setup_commands:
+                    - npm ci --no-audit --no-fund
+                    - CI=1 npx expo prebuild --platform ios --clean
+                    - cd ios && pod install
+                build_commands:
+                    - cd ios && xcodebuild -workspace yardsale.xcworkspace -scheme yardsale -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO
+                output_path: ios/build/Build/Products/Release-iphonesimulator/yardsale.app
+pr_review:
+    enabled: true
+    build:
+        kind: revyl
+        profile: preview
+    proof_of_changes:
+        enabled: true
+        harness:
+            kind: revyl
