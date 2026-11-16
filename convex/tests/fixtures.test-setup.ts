@@ -5,6 +5,34 @@ import schema from "../schema";
 
 const modules = import.meta.glob("../**/*.ts");
 
+export const webhookSecret = "ws_test_secret";
+
+export async function signedPayment(orderId: string) {
+  const id = `msg_checkout_${orderId}`;
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  const body = JSON.stringify({
+    id,
+    type: "payment.succeeded",
+    data: { id: `pay_${orderId}`, metadata: { orderId } },
+  });
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw", encoder.encode(webhookSecret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(`${id}.${timestamp}.${body}`));
+  const encoded = btoa(String.fromCharCode(...new Uint8Array(signature)));
+  return {
+    method: "POST",
+    body,
+    headers: new Headers({
+      "content-type": "application/json",
+      "webhook-id": id,
+      "webhook-timestamp": timestamp,
+      "webhook-signature": `v1,${encoded}`,
+    }),
+  };
+}
+
 export async function checkoutFixture() {
   const t = convexTest(schema, modules);
   const ids = await t.run(async ({ db }) => {
