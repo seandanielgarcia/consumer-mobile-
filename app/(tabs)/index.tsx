@@ -7,6 +7,9 @@ import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import { EditItemSheet, type EditableItem } from "../../src/components/EditItemSheet";
+import { Stamp } from "../../src/components/Stamp";
+import { Tape } from "../../src/components/Tape";
+import { Wordmark } from "../../src/components/Wordmark";
 import { setPickedPhotos } from "../../src/lib/pickedPhotos";
 import { loadSamplePhotos } from "../../src/lib/samplePhotos";
 import { formatPlace } from "../../src/lib/place";
@@ -57,7 +60,7 @@ function Landing({ user }: { user: { userId: Doc<"users">["_id"]; name?: string 
     <View style={styles.screen}>
       <View style={styles.block}>
         <Pressable onPress={() => router.dismissTo("/")} accessibilityRole="link" accessibilityLabel="Home">
-          <Text style={styles.wordmark}>yardsale</Text>
+          <Wordmark size={44} color={colors.ink} inverse={colors.cream} />
         </Pressable>
         <Text style={styles.tagline} numberOfLines={1} adjustsFontSizeToFit>
           Share a photo and set a price, we'll take care of the rest
@@ -235,7 +238,9 @@ function YardCard({
     <View style={styles.card}>
       <Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel={`Edit ${item.title}`} style={styles.cardBody}>
         <View>
-          <Image source={{ uri: item.photoUrl }} style={styles.cardPhoto} contentFit="cover" />
+          <Image source={{ uri: item.photoUrl }} style={[styles.cardPhoto, sold && styles.cardPhotoSold]} contentFit="cover" />
+          <Tape />
+          {(reserved || sold) && <Stamp label={reserved ? "Reserved" : "Sold"} />}
           <View style={styles.priceSticker}>
             <Text style={styles.cardPrice}>${Math.round(item.priceCents / 100)}</Text>
           </View>
@@ -303,8 +308,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.tag,
     justifyContent: "center",
   },
-  stickerText: { fontSize: 15, fontWeight: "800", color: colors.ink },
-  wordmark: { ...fonts.wordmark, fontSize: 44, letterSpacing: -1.5, color: colors.ink },
+  stickerText: surfaces.stickerText,
   landingLinks: { marginTop: 8, alignItems: "center", gap: 8 },
   linkButton: {
     minHeight: spacing.minButton,
@@ -323,21 +327,22 @@ const styles = StyleSheet.create({
     ...shadows.float,
     shadowOpacity: 0.2,
   },
-  buttonText: { ...fonts.semibold, fontSize: 20, color: colors.white },
+  buttonText: { ...fonts.display, fontSize: 24, letterSpacing: 0.8, color: colors.white },
   buttonSecondary: { ...secondaryButton, height: 64, borderRadius: 32 },
-  buttonSecondaryText: { ...secondaryButtonText, fontSize: 20 },
+  buttonSecondaryText: { ...secondaryButtonText, fontSize: 24 },
 
   // Yard
   yard: { flex: 1, backgroundColor: colors.cream, paddingTop: 4, paddingHorizontal: spacing.sidePad, paddingBottom: 34, gap: 8 },
   yardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   yardWordmark: { ...fonts.display, fontSize: 20, letterSpacing: -0.5, color: colors.brand },
-  yardHeadline: { ...fonts.wordmark, fontSize: 30, lineHeight: 34, letterSpacing: -1, color: colors.ink },
+  yardHeadline: { ...fonts.display, fontSize: 34, lineHeight: 40, letterSpacing: 0.2, color: colors.ink },
   yardMeta: { ...fonts.semibold, fontSize: 11, letterSpacing: 1.6, textTransform: "uppercase", color: colors.muted },
   grid: { paddingTop: 8, paddingBottom: 12, gap: 14 },
   gridRow: { gap: 14 },
   card: { flex: 1, maxWidth: "48%", gap: 8 },
   cardBody: { ...surfaces.card, padding: 8, paddingBottom: 12, gap: 2 },
   cardPhoto: { width: "100%", aspectRatio: 1, borderRadius: spacing.photo, backgroundColor: colors.hairline, marginBottom: 8 },
+  cardPhotoSold: { opacity: 0.55 },
   sizeBadge: {
     position: "absolute",
     right: 8,
@@ -351,8 +356,8 @@ const styles = StyleSheet.create({
   },
   sizeText: { ...fonts.semibold, fontSize: 12, color: colors.white },
   priceSticker: { position: "absolute", left: 6, bottom: 14, ...surfaces.sticker },
-  cardPrice: { fontSize: 15, fontWeight: "800", color: colors.ink },
-  cardTitle: { ...fonts.semibold, fontSize: 15, lineHeight: 20, color: colors.ink, paddingHorizontal: 4 },
+  cardPrice: surfaces.stickerText,
+  cardTitle: { ...fonts.display, fontSize: 18, lineHeight: 23, letterSpacing: 0.3, color: colors.ink, paddingHorizontal: 4 },
   cardMeta: { ...fonts.medium, fontSize: 13, color: colors.muted, paddingHorizontal: 4 },
   cardReserved: { color: colors.pink },
   cardActions: { flexDirection: "row", gap: 6 },

@@ -1,10 +1,11 @@
 import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { useFonts } from "expo-font";
 import { SplashScreen, Stack, type NativeStackHeaderProps } from "expo-router";
 import { useEffect } from "react";
 import { AppHeader } from "../src/components/AppHeader";
 import { headerBackHandler } from "../src/lib/headerBack";
 import { loadCurrentUser, useCurrentUserLoaded } from "../src/lib/useCurrentUser";
-import { colors } from "../src/theme";
+import { colors, fontFiles } from "../src/theme";
 
 export const unstable_settings = { initialRouteName: "(tabs)" };
 
@@ -21,13 +22,15 @@ function StackHeader({ navigation, route, back, options }: NativeStackHeaderProp
 
 export default function RootLayout() {
   const userLoaded = useCurrentUserLoaded();
+  const [fontsLoaded, fontError] = useFonts(fontFiles);
+  const ready = userLoaded && (fontsLoaded || !!fontError);
   useEffect(() => {
     loadCurrentUser();
   }, []);
   useEffect(() => {
-    if (userLoaded) SplashScreen.hideAsync();
-  }, [userLoaded]);
-  if (!userLoaded) return null;
+    if (ready) SplashScreen.hideAsync();
+  }, [ready]);
+  if (!ready) return null;
   return (
     <ConvexProvider client={convex}>
       <Stack

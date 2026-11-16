@@ -18,6 +18,8 @@ export const colors = {
   frost: "rgba(255,255,255,0.7)",
   scrim: "rgba(27,27,58,0.4)",
   shadow: "#1B1B3A",
+  tape: "rgba(236,226,190,0.9)",
+  stampWash: "rgba(243,242,250,0.88)",
   // Accents (pins, status chips)
   lime: "#B6F03A",
   orange: "#FF7A1A",
@@ -34,9 +36,19 @@ export const colors = {
   mapRadiusLine: "rgba(47,91,255,0.25)",
 } as const;
 
+// 90s zine layer: Anton caps for headlines and buttons, Space Mono for prices, Archivo Black for the wordmark.
+export const fontFiles = {
+  Anton_400Regular: require("../assets/fonts/Anton_400Regular.ttf"),
+  ArchivoBlack_400Regular: require("../assets/fonts/ArchivoBlack_400Regular.ttf"),
+  SpaceMono_400Regular: require("../assets/fonts/SpaceMono_400Regular.ttf"),
+  SpaceMono_700Bold: require("../assets/fonts/SpaceMono_700Bold.ttf"),
+};
+
 export const fonts = {
-  wordmark: { fontWeight: "800" },
-  display: { fontWeight: "700" },
+  wordmark: { fontFamily: "ArchivoBlack_400Regular" },
+  display: { fontFamily: "Anton_400Regular", textTransform: "uppercase" },
+  mono: { fontFamily: "SpaceMono_400Regular" },
+  monoBold: { fontFamily: "SpaceMono_700Bold" },
   body: { fontWeight: "400" },
   medium: { fontWeight: "500" },
   semibold: { fontWeight: "600" },
@@ -51,7 +63,7 @@ export const spacing = {
   cta: 60,
   radius: 999,
   card: 22,
-  photo: 16,
+  photo: 6,
   field: 14,
 } as const;
 
@@ -64,7 +76,8 @@ export const shadows = {
 
 export const surfaces = {
   card: { backgroundColor: colors.white, borderRadius: spacing.card, ...shadows.card },
-  sticker: { backgroundColor: colors.tag, borderRadius: 8, borderWidth: 2, borderColor: colors.ink, paddingHorizontal: 8, height: 28, justifyContent: "center" },
+  sticker: { backgroundColor: colors.tag, borderRadius: 3, borderWidth: 2, borderColor: colors.ink, paddingHorizontal: 7, height: 28, justifyContent: "center", transform: [{ rotate: "-3deg" }] },
+  stickerText: { ...fonts.monoBold, fontSize: 15, lineHeight: 20, color: colors.ink },
 } as const;
 
 export const typeSize = {
@@ -90,15 +103,15 @@ export const type = {
 } as const;
 
 export const sys = {
-  title: { fontSize: 28, lineHeight: 34, fontWeight: "700", color: colors.ink },
-  hero: { fontSize: 32, lineHeight: 38, fontWeight: "700", color: colors.ink },
-  header: { fontSize: 20, lineHeight: 25, fontWeight: "600", color: colors.ink },
-  button: { fontSize: 17, fontWeight: "600" },
+  title: { ...fonts.display, fontSize: 32, lineHeight: 38, letterSpacing: 0.2, color: colors.ink },
+  hero: { ...fonts.display, fontSize: 40, lineHeight: 46, letterSpacing: 0.2, color: colors.ink },
+  header: { ...fonts.display, fontSize: 22, lineHeight: 27, letterSpacing: 0.3, color: colors.ink },
+  button: { ...fonts.display, fontSize: 20, letterSpacing: 0.8 },
   body: { fontSize: 16, lineHeight: 22, fontWeight: "400", color: colors.ink },
   sentence: { fontSize: 17, lineHeight: 23, fontWeight: "400", color: colors.ink },
   row: { fontSize: 15, lineHeight: 20, fontWeight: "400", color: colors.ink },
   label: { fontSize: 13, lineHeight: 18, fontWeight: "500", color: colors.muted },
-  price: { fontSize: 17, lineHeight: 22, fontWeight: "700", color: colors.ink },
+  price: { ...fonts.monoBold, fontSize: 16, lineHeight: 22, color: colors.ink },
 } as const;
 
 export const primaryButton = {
@@ -111,7 +124,7 @@ export const primaryButton = {
   shadowOpacity: 0.18,
 } as const;
 
-export const primaryButtonText = { ...fonts.semibold, fontSize: 17, color: colors.white } as const;
+export const primaryButtonText = { ...sys.button, color: colors.white } as const;
 
 export const secondaryButton = {
   height: 56,
@@ -123,7 +136,7 @@ export const secondaryButton = {
   justifyContent: "center",
 } as const;
 
-export const secondaryButtonText = { ...fonts.semibold, fontSize: 17, color: colors.ink } as const;
+export const secondaryButtonText = { ...sys.button, color: colors.ink } as const;
 
 export const theme = { colors, fonts, spacing, type, shadows, surfaces };
 export default theme;

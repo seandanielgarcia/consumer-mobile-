@@ -9,6 +9,7 @@ import { guardedLeave } from "../lib/headerBack";
 import { requireUser, signOut, useCurrentUser } from "../lib/useCurrentUser";
 import { pinFor } from "../buyer/pins";
 import { colors, fonts, spacing } from "../theme";
+import { Wordmark } from "./Wordmark";
 
 function PersonCircleIcon({ size, color }: { size: number; color: string }) {
   return (
@@ -56,7 +57,7 @@ export function AppHeader({ landing = false, onBack }: { landing?: boolean; onBa
         {!landing && !onBack && (
           <View style={[styles.wordmarkSlot, styles.wordmarkLeft]} pointerEvents="box-none">
             <Pressable onPress={() => guardedLeave(() => router.dismissTo("/"))} hitSlop={8} accessibilityRole="link" accessibilityLabel="yardsale, Home">
-              <Text style={styles.wordmark}>yardsale</Text>
+              <Wordmark size={22} color={colors.ink} inverse={colors.cream} />
             </Pressable>
           </View>
         )}
@@ -109,7 +110,6 @@ export function AppHeader({ landing = false, onBack }: { landing?: boolean; onBa
 const styles = StyleSheet.create({
   bar: { paddingHorizontal: spacing.sidePad - 4 },
   row: { height: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  wordmark: { ...fonts.wordmark, fontSize: 22, letterSpacing: -0.6, color: colors.ink },
   wordmarkSlot: { position: "absolute", top: 0, bottom: 0, justifyContent: "center" },
   wordmarkLeft: { left: 0 },
   back: { minHeight: 44, justifyContent: "center", paddingRight: 12 },

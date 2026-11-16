@@ -1,7 +1,8 @@
 import { Image } from "expo-image";
 import { Pressable, Text, View } from "react-native";
 import { formatPlace } from "../lib/place";
-import { colors, spacing, surfaces, sys } from "../theme";
+import { Tape } from "../components/Tape";
+import { colors, fonts, spacing, surfaces, sys } from "../theme";
 import { aboutMiles, detailLine, formatPrice } from "./format";
 
 export type CardItem = {
@@ -32,8 +33,9 @@ export function ItemCard({ item, width, onPress, selected }: { item: CardItem; w
     >
       <View style={{ marginBottom: 10 }}>
         <Image source={{ uri: item.photoUrl }} style={{ width: photo, height: photo, borderRadius: spacing.photo, backgroundColor: colors.line }} contentFit="cover" transition={150} />
+        <Tape />
         <View style={{ position: "absolute", left: 6, bottom: 6, ...surfaces.sticker }}>
-          <Text style={{ fontSize: 15, fontWeight: "800", color: colors.ink }}>{formatPrice(item.priceCents)}</Text>
+          <Text style={surfaces.stickerText}>{formatPrice(item.priceCents)}</Text>
         </View>
         {selected && (
           <View style={{ position: "absolute", top: 8, right: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: colors.brand, borderWidth: 2, borderColor: colors.white, alignItems: "center", justifyContent: "center" }}>
@@ -41,7 +43,7 @@ export function ItemCard({ item, width, onPress, selected }: { item: CardItem; w
           </View>
         )}
       </View>
-      <Text numberOfLines={1} style={{ ...sys.row, fontWeight: "600", paddingHorizontal: 4 }}>
+      <Text numberOfLines={1} style={{ ...fonts.display, fontSize: 18, lineHeight: 23, letterSpacing: 0.3, color: colors.ink, paddingHorizontal: 4 }}>
         {item.title}
       </Text>
       {details !== "" && (
