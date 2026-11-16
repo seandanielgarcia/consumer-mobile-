@@ -93,6 +93,12 @@ export function AppHeader() {
             <Text style={styles.value}>{garage ? "Your yard" : "Home"}</Text>
             <Text style={styles.chevron}>›</Text>
           </Pressable>
+          {garage && (
+            <Pressable onPress={() => leave(() => router.push(`/buyer/garage/${garage.garage._id}`))} style={styles.row} accessibilityRole="button">
+              <Text style={styles.value}>View as buyer</Text>
+              <Text style={styles.chevron}>›</Text>
+            </Pressable>
+          )}
           <View style={styles.flex} />
           <Pressable onPress={doSignOut} hitSlop={8} style={styles.signOut} accessibilityRole="button">
             <Text style={styles.signOutText}>Sign out</Text>
