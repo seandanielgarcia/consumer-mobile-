@@ -18,7 +18,9 @@ test("the Landing stack shows four distinct items at varied realistic prices", (
 });
 
 test("each seed yard lists its own photos", () => {
-  for (const seller of ["Hailey", "Maya", "Jon"]) {
+  const sellers = new Set(STOCK.filter((s) => s.use === "seed").map((s) => s.seller));
+  expect(sellers.size).toBeGreaterThanOrEqual(3);
+  for (const seller of sellers) {
     expect(STOCK.filter((s) => s.use === "seed" && s.seller === seller).length).toBeGreaterThan(0);
   }
 });

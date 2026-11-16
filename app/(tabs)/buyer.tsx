@@ -8,8 +8,6 @@ import { EmptyState } from "../../src/buyer/EmptyState";
 import { ItemCard } from "../../src/buyer/ItemCard";
 import { locateMe, locatePlace, SF_FALLBACK, useBuyerLocation } from "../../src/buyer/location";
 import { PrimaryButton } from "../../src/components/PrimaryButton";
-import { useHeaderBack } from "../../src/lib/headerBack";
-import { startSelling } from "../../src/lib/sell";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors, sys } from "../../src/theme";
 
@@ -155,9 +153,6 @@ export default function BuyerNearYou() {
     return () => clearInterval(timer);
   }, []);
   const buyerId = useCurrentUser()?.userId;
-  useHeaderBack("Home", () => router.dismissTo("/"));
-  const myYard = useQuery(api.garages.mine, buyerId ? { ownerId: buyerId } : "skip");
-  const isDemoUser = useQuery(api.users.isDemoUser, buyerId ? { userId: buyerId } : "skip");
   const { width } = useWindowDimensions();
   const cardWidth = (width - 40 - 12) / 2;
 
@@ -177,13 +172,6 @@ export default function BuyerNearYou() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40, gap: 12 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text style={sys.title}>Near you</Text>
-          <Pressable
-            onPress={() => (myYard ? router.dismissTo("/") : startSelling(__DEV__ || isDemoUser === true))}
-            accessibilityRole="button"
-            style={{ minHeight: 44, justifyContent: "center", paddingLeft: 12 }}
-          >
-            <Text style={{ ...sys.button, color: colors.brand }}>{myYard ? "Your yard" : "Sell"}</Text>
-          </Pressable>
         </View>
 
         <View style={{ height: 48, borderRadius: 12, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.hairline, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14 }}>

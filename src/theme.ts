@@ -10,6 +10,10 @@ export const colors = {
   surfaceMuted: "#F2F2F2",
   error: "#B3261E",
   destructive: "#D93025",
+  badge: "rgba(17,17,17,0.85)",
+  veil: "rgba(17,17,17,0.25)",
+  frost: "rgba(255,255,255,0.7)",
+  scrim: "rgba(0,0,0,0.35)",
 } as const;
 
 export const fonts = {

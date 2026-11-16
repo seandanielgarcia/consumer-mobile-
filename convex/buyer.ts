@@ -67,6 +67,7 @@ export const search = query({
         brand: item.brand,
         priceCents: item.priceCents,
         photoUrl: item.photoUrl,
+        storageId: item.storageId,
         garageId: garage._id,
         ownerName: owners.get(garage.ownerId)?.name ?? "Someone",
         neighborhood: garage.neighborhood,
@@ -74,7 +75,22 @@ export const search = query({
         distanceMi,
       });
     }
-    return results.sort((a, b) => a.distanceMi - b.distanceMi);
+    const photos = new Map<Id<"_storage">, Promise<string | undefined>>();
+    const listings = await Promise.all(results.map(async ({ storageId, ...listing }) => {
+      if (storageId && !photos.has(storageId)) {
+        photos.set(storageId, ctx.db.system.get("_storage", storageId).then((file) => file?.sha256));
+      }
+      const hash = storageId ? await photos.get(storageId) : undefined;
+      return { listing, photoKey: hash ? `hash:${hash}` : `url:${listing.photoUrl}` };
+    }));
+    const seenPhotos = new Set<string>();
+    return listings
+      .sort((a, b) => a.listing.distanceMi - b.listing.distanceMi)
+      .flatMap(({ listing, photoKey }) => {
+        if (seenPhotos.has(photoKey)) return [];
+        seenPhotos.add(photoKey);
+        return [listing];
+      });
   },
 });
 

@@ -50,15 +50,18 @@ export function AppHeader() {
     <View style={[styles.bar, { paddingTop: insets.top, backgroundColor: onBrand ? colors.brand : colors.cream }]}>
       <View style={styles.row}>
         {back ? (
-          <Pressable onPress={back.onPress} hitSlop={8} style={styles.back} accessibilityRole="button" accessibilityLabel={back.label}>
-            <Text style={[styles.backText, { color: onBrand ? colors.cream : colors.brand }]}>‹ {back.label}</Text>
+          <Pressable onPress={back.onPress} hitSlop={8} style={styles.back} accessibilityRole="button" accessibilityLabel="Back">
+            <Text style={[styles.backText, { color: onBrand ? colors.cream : colors.brand }]}>‹ Back</Text>
           </Pressable>
-        ) : landing ? (
-          <View />
         ) : (
-          <Pressable onPress={() => router.dismissTo("/")} hitSlop={8} accessibilityRole="link" accessibilityLabel="yardsale, Home">
-            <Text style={[styles.wordmark, { color: onBrand ? colors.cream : colors.brand }]}>yardsale</Text>
-          </Pressable>
+          <View />
+        )}
+        {!landing && !back && (
+          <View style={[styles.wordmarkSlot, styles.wordmarkLeft]} pointerEvents="box-none">
+            <Pressable onPress={() => guardedLeave(() => router.dismissTo("/"))} hitSlop={8} accessibilityRole="link" accessibilityLabel="yardsale, Home">
+              <Text style={[styles.wordmark, { color: onBrand ? colors.cream : colors.brand }]}>yardsale</Text>
+            </Pressable>
+          </View>
         )}
         <Pressable onPress={press} style={styles.account} accessibilityRole="button" accessibilityLabel={user ? "Account" : "Sign in"}>
           {user ? (
@@ -104,6 +107,8 @@ const styles = StyleSheet.create({
   bar: { paddingHorizontal: spacing.sidePad - 4 },
   row: { height: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   wordmark: { ...fonts.wordmark, fontSize: 22, letterSpacing: -0.6 },
+  wordmarkSlot: { position: "absolute", top: 0, bottom: 0, justifyContent: "center" },
+  wordmarkLeft: { left: 0 },
   back: { minHeight: 44, justifyContent: "center", paddingRight: 12 },
   backText: { ...fonts.semibold, fontSize: 17 },
   account: { width: 44, height: 44, alignItems: "flex-end", justifyContent: "center" },

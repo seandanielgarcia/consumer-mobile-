@@ -6,7 +6,7 @@ import { AppHeader } from "../src/components/AppHeader";
 import { loadCurrentUser, useCurrentUserLoaded } from "../src/lib/useCurrentUser";
 import { colors } from "../src/theme";
 
-export const unstable_settings = { initialRouteName: "index" };
+export const unstable_settings = { initialRouteName: "(tabs)" };
 
 const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
   unsavedChangesWarning: false,
@@ -23,6 +23,7 @@ export default function RootLayout() {
       <View style={{ flex: 1, backgroundColor: colors.cream }}>
         <AppHeader />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.cream } }}>
+        <Stack.Screen name="(tabs)" />
         <Stack.Screen name="signin" options={{ presentation: "modal" }} />
         <Stack.Screen name="buyer/paid" options={{ gestureEnabled: false }} />
         <Stack.Screen name="seller/price" options={{ gestureEnabled: false }} />

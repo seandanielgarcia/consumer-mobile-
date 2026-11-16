@@ -140,7 +140,7 @@ export default function SignIn() {
             style={styles.headerSide}
             accessibilityRole="button"
           >
-            <Text style={styles.headerAction}>{pending ? "Back" : "Close"}</Text>
+            <Text style={styles.headerAction}>{pending ? "‹ Back" : "Close"}</Text>
           </Pressable>
           <Text style={styles.headerTitle}>Sign in</Text>
           <View style={styles.headerSide} />

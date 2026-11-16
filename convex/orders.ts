@@ -41,6 +41,9 @@ export const createPending = mutation({
     const ids = [...new Set(itemIds)];
     if (ids.length === 0) throw new Error("Pick at least one item");
     if (!(await ctx.db.get(buyerId))) throw new Error("Unknown buyer");
+    if ((await ctx.db.get(garageId))?.ownerId === buyerId) {
+      throw new ConvexError({ code: "OWN_YARD", message: "You can't buy from your own yard" });
+    }
     const pending = await recentPendingOrders(ctx, garageId, Date.now());
     const held = new Set(pending.filter((order) => order.buyerId !== buyerId).flatMap((order) => order.itemIds));
     let totalCents = 0;
