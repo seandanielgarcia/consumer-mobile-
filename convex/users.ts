@@ -113,10 +113,10 @@ export const devSkipVerification = mutation({
   },
 });
 
+// sellerContact trusts a client-supplied buyerId, so only demo and seed numbers are textable.
+// allowBuyerTexts is stored but inert until session-token auth (option A) lands; then the opt-in returns.
 const isTextableSeller = (seller: Doc<"users">) =>
-  /^\+[1-9]\d{7,14}$/.test(seller.phone) &&
-  (isDemoPhone(seller.phone) || SEED_YARD_PHONES.includes(seller.phone) ||
-    (seller.verified === true && seller.allowBuyerTexts === true));
+  /^\+[1-9]\d{7,14}$/.test(seller.phone) && (isDemoPhone(seller.phone) || SEED_YARD_PHONES.includes(seller.phone));
 
 export const requestBuyerTexts = mutation({
   args: { garageId: v.id("garages"), ownerId: v.id("users"), allow: v.boolean() },
