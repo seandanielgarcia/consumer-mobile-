@@ -1,34 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../_generated/api";
-import { checkoutFixture } from "./fixtures.test-setup";
-
-const webhookSecret = "ws_test_secret";
-
-async function signedPayment(orderId: string) {
-  const id = "msg_checkout_test";
-  const timestamp = String(Math.floor(Date.now() / 1000));
-  const body = JSON.stringify({
-    id,
-    type: "payment.succeeded",
-    data: { id: "pay_checkout_test", metadata: { orderId } },
-  });
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw", encoder.encode(webhookSecret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
-  );
-  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(`${id}.${timestamp}.${body}`));
-  const encoded = btoa(String.fromCharCode(...new Uint8Array(signature)));
-  return {
-    method: "POST",
-    body,
-    headers: new Headers({
-      "content-type": "application/json",
-      "webhook-id": id,
-      "webhook-timestamp": timestamp,
-      "webhook-signature": `v1,${encoded}`,
-    }),
-  };
-}
+import { checkoutFixture, signedPayment, webhookSecret } from "./fixtures.test-setup";
 
 const notifyFetch = vi.fn(async () => new Response("ok"));
 

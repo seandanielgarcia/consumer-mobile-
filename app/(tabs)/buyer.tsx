@@ -8,6 +8,7 @@ import { EmptyState } from "../../src/buyer/EmptyState";
 import { ItemCard } from "../../src/buyer/ItemCard";
 import { locateMe, locatePlace, SF_FALLBACK, useBuyerLocation } from "../../src/buyer/location";
 import { PrimaryButton } from "../../src/components/PrimaryButton";
+import { YardMap } from "../../src/buyer/YardMap";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors, sys } from "../../src/theme";
 
@@ -147,6 +148,7 @@ export default function BuyerNearYou() {
   const [under30, setUnder30] = useState(false);
   const [radiusMiles, setRadiusMiles] = useState(2);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [view, setView] = useState<"map" | "list">("map");
   const [now, setNow] = useState(() => Math.floor(Date.now() / 30000) * 30000);
   useEffect(() => {
     const timer = setInterval(() => setNow(Math.floor(Date.now() / 30000) * 30000), 30000);
@@ -157,6 +159,7 @@ export default function BuyerNearYou() {
   const cardWidth = (width - 40 - 12) / 2;
 
   const results = useQuery(api.buyer.search, { q, lat: location.lat, lng: location.lng, radiusMiles, buyerId, now });
+  const yards = useQuery(api.buyer.yards, view === "map" ? { q, lat: location.lat, lng: location.lng, radiusMiles, buyerId, now } : "skip");
   const sizes = useMemo(
     () => [...new Set((results ?? []).flatMap((r) => (r.size ? [r.size] : [])))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
     [results],
@@ -166,66 +169,141 @@ export default function BuyerNearYou() {
   }, [results, size, under30]);
   const wider = RADII.find((r) => r > radiusMiles);
   const filtered = !!size || under30;
+  const filterText = [size && `size ${size}`, under30 && "under $30"].filter(Boolean).join(" ");
+  const clearFilters = () => {
+    setSize(null);
+    setUnder30(false);
+    setSizeOpen(false);
+  };
+  const mapYards = (yards ?? []).filter((y) => !filtered || shown.some((i) => i.garageId === y.garageId));
+
+  const controls = (
+    <View style={{ gap: 10 }}>
+      <View
+        style={{
+          height: 50,
+          borderRadius: 25,
+          backgroundColor: colors.white,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
+          paddingHorizontal: 16,
+          shadowColor: colors.mapInk,
+          shadowOpacity: view === "map" ? 0.12 : 0,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: 6 },
+          borderWidth: view === "map" ? 0 : 1,
+          borderColor: colors.hairline,
+        }}
+      >
+        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.ink} strokeWidth={2.4}>
+          <Circle cx={11} cy={11} r={7} />
+          <Path d="M20 20l-4-4" />
+        </Svg>
+        <TextInput
+          value={q}
+          onChangeText={setQ}
+          placeholder="Search jeans, lamps, bikes…"
+          placeholderTextColor={colors.muted}
+          accessibilityLabel="Search items"
+          autoCorrect={false}
+          returnKeyType="search"
+          clearButtonMode="while-editing"
+          style={[{ flex: 1, ...sys.body }, noOutline]}
+        />
+        <View style={{ flexDirection: "row", backgroundColor: colors.surfaceMuted, borderRadius: 999, padding: 2 }}>
+          {(["map", "list"] as const).map((v) => (
+            <Pressable
+              key={v}
+              onPress={() => setView(v)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: view === v }}
+              hitSlop={6}
+              style={{ height: 32, paddingHorizontal: 10, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: view === v ? colors.ink : "transparent" }}
+            >
+              <Text style={{ fontSize: 13, fontWeight: "700", color: view === v ? colors.white : colors.ink }}>{v === "map" ? "Map" : "List"}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+        <Pill label={location.label} suffix={` · ${radiusMiles} mi ▾`} active={false} onPress={() => setSheetOpen(true)} />
+        <Pill
+          label={size ? `Size ${size} ✕` : "Size ▾"}
+          active={!!size}
+          onPress={() => {
+            if (!size) return setSizeOpen((o) => !o);
+            setSize(null);
+            setSizeOpen(false);
+          }}
+        />
+        <Pill label="Under $30" active={under30} onPress={() => setUnder30((u) => !u)} />
+      </ScrollView>
+      {sizeOpen && (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          {sizes.length === 0 && <Text style={sys.label}>No sizes in these results</Text>}
+          {sizes.map((s) => (
+            <Pill
+              key={s}
+              label={s}
+              active={size === s}
+              onPress={() => {
+                setSize(size === s ? null : s);
+                setSizeOpen(false);
+              }}
+            />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+
+  if (view === "map") {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.mapGround }}>
+        <YardMap
+          yards={mapYards}
+          center={{ lat: location.lat, lng: location.lng }}
+          radiusMiles={radiusMiles}
+          topInset={sizeOpen ? 160 : 110}
+          bottomInset={0}
+        />
+        <View pointerEvents="box-none" style={{ position: "absolute", left: 20, right: 20, top: 8 }}>{controls}</View>
+        {yards !== undefined && results !== undefined && mapYards.length === 0 && (
+          <View pointerEvents="box-none" style={{ position: "absolute", left: 20, right: 20, bottom: 24 }}>
+            <View style={{ backgroundColor: colors.white, borderRadius: 22, padding: 16, shadowColor: colors.mapInk, shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 8 } }}>
+              <Text style={{ ...sys.row, fontWeight: "700" }}>{filtered && yards.length > 0 ? `No matches with ${filterText}` : q.trim() ? `No "${q.trim()}" within ${radiusMiles} mi yet` : `No yards within ${radiusMiles} mi yet`}</Text>
+              {filtered && yards.length > 0 ? (
+                <Pressable onPress={clearFilters} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
+                  <Text style={{ ...sys.button, color: colors.brand }}>Clear filter</Text>
+                </Pressable>
+              ) : wider && (
+                <Pressable onPress={() => setRadiusMiles(wider)} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
+                  <Text style={{ ...sys.button, color: colors.brand }}>Try {wider} mi</Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+        )}
+        <LocationSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} radiusMiles={radiusMiles} onRadius={setRadiusMiles} />
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40, gap: 12 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={sys.title}>Near you</Text>
-        </View>
-
-        <View style={{ height: 48, borderRadius: 12, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.hairline, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14 }}>
-          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.ink} strokeWidth={2}>
-            <Circle cx={11} cy={11} r={7} />
-            <Path d="M20 20l-4-4" />
-          </Svg>
-          <TextInput
-            value={q}
-            onChangeText={setQ}
-            placeholder="Search jeans, jackets…"
-            placeholderTextColor={colors.muted}
-            accessibilityLabel="Search items"
-            autoCorrect={false}
-            returnKeyType="search"
-            clearButtonMode="while-editing"
-            style={[{ flex: 1, ...sys.body }, noOutline]}
-          />
-        </View>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-          <Pill label={location.label} suffix={` · ${radiusMiles} mi ▾`} active={false} onPress={() => setSheetOpen(true)} />
-          <Pill label={size ? `Size ${size} ▾` : "Size ▾"} active={!!size} onPress={() => setSizeOpen((o) => !o)} />
-          <Pill label="Under $30" active={under30} onPress={() => setUnder30((u) => !u)} />
-        </ScrollView>
-        {sizeOpen && (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {sizes.length === 0 && <Text style={sys.label}>No sizes in these results</Text>}
-            {sizes.map((s) => (
-              <Pill
-                key={s}
-                label={s}
-                active={size === s}
-                onPress={() => {
-                  setSize(size === s ? null : s);
-                  setSizeOpen(false);
-                }}
-              />
-            ))}
-          </View>
-        )}
-
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40, gap: 12 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+        {controls}
         {results === undefined ? (
           <ActivityIndicator color={colors.ink} style={{ marginTop: 40 }} />
         ) : shown.length === 0 ? (
           <EmptyState
-            headline={q.trim() ? `No "${q.trim()}" within ${radiusMiles} mi yet` : `Nothing within ${radiusMiles} mi yet`}
-            line={filtered ? "Your filters may be hiding some." : wider ? "Try looking a little farther." : "Check back soon."}
-            action={filtered ? "Clear filters" : wider ? `Try ${wider} mi` : undefined}
+            headline={filtered && (results?.length ?? 0) > 0 ? `No matches with ${filterText}` : q.trim() ? `No "${q.trim()}" within ${radiusMiles} mi yet` : `Nothing within ${radiusMiles} mi yet`}
+            line={filtered ? "Your filter is hiding everything here." : wider ? "Try looking a little farther." : "Check back soon."}
+            action={filtered ? "Clear filter" : wider ? `Try ${wider} mi` : undefined}
             onAction={() => {
-              if (filtered) {
-                setSize(null);
-                setUnder30(false);
-              } else if (wider) setRadiusMiles(wider);
+              if (filtered) clearFilters();
+              else if (wider) setRadiusMiles(wider);
             }}
           />
         ) : (

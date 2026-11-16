@@ -1,15 +1,14 @@
 import { useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
-import { Tabs, useNavigation } from "expo-router";
-import { useEffect, useState } from "react";
-import { ActionSheetIOS } from "react-native";
+import { Tabs } from "expo-router";
+import { ActionSheetIOS, View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
 import { AppHeader } from "../../src/components/AppHeader";
 import { useEntered } from "../../src/lib/entered";
 import { pickFromCamera, pickFromLibrary } from "../../src/lib/sell";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
-import { colors } from "../../src/theme";
+import { colors, shadows } from "../../src/theme";
 
 function HouseIcon({ color }: { color: string }) {
   return (
@@ -21,12 +20,27 @@ function HouseIcon({ color }: { color: string }) {
   );
 }
 
-function PlusIcon({ color }: { color: string }) {
+// The Sell tab is a raised lime pin: it is the one action the whole app points at.
+function SellPin() {
   return (
-    <Svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9}>
-      <Circle cx={12} cy={12} r={10} />
-      <Path d="M12 7.5v9M7.5 12h9" />
-    </Svg>
+    <View
+      style={{
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        marginTop: -22,
+        backgroundColor: colors.lime,
+        borderWidth: 3,
+        borderColor: colors.white,
+        alignItems: "center",
+        justifyContent: "center",
+        ...shadows.pin,
+      }}
+    >
+      <Svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={colors.ink} strokeWidth={2.8} strokeLinecap="round">
+        <Path d="M12 5v14M5 12h14" />
+      </Svg>
+    </View>
   );
 }
 
@@ -45,34 +59,34 @@ export default function TabsLayout() {
   const entered = useEntered();
   const firstOpen = !entered && !user && !garage;
   const landing = !user || garage === null;
-  const navigation = useNavigation();
-  const [tab, setTab] = useState("index");
-  const onBrand = tab === "index" && landing;
-  useEffect(() => {
-    navigation.setOptions({ statusBarStyle: onBrand ? "light" : "dark" });
-  }, [navigation, onBrand]);
 
   return (
     <Tabs
-      screenListeners={({ route }) => ({
-        tabPress: () => Haptics.selectionAsync(),
-        focus: () => setTab(route.name),
-      })}
+      screenListeners={{ tabPress: () => Haptics.selectionAsync() }}
       screenOptions={{
-        header: ({ route }) => {
-          const onLanding = route.name === "index" && landing;
-          return <AppHeader onBrand={onLanding} landing={onLanding} />;
-        },
+        header: ({ route }) => <AppHeader landing={route.name === "index" && landing} />,
         tabBarActiveTintColor: colors.brand,
         tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: firstOpen ? { display: "none" } : { backgroundColor: colors.white, borderTopColor: colors.hairline },
+        tabBarStyle: firstOpen
+          ? { display: "none" }
+          : {
+              backgroundColor: colors.white,
+              borderTopWidth: 0,
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              height: 88,
+              paddingTop: 8,
+              ...shadows.float,
+              shadowOffset: { width: 0, height: -6 },
+            },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
         sceneStyle: { backgroundColor: colors.cream },
       }}
     >
       <Tabs.Screen name="index" options={{ title: "My yard", tabBarIcon: ({ color }) => <HouseIcon color={color as string} /> }} />
       <Tabs.Screen
         name="sell"
-        options={{ title: "Sell", tabBarIcon: ({ color }) => <PlusIcon color={color as string} />, tabBarAccessibilityLabel: "Sell: add photos" }}
+        options={{ title: "Sell", tabBarIcon: () => <SellPin />, tabBarAccessibilityLabel: "Sell: add photos" }}
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
