@@ -1,4 +1,5 @@
 import { useConvex, useQuery } from "convex/react";
+import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -36,6 +37,9 @@ export default function BuyerPaid() {
   }
 
   const paid = order?.status === "paid" || order?.status === "picked_up";
+  useEffect(() => {
+    if (paid) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+  }, [paid]);
   const pending = order?.status === "pending";
   const text = async () => {
     if (!order?.garageId) return;
