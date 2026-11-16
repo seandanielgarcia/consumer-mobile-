@@ -25,9 +25,9 @@ export function ItemCard({ item, width, onPress, selected }: { item: CardItem; w
     <Pressable
       onPress={onPress}
       disabled={!onPress}
-      style={({ pressed }) => ({ width, ...surfaces.card, padding: 8, paddingBottom: 12, gap: 2, borderWidth: 2, borderColor: selected ? colors.brand : colors.white, transform: [{ scale: pressed ? 0.98 : 1 }] })}
-      accessibilityRole={!onPress ? undefined : selected === undefined ? "button" : "checkbox"}
-      accessibilityState={selected === undefined ? undefined : { checked: selected }}
+      style={({ pressed }) => ({ width, ...surfaces.card, padding: 8, paddingBottom: 12, gap: 2, borderWidth: 2, borderColor: selected ? colors.lime : colors.white, transform: [{ scale: pressed ? 0.98 : 1 }] })}
+      accessibilityRole={onPress ? "button" : undefined}
+      accessibilityHint={onPress ? "Opens item details" : undefined}
       accessibilityLabel={detailLine([formatPrice(item.priceCents), item.title, details, item.ownerName && `${item.ownerName}'s yard`, distance, place])}
     >
       <View style={{ marginBottom: 10 }}>
@@ -35,11 +35,7 @@ export function ItemCard({ item, width, onPress, selected }: { item: CardItem; w
         <View style={{ position: "absolute", left: 6, bottom: 6, ...surfaces.sticker }}>
           <Text style={{ fontSize: 15, fontWeight: "800", color: colors.ink }}>{formatPrice(item.priceCents)}</Text>
         </View>
-        {selected && (
-          <View style={{ position: "absolute", top: 8, right: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: colors.brand, borderWidth: 2, borderColor: colors.white, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: colors.white, fontSize: 14, fontWeight: "700" }}>✓</Text>
-          </View>
-        )}
+
       </View>
       <Text numberOfLines={1} style={{ ...sys.row, fontWeight: "600", paddingHorizontal: 4 }}>
         {item.title}
