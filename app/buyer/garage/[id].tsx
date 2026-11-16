@@ -26,6 +26,8 @@ export default function BuyerGarage() {
     return () => clearInterval(timer);
   }, []);
   const garage = useQuery(api.buyer.garage, { garageId, lat: location.lat, lng: location.lng, buyerId, now });
+  const mine = useQuery(api.garages.mine, buyerId ? { ownerId: buyerId } : "skip");
+  const isOwner = mine?.garage._id === garageId;
   const [picked, setPicked] = useState<Id<"items">[]>(selected ? (selected.split(",") as Id<"items">[]) : []);
   const [notice, setNotice] = useState<string | null>(returnNotice ?? null);
   const titles = useRef(new Map<string, string>());
@@ -108,7 +110,8 @@ export default function BuyerGarage() {
           <EmptyState headline="Everything here sold" line="Check other yards nearby." action="Back to browsing" onAction={() => router.dismissTo("/buyer")} />
         ) : (
           <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 20 }}>
-            {garage.items.length > 1 && (
+            {isOwner && <Text style={{ ...sys.label, width: "100%" }}>This is how buyers see your yard</Text>}
+            {!isOwner && garage.items.length > 1 && (
               <Pressable
                 onPress={pickAll}
                 accessibilityRole="button"
@@ -120,20 +123,28 @@ export default function BuyerGarage() {
               </Pressable>
             )}
             {garage.items.map((item) => (
-              <ItemCard key={item._id} item={item} width={cardWidth} selected={picked.includes(item._id)} onPress={() => toggle(item._id)} />
+              <ItemCard
+                key={item._id}
+                item={item}
+                width={cardWidth}
+                selected={isOwner ? undefined : picked.includes(item._id)}
+                onPress={isOwner ? undefined : () => toggle(item._id)}
+              />
             ))}
           </View>
         )}
       </ScrollView>
 
-      <View style={{ paddingTop: 12, paddingHorizontal: 20, paddingBottom: 34, backgroundColor: colors.cream, borderTopWidth: 1, borderTopColor: colors.hairline }}>
-        <PrimaryButton
-          label={pickedItems.length ? `Buy ${pickedItems.length} · ${formatPrice(total)}` : "Tap items to pick"}
-          onPress={buy}
-          disabled={pickedItems.length === 0}
-          loading={buying}
-        />
-      </View>
+      {!isOwner && (
+        <View style={{ paddingTop: 12, paddingHorizontal: 20, paddingBottom: 34, backgroundColor: colors.cream, borderTopWidth: 1, borderTopColor: colors.hairline }}>
+          <PrimaryButton
+            label={pickedItems.length ? `Buy ${pickedItems.length} · ${formatPrice(total)}` : "Tap items to pick"}
+            onPress={buy}
+            disabled={pickedItems.length === 0}
+            loading={buying}
+          />
+        </View>
+      )}
     </View>
   );
 }

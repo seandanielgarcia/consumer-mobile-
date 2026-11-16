@@ -16,15 +16,16 @@ export type CardItem = {
   city?: string;
 };
 
-export function ItemCard({ item, width, onPress, selected }: { item: CardItem; width: number; onPress: () => void; selected?: boolean }) {
+export function ItemCard({ item, width, onPress, selected }: { item: CardItem; width: number; onPress?: () => void; selected?: boolean }) {
   const details = detailLine([item.size, item.condition]);
   const distance = item.distanceMi !== undefined ? aboutMiles(item.distanceMi) : undefined;
   const place = item.neighborhood ? formatPlace({ neighborhood: item.neighborhood, city: item.city }) : undefined;
   return (
     <Pressable
       onPress={onPress}
+      disabled={!onPress}
       style={{ width, gap: 2 }}
-      accessibilityRole={selected === undefined ? "button" : "checkbox"}
+      accessibilityRole={!onPress ? undefined : selected === undefined ? "button" : "checkbox"}
       accessibilityState={selected === undefined ? undefined : { checked: selected }}
       accessibilityLabel={detailLine([formatPrice(item.priceCents), item.title, details, item.ownerName && `${item.ownerName}'s yard`, distance, place])}
     >
