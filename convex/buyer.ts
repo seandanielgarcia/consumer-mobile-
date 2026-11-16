@@ -53,7 +53,7 @@ export const search = query({
       if (item.status !== "live") continue;
       if (!garages.has(item.garageId)) garages.set(item.garageId, await ctx.db.get(item.garageId));
       const garage = garages.get(item.garageId);
-      if (!garage) continue;
+      if (!garage?.isOpen || garage.ownerId === buyerId) continue;
       const distanceMi = roughMiles(lat, lng, garage);
       if (distanceMi > radius) continue;
       if (!held.has(garage._id)) held.set(garage._id, await heldItemIds(ctx, garage._id, buyerId, now));
@@ -67,6 +67,7 @@ export const search = query({
         brand: item.brand,
         priceCents: item.priceCents,
         photoUrl: item.photoUrl,
+        storageId: item.storageId,
         garageId: garage._id,
         ownerName: owners.get(garage.ownerId)?.name ?? "Someone",
         neighborhood: garage.neighborhood,
@@ -74,7 +75,27 @@ export const search = query({
         distanceMi,
       });
     }
-    return results.sort((a, b) => a.distanceMi - b.distanceMi);
+    const photos = new Map<Id<"_storage">, Promise<string | undefined>>();
+    const cloudUrl = process.env.CONVEX_CLOUD_URL;
+    const storagePrefix = cloudUrl ? `${cloudUrl.replace(/\/$/, "")}/api/storage/` : undefined;
+    const listings = await Promise.all(results.map(async ({ storageId, ...listing }) => {
+      const photoId = storageId ?? (storagePrefix && listing.photoUrl.startsWith(storagePrefix)
+        ? ctx.db.system.normalizeId("_storage", listing.photoUrl.slice(storagePrefix.length).split(/[?#]/, 1)[0])
+        : null);
+      if (photoId && !photos.has(photoId)) {
+        photos.set(photoId, ctx.db.system.get("_storage", photoId).then((file) => file?.sha256));
+      }
+      const hash = photoId ? await photos.get(photoId) : undefined;
+      return { listing, photoKey: hash ? `hash:${hash}` : `url:${listing.photoUrl}` };
+    }));
+    const seenPhotos = new Set<string>();
+    return listings
+      .sort((a, b) => a.listing.distanceMi - b.listing.distanceMi)
+      .flatMap(({ listing, photoKey }) => {
+        if (seenPhotos.has(photoKey)) return [];
+        seenPhotos.add(photoKey);
+        return [listing];
+      });
   },
 });
 

@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
   card: { gap: 2 },
   cardRemoved: { opacity: 0.45 },
   cardPhoto: { width: "100%", aspectRatio: 1, borderRadius: 16, backgroundColor: HAIRLINE, marginBottom: 6 },
-  cardSpinner: { position: "absolute", top: 0, right: 0, bottom: 6, left: 0, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(17,17,17,0.25)" },
+  cardSpinner: { position: "absolute", top: 0, right: 0, bottom: 6, left: 0, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: colors.veil },
   sizeBadge: {
     position: "absolute",
     right: 8,
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     height: 22,
     paddingHorizontal: 8,
     borderRadius: 11,
-    backgroundColor: "rgba(17,17,17,0.85)",
+    backgroundColor: colors.badge,
     justifyContent: "center",
   },
   sizeText: { ...fonts.semibold, fontSize: 12, color: colors.white },
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  toggleOff: { backgroundColor: "rgba(255,255,255,0.7)", borderColor: colors.ink },
+  toggleOff: { backgroundColor: colors.frost, borderColor: colors.ink },
   toggleText: { ...fonts.semibold, fontSize: 14, color: colors.white },
   error: { ...fonts.medium, fontSize: 14, color: colors.error, textAlign: "center" },
 });

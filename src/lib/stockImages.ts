@@ -1,20 +1,20 @@
 import { STOCK } from "./stock";
 
 const IMAGES: Record<string, number> = {
+  "after-sun-eau-de-toilette.jpg": require("../../assets/stock/after-sun-eau-de-toilette.jpg"),
+  "aperire-berry-tint.jpg": require("../../assets/stock/aperire-berry-tint.jpg"),
+  "cinnamoroll-tin.jpg": require("../../assets/stock/cinnamoroll-tin.jpg"),
+  "fixx-setting-spray.jpg": require("../../assets/stock/fixx-setting-spray.jpg"),
+  "gisou-hair-perfume.jpg": require("../../assets/stock/gisou-hair-perfume.jpg"),
+  "john-galt-striped-shirt.jpg": require("../../assets/stock/john-galt-striped-shirt.jpg"),
+  "la-all-star-hoodie.jpg": require("../../assets/stock/la-all-star-hoodie.jpg"),
+  "north-face-fleece.jpg": require("../../assets/stock/north-face-fleece.jpg"),
+  "sunkissed-morning-candle.jpg": require("../../assets/stock/sunkissed-morning-candle.jpg"),
   "black-skinny-jeans.jpg": require("../../assets/stock/black-skinny-jeans.jpg"),
   "denim-jacket.jpg": require("../../assets/stock/denim-jacket.jpg"),
-  "field-jacket.jpg": require("../../assets/stock/field-jacket.jpg"),
   "flannel-shirt.jpg": require("../../assets/stock/flannel-shirt.jpg"),
-  "jacket.jpg": require("../../assets/stock/jacket.jpg"),
-  "jeans.jpg": require("../../assets/stock/jeans.jpg"),
   "knit-sweater.jpg": require("../../assets/stock/knit-sweater.jpg"),
-  "lamp.jpg": require("../../assets/stock/lamp.jpg"),
-  "levis-501.jpg": require("../../assets/stock/levis-501.jpg"),
   "mom-jeans.jpg": require("../../assets/stock/mom-jeans.jpg"),
-  "silk-top.jpg": require("../../assets/stock/silk-top.jpg"),
-  "sneakers.jpg": require("../../assets/stock/sneakers.jpg"),
-  "tote.jpg": require("../../assets/stock/tote.jpg"),
-  "white-sneakers.jpg": require("../../assets/stock/white-sneakers.jpg"),
   "wide-leg-jeans.jpg": require("../../assets/stock/wide-leg-jeans.jpg"),
 };
 

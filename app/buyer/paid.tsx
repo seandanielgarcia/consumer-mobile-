@@ -1,4 +1,4 @@
-import { useQuery } from "convex/react";
+import { useConvex, useQuery } from "convex/react";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -8,13 +8,19 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { PAID_GRACE_MS } from "../../src/buyer/checkout";
 import { detailLine, formatPrice } from "../../src/buyer/format";
 import { PAYMENT_FAILED } from "../../src/buyer/useBuy";
+import { pickupText, textSeller } from "../../src/buyer/textSeller";
 import { PrimaryButton } from "../../src/components/PrimaryButton";
+import { SecondaryButton } from "../../src/components/SecondaryButton";
 import { colors, sys } from "../../src/theme";
 
 export default function BuyerPaid() {
   const { orderId, garageId, items } = useLocalSearchParams<{ orderId?: string; garageId?: string; items?: string }>();
   const order = useQuery(api.orders.getOrder, orderId ? { orderId: orderId as Id<"orders"> } : "skip");
+  const convex = useConvex();
+  const textable = useQuery(api.users.sellerTextable, order?.garageId ? { garageId: order.garageId } : "skip");
   const [graceOver, setGraceOver] = useState(false);
+  const [texting, setTexting] = useState(false);
+  const [textProblem, setTextProblem] = useState<string | null>(null);
   useEffect(() => {
     const timer = setTimeout(() => setGraceOver(true), PAID_GRACE_MS);
     return () => clearTimeout(timer);
@@ -31,6 +37,13 @@ export default function BuyerPaid() {
 
   const paid = order?.status === "paid" || order?.status === "picked_up";
   const pending = order?.status === "pending";
+  const text = async () => {
+    if (!order?.garageId) return;
+    setTexting(true);
+    const neighborhood = order.neighborhood ?? "your area";
+    setTextProblem(await textSeller(convex, order.garageId, (name) => pickupText(name, order.items.map((i) => i.title), neighborhood)));
+    setTexting(false);
+  };
   const heading = !order ? "Order not found" : paid ? "Paid" : pending ? "Confirming payment…" : "Order cancelled";
 
   return (
@@ -72,8 +85,10 @@ export default function BuyerPaid() {
             </View>
           </View>
         )}
+        {textProblem && <Text style={{ ...sys.row, fontWeight: "500" }}>{textProblem}</Text>}
       </ScrollView>
-      <View style={{ paddingHorizontal: 20, paddingBottom: 34 }}>
+      <View style={{ paddingHorizontal: 20, paddingBottom: 34, gap: 12 }}>
+        {paid && textable && <SecondaryButton label={`Text ${order.sellerName}`} onPress={text} disabled={texting} />}
         <PrimaryButton label="Back to browsing" onPress={() => router.dismissTo("/buyer")} />
       </View>
     </View>

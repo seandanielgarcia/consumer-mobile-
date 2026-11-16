@@ -3,18 +3,18 @@ import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useState } from "react";
-import { ActionSheetIOS, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
-import { api } from "../convex/_generated/api";
-import type { Doc } from "../convex/_generated/dataModel";
-import { EditItemSheet, type EditableItem } from "../src/components/EditItemSheet";
-import { setPickedPhotos } from "../src/lib/pickedPhotos";
-import { loadSamplePhotos } from "../src/lib/samplePhotos";
-import { formatPlace } from "../src/lib/place";
-import { shareYard } from "../src/lib/shareYard";
-import { stockImages } from "../src/lib/stockImages";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useCurrentUser } from "../src/lib/useCurrentUser";
-import { colors, fonts, spacing } from "../src/theme";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { api } from "../../convex/_generated/api";
+import type { Doc } from "../../convex/_generated/dataModel";
+import { EditItemSheet, type EditableItem } from "../../src/components/EditItemSheet";
+import { setPickedPhotos } from "../../src/lib/pickedPhotos";
+import { loadSamplePhotos } from "../../src/lib/samplePhotos";
+import { formatPlace } from "../../src/lib/place";
+import { shareYard } from "../../src/lib/shareYard";
+import { stockImages } from "../../src/lib/stockImages";
+import { markEntered } from "../../src/lib/entered";
+import { useCurrentUser } from "../../src/lib/useCurrentUser";
+import { colors, fonts, spacing } from "../../src/theme";
 
 const POLAROID_POSITIONS = [
   { left: 8, top: 18, transform: [{ rotate: "-8deg" }] },
@@ -33,25 +33,6 @@ async function pickFromLibrary() {
   router.push("/seller/price");
 }
 
-function addItems() {
-  ActionSheetIOS.showActionSheetWithOptions(
-    { options: ["Choose from library", "Take photo", "Cancel"], cancelButtonIndex: 2 },
-    (index) => {
-      if (index === 0) pickFromLibrary();
-      if (index === 1) pickFromCamera();
-    },
-  );
-}
-
-async function pickFromCamera() {
-  const permission = await ImagePicker.requestCameraPermissionsAsync();
-  if (!permission.granted) return;
-  const result = await ImagePicker.launchCameraAsync(PICKER_OPTIONS);
-  if (result.canceled || result.assets.length === 0) return;
-  setPickedPhotos(result.assets.map((asset) => asset.uri));
-  router.push("/seller/price");
-}
-
 async function pickSamplePhotos() {
   setPickedPhotos(await loadSamplePhotos());
   router.push("/seller/price");
@@ -62,6 +43,7 @@ async function pickSamplePhotos() {
 export default function Home() {
   const user = useCurrentUser();
   const mine = useQuery(api.garages.mine, user ? { ownerId: user.userId } : "skip");
+  if (user && mine === undefined) return null;
   if (user && mine) return <Yard user={user} garage={mine.garage} />;
   return <Landing user={user} />;
 }
@@ -91,16 +73,16 @@ function Landing({ user }: { user: { userId: Doc<"users">["_id"]; name?: string 
           ))}
         </View>
         <View style={styles.buttons}>
-          <Pressable style={styles.button} onPress={pickFromLibrary} accessibilityRole="button">
+          <Pressable style={styles.button} onPress={() => (markEntered(), pickFromLibrary())} accessibilityRole="button">
             <Text style={styles.buttonText}>Sell your stuff</Text>
           </Pressable>
-          <Pressable style={styles.button} onPress={() => router.push("/buyer")} accessibilityRole="button">
+          <Pressable style={styles.button} onPress={() => (markEntered(), router.navigate("/buyer"))} accessibilityRole="button">
             <Text style={styles.buttonText}>Shop near you</Text>
           </Pressable>
         </View>
         <View style={styles.landingLinks}>
           {showSamplePhotos && (
-            <Pressable onPress={pickSamplePhotos} hitSlop={8} style={styles.linkButton} accessibilityRole="button">
+            <Pressable onPress={() => (markEntered(), pickSamplePhotos())} hitSlop={8} style={styles.linkButton} accessibilityRole="button">
               <Text style={[styles.sessionText, styles.signOut]}>Use sample photos</Text>
             </Pressable>
           )}
@@ -127,7 +109,6 @@ const toFields = (item: Item): EditState => ({
 // Signed-in seller with a yard: Home is the yard.
 function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: string }; garage: Doc<"garages"> }) {
   const items = useQuery(api.items.byGarage, { garageId: garage._id }) ?? [];
-  const insets = useSafeAreaInsets();
   const setStatus = useMutation(api.items.setStatus);
   const updateItem = useMutation(api.items.update);
   const removeItem = useMutation(api.items.remove);
@@ -194,37 +175,27 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
     .join(" · ");
 
   return (
-    <View style={[styles.yard, { paddingTop: 8, paddingBottom: insets.bottom + 8 }]}>
+    <View style={[styles.yard, { paddingTop: 8, paddingBottom: 0 }]}>
       <Text style={styles.yardHeadline}>Your yard{counts ? ` · ${counts}` : ""}</Text>
       <Text style={styles.yardMeta}>{formatPlace(garage)}</Text>
+      <View style={styles.textActions}>
+        <Pressable onPress={() => shareYard(garage._id, user.name)} hitSlop={8} style={styles.takePhoto} accessibilityRole="button">
+          <Text style={styles.takePhotoText}>Share my yard</Text>
+        </Pressable>
+      </View>
       {error && !editing && <Text style={styles.error}>{error}</Text>}
       <FlatList
         data={items}
         keyExtractor={(item) => item._id}
         numColumns={2}
         columnWrapperStyle={styles.gridRow}
+        style={styles.gridList}
         contentContainerStyle={styles.grid}
         ListEmptyComponent={<Text style={styles.yardMeta}>Nothing in your yard yet. Add a photo to start.</Text>}
         renderItem={({ item }) => (
           <YardCard item={item} busy={busy} onEdit={() => openEdit(item)} onStatus={(status) => change(item, status)} />
         )}
       />
-      <View style={styles.bottomBar}>
-        <Pressable style={styles.shopPill} onPress={() => router.push("/buyer")} accessibilityRole="button">
-          <Text style={styles.shopPillText}>Shop near you</Text>
-        </Pressable>
-        <Pressable style={styles.cta} onPress={addItems} accessibilityRole="button">
-          <Text style={styles.ctaText}>Add items</Text>
-        </Pressable>
-        <View style={styles.textActions}>
-          <Pressable onPress={() => router.push(`/buyer/garage/${garage._id}`)} hitSlop={8} style={styles.takePhoto} accessibilityRole="button">
-            <Text style={styles.takePhotoText}>View your yard</Text>
-          </Pressable>
-          <Pressable onPress={() => shareYard(garage._id, user.name)} hitSlop={8} style={styles.takePhoto} accessibilityRole="button">
-            <Text style={styles.takePhotoText}>Share my yard</Text>
-          </Pressable>
-        </View>
-      </View>
 
       {editing && draft && (
         <EditItemSheet
@@ -235,7 +206,7 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
           busy={busy}
           error={error}
           onSave={save}
-          onRemove={remove}
+          onRemove={editing.status === "reserved" ? undefined : remove}
           onClose={closeEdit}
         />
       )}
@@ -291,7 +262,7 @@ function YardCard({
           )}
           {sold && (
             <Pressable onPress={() => onStatus("live")} disabled={busy} style={styles.cardAction} accessibilityRole="button">
-              <Text style={styles.cardActionText}>Relist</Text>
+              <Text style={styles.cardActionText}>Put back</Text>
             </Pressable>
           )}
         </View>
@@ -357,7 +328,7 @@ const styles = StyleSheet.create({
   yardMeta: { ...fonts.body, fontSize: 15, color: colors.muted },
   grid: { paddingTop: 8, paddingBottom: 12, gap: 14 },
   gridRow: { gap: 14 },
-  card: { flex: 1, gap: 6 },
+  card: { flex: 1, maxWidth: "48%", gap: 6 },
   cardBody: { gap: 2 },
   cardPhoto: { width: "100%", aspectRatio: 1, borderRadius: 16, backgroundColor: colors.hairline, marginBottom: 6 },
   sizeBadge: {
@@ -368,7 +339,7 @@ const styles = StyleSheet.create({
     height: 22,
     paddingHorizontal: 8,
     borderRadius: 11,
-    backgroundColor: "rgba(17,17,17,0.85)",
+    backgroundColor: colors.badge,
     justifyContent: "center",
   },
   sizeText: { ...fonts.semibold, fontSize: 12, color: colors.white },
@@ -387,7 +358,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   cardActionText: { ...fonts.semibold, fontSize: 14, color: colors.ink },
-  bottomBar: { gap: 12, paddingTop: 8 },
+  gridList: { flex: 1 },
   cta: {
     height: 56,
     borderRadius: spacing.radius,
@@ -396,7 +367,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   ctaText: { ...fonts.semibold, fontSize: 17, color: colors.white },
-  textActions: { flexDirection: "row", justifyContent: "center", gap: 32, marginTop: -4 },
+  textActions: { flexDirection: "row", justifyContent: "center", gap: 24, marginTop: -4 },
   takePhoto: { minHeight: spacing.minButton, justifyContent: "center" },
   takePhotoText: { ...fonts.medium, fontSize: 16, color: colors.brand },
   shopPill: {
