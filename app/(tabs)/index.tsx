@@ -2,18 +2,18 @@ import { useMutation, useQuery } from "convex/react";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import { EditItemSheet, type EditableItem } from "../../src/components/EditItemSheet";
-import { setPickedPhotos } from "../../src/lib/pickedPhotos";
-import { loadSamplePhotos } from "../../src/lib/samplePhotos";
+import { PrimaryButton } from "../../src/components/PrimaryButton";
 import { formatPlace } from "../../src/lib/place";
 import { shareYard } from "../../src/lib/shareYard";
 import { stockImages } from "../../src/lib/stockImages";
 import { markEntered } from "../../src/lib/entered";
-import { openSellSheet } from "../../src/lib/sell";
+import { openSellSheet, pickSamplePhotos, pickFromLibrary } from "../../src/lib/sell";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
+import { ShareIcon } from "../../src/components/icons";
 import { colors, fonts, secondaryButton, secondaryButtonText, shadows, spacing, surfaces } from "../../src/theme";
 
 const POLAROID_POSITIONS = [
@@ -22,15 +22,6 @@ const POLAROID_POSITIONS = [
   { left: 176, top: 22, transform: [{ rotate: "-3deg" }] },
   { left: 236, top: 4, transform: [{ rotate: "7deg" }] },
 ];
-
-
-
-async function pickSamplePhotos() {
-  setPickedPhotos(await loadSamplePhotos());
-  router.push("/seller/price");
-}
-
-
 
 export default function Home() {
   const user = useCurrentUser();
@@ -100,7 +91,20 @@ const toFields = (item: Item): EditState => ({
 
 // Signed-in seller with a yard: Home is the yard.
 function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: string }; garage: Doc<"garages"> }) {
-  const items = useQuery(api.items.byGarage, { garageId: garage._id }) ?? [];
+  const items = useQuery(api.items.byGarage, { garageId: garage._id });
+  const [picking, setPicking] = useState(false);
+  const [pickerError, setPickerError] = useState(false);
+  const addPhotos = async () => {
+    setPicking(true);
+    setPickerError(false);
+    try {
+      await pickFromLibrary();
+    } catch {
+      setPickerError(true);
+    } finally {
+      setPicking(false);
+    }
+  };
   const setStatus = useMutation(api.items.setStatus);
   const updateItem = useMutation(api.items.update);
   const removeItem = useMutation(api.items.remove);
@@ -165,19 +169,30 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
 
   // "Your yard · N live · N reserved · N sold" (zero counts other than live are omitted)
   const counts = (["live", "reserved", "sold"] as const)
-    .map((status) => [items.filter((item) => item.status === status).length, status] as const)
+    .map((status) => [(items ?? []).filter((item) => item.status === status).length, status] as const)
     .filter(([n, status]) => n > 0 || status === "live")
     .map(([n, status]) => `${n} ${status}`)
     .join(" · ");
 
   return (
     <View style={[styles.yard, { paddingTop: 8, paddingBottom: 0 }]}>
-      <Text style={styles.yardHeadline}>Your yard{counts ? ` · ${counts}` : ""}</Text>
-      <Text style={styles.yardMeta}>{formatPlace(garage)}</Text>
-      <View style={styles.textActions}>
-        <Pressable onPress={() => shareYard(garage._id, user.name)} hitSlop={8} style={styles.takePhoto} accessibilityRole="button">
-          <Text style={styles.takePhotoText}>Share my yard</Text>
-        </Pressable>
+      <View style={styles.yardHeaderRow}>
+        <View style={styles.yardHeaderText}>
+          <Text style={styles.yardHeadline}>Your yard{items?.length ? ` · ${counts}` : ""}</Text>
+          <Text style={styles.yardMeta}>{formatPlace(garage)}</Text>
+        </View>
+        {!!items?.length && (
+          <Pressable
+            onPress={() => shareYard(garage._id, user.name)}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel="Share my yard"
+            style={({ pressed }) => [styles.sharePill, pressed && styles.sharePillPressed]}
+          >
+            <ShareIcon />
+            <Text style={styles.sharePillText}>Share</Text>
+          </Pressable>
+        )}
       </View>
       {error && !editing && <Text style={styles.error}>{error}</Text>}
       <FlatList
@@ -187,7 +202,22 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
         columnWrapperStyle={styles.gridRow}
         style={styles.gridList}
         contentContainerStyle={styles.grid}
-        ListEmptyComponent={<Text style={styles.yardMeta}>Nothing in your yard yet. Add a photo to start.</Text>}
+        ListEmptyComponent={items === undefined ? (
+          <ActivityIndicator color={colors.brand} accessibilityLabel="Loading your yard" />
+        ) : (
+          <View style={styles.emptyYard}>
+            <View style={styles.emptyArtwork} accessible={false} accessibilityElementsHidden>
+              <View style={[styles.emptyPhoto, styles.emptyPhotoBack]} />
+              <View style={[styles.emptyPhoto, styles.emptyPhotoFront]}>
+                <Text style={styles.emptyPlus}>+</Text>
+              </View>
+            </View>
+            <Text style={styles.emptyTitle}>Add your first listing</Text>
+            <Text style={styles.emptyDescription}>Pick a photo of something you’d like to sell.</Text>
+            {pickerError && <Text accessibilityRole="alert" style={styles.error}>Couldn't open your photos. Try again.</Text>}
+            <PrimaryButton label="Choose photos" onPress={addPhotos} loading={picking} />
+          </View>
+        )}
         renderItem={({ item }) => (
           <YardCard item={item} busy={busy} onEdit={() => openEdit(item)} onStatus={(status) => change(item, status)} />
         )}
@@ -325,6 +355,17 @@ const styles = StyleSheet.create({
   yardWordmark: { ...fonts.display, fontSize: 20, letterSpacing: -0.5, color: colors.brand },
   yardHeadline: { ...fonts.wordmark, fontSize: 30, lineHeight: 34, letterSpacing: -1, color: colors.ink },
   yardMeta: { ...fonts.semibold, fontSize: 11, letterSpacing: 1.6, textTransform: "uppercase", color: colors.muted },
+  emptyYard: { ...surfaces.card, gap: 12, marginTop: 12, padding: 24 },
+  emptyArtwork: { height: 104, alignSelf: "center", width: 108, marginBottom: 4 },
+  emptyPhoto: { position: "absolute", width: 72, height: 86, borderRadius: 12, borderWidth: 4, borderColor: colors.white },
+  emptyPhotoBack: { top: 9, left: 7, transform: [{ rotate: "-12deg" }], backgroundColor: colors.hairline },
+  emptyPhotoFront: {
+    top: 5, right: 9, transform: [{ rotate: "9deg" }], backgroundColor: colors.cream,
+    alignItems: "center", justifyContent: "center", ...shadows.card,
+  },
+  emptyPlus: { ...fonts.semibold, fontSize: 32, color: colors.brand },
+  emptyTitle: { ...fonts.display, fontSize: 23, color: colors.ink, textAlign: "center" },
+  emptyDescription: { ...fonts.body, fontSize: 16, color: colors.muted, textAlign: "center", marginBottom: 8 },
   grid: { paddingTop: 8, paddingBottom: 12, gap: 14 },
   gridRow: { gap: 14 },
   card: { flex: 1, maxWidth: "48%", gap: 8 },
@@ -368,9 +409,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   ctaText: { ...fonts.semibold, fontSize: 17, color: colors.white },
-  textActions: { flexDirection: "row", justifyContent: "center", gap: 24, marginTop: -4 },
-  takePhoto: { minHeight: spacing.minButton, justifyContent: "center" },
-  takePhotoText: { ...fonts.medium, fontSize: 16, color: colors.brand },
+  yardHeaderRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  yardHeaderText: { flex: 1, gap: 4 },
+  sharePill: {
+    height: spacing.minButton,
+    paddingLeft: 14,
+    paddingRight: 16,
+    borderRadius: spacing.radius,
+    backgroundColor: colors.lime,
+    borderWidth: 2,
+    borderColor: colors.white,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    ...shadows.pin,
+  },
+  sharePillPressed: { transform: [{ scale: 0.96 }], opacity: 0.9 },
+  sharePillText: { fontSize: 15, fontWeight: "800", color: colors.ink },
   shopPill: {
     height: 56,
     borderRadius: spacing.radius,
