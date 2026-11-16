@@ -1,6 +1,6 @@
 # yardsale
 
-Snap your stuff, set a price, and your yard sale goes live to buyers nearby. Text our iMessage agent a pic to add more.
+Open your yard sale in a few photos. Sell to friends and neighbors, then keep it going with a text.
 
 <p>
   <img src="docs/landing.png" width="200" alt="Landing screen">
@@ -23,12 +23,19 @@ Backup (live dev server, until 6 PM PT): <img src="docs/expo-go-qr.png" width="1
 Coming soon.
 
 ## How it works
+- **Sell:** pick a batch of photos and AI writes every listing. Approve each one with a tap and your yard is live.
+- **Shop:** search what's for sale within a few miles, step into a yard, grab a few things and pay.
+- **Keep selling:** text a pic when you have something else to sell. We'll confirm the price and use AI to get it listed.
 
-1. Snap photos of your stuff.
-2. AI fills in each listing: title, details and a suggested price.
-3. Buyers nearby find it and pay with Whop. Text Keiki a pic to add more.
+## Notable features
+- **Clear out your whole closet:** pick your photos in bulk and get listings back, ready for your approval.
+- **Paid before you meet:** buyers check out in the app, and the items are held for them, so pickup is just a handoff.
+- **Pickup in one text:** after paying, tap to text the seller. The message already has your items and a pickup question.
+- **Live and local:** new listings show up in nearby search instantly, and you only ever see a neighborhood, never an address.
+- **Shop locally, keep stuff out of the landfill:** search for anything and find sellers nearby.
+- **One yard, one pickup:** buy in bulk from someone's yard and come home with a haul.
 
-**Stack:** Expo (iOS), Convex, OpenAI vision, Whop, Keiki.
+**Stack:** Expo (iOS), Convex, OpenAI vision, Whop, Keiki, Revyl, Capy.
 
 ### Shared yard and item links
 
