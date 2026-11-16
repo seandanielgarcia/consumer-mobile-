@@ -28,7 +28,18 @@ describe("users.sellerContact", () => {
     expect(await t.query(api.users.sellerTextable, { garageId })).toBe(false);
   });
 
-  it("shares a real number only after the seller confirms in Messages and removes it when they turn texts off", async () => {
+  it("never shares a verified, opted-in real-number seller's phone", async () => {
+    const { t, buyerId, garageId } = await checkoutFixture();
+    await t.run(async ({ db }) => {
+      await db.patch(buyerId, { verified: true });
+      await db.patch((await db.get(garageId))!.ownerId, { phone: "+16505550123", verified: true, allowBuyerTexts: true });
+    });
+
+    expect(await t.query(api.users.sellerContact, { garageId, buyerId })).toBeNull();
+    expect(await t.query(api.users.sellerTextable, { garageId })).toBe(false);
+  });
+
+  it("records a confirmed buyer-texts opt-in without sharing the real number", async () => {
     vi.stubEnv("KEIKI_TOOL_TOKEN", "test-token");
     const { t, buyerId, garageId, sellerPhone } = await checkoutFixture();
     const ownerId = await t.run(async ({ db }) => {
@@ -57,8 +68,9 @@ describe("users.sellerContact", () => {
     expect(await t.mutation(internal.keiki.verifyPhone, { phones: ["+15559770002"], code: on })).toEqual({ error: "bad_code" });
 
     expect(await sendCode(Number(on))).toMatchObject({ ok: true });
-    expect(await textable()).toBe(true);
-    expect(await contact()).toEqual({ firstName: "Maya", phone: sellerPhone });
+    expect(await t.run(async ({ db }) => (await db.get(ownerId))!.allowBuyerTexts)).toBe(true);
+    expect(await textable()).toBe(false);
+    expect(await contact()).toBeNull();
     expect(await t.query(api.users.sellerContact, { garageId })).toBeNull();
     expect(await t.query(api.users.sellerContact, { garageId, buyerId: ownerId })).toBeNull();
     expect(await sendCode(on)).toEqual({ error: "bad_code" });
