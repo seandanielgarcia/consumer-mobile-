@@ -10,10 +10,10 @@ import { aboutMiles, detailLine, formatPrice } from "../../../src/buyer/format";
 import { ItemCard } from "../../../src/buyer/ItemCard";
 import { PrimaryButton } from "../../../src/components/PrimaryButton";
 import { useBuyerLocation } from "../../../src/buyer/location";
-import { useHeaderBack } from "../../../src/lib/headerBack";
 import { formatPlace } from "../../../src/lib/place";
 import { useCurrentUser } from "../../../src/lib/useCurrentUser";
-import { colors, sys } from "../../../src/theme";
+import { pinFor } from "../../../src/buyer/pins";
+import { colors, shadows, spacing, sys } from "../../../src/theme";
 
 export default function BuyerGarage() {
   const { id, selected, notice: returnNotice } = useLocalSearchParams<{ id: string; selected?: string; notice?: string }>();
@@ -39,7 +39,6 @@ export default function BuyerGarage() {
   const buy = () => router.push({ pathname: "/buyer/confirm", params: { garageId, items: pickedItems.map((i) => i._id).join(",") } });
   const { width } = useWindowDimensions();
   const cardWidth = (width - 40 - 12) / 2;
-  useHeaderBack(() => (router.canGoBack() ? router.back() : router.replace("/buyer")));
 
   useEffect(() => {
     if (!garage) return;
@@ -77,15 +76,15 @@ export default function BuyerGarage() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
-      <View style={{ backgroundColor: colors.brand, paddingTop: 4, paddingHorizontal: 20, paddingBottom: 20, flexDirection: "row", alignItems: "center", gap: 12 }}>
-        <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.tag, alignItems: "center", justifyContent: "center" }}>
-          <Text style={sys.header}>{garage?.ownerName.charAt(0) ?? ""}</Text>
+      <View style={{ marginHorizontal: 20, marginTop: 4, marginBottom: 4, padding: 12, borderRadius: spacing.card, backgroundColor: colors.white, flexDirection: "row", alignItems: "center", gap: 12, ...shadows.card }}>
+        <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: pinFor(garageId).bg, borderWidth: 3, borderColor: colors.white, alignItems: "center", justifyContent: "center", ...shadows.pin }}>
+          <Text style={{ fontSize: 22, fontWeight: "800", color: pinFor(garageId).fg }}>{garage?.ownerName.charAt(0).toUpperCase() ?? ""}</Text>
         </View>
         <View style={{ flex: 1, gap: 2 }}>
-          <Text numberOfLines={1} style={{ ...sys.title, color: colors.cream }}>
+          <Text numberOfLines={1} style={{ ...sys.header, fontWeight: "800" }}>
             {garage ? `${garage.ownerName}'s yard` : " "}
           </Text>
-          <Text numberOfLines={1} style={{ ...sys.label, color: colors.cream }}>
+          <Text numberOfLines={1} style={{ ...sys.label, textTransform: "uppercase", letterSpacing: 1.2, fontSize: 11 }}>
               {garage
                 ? detailLine([
                     formatPlace(garage),
@@ -98,7 +97,7 @@ export default function BuyerGarage() {
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, gap: 20 }}>
         {notice && (
-          <View style={{ padding: 12, borderRadius: 12, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.hairline }}>
+          <View style={{ padding: 14, borderRadius: 16, backgroundColor: colors.white, borderWidth: 2, borderColor: colors.pink }}>
             <Text style={sys.row}>{notice}</Text>
           </View>
         )}
@@ -114,7 +113,7 @@ export default function BuyerGarage() {
               <Pressable
                 onPress={pickAll}
                 accessibilityRole="button"
-                style={{ width: "100%", height: 44, justifyContent: "center", alignItems: "center", borderRadius: 999, borderWidth: 1.5, borderColor: colors.ink }}
+                style={{ width: "100%", height: 48, justifyContent: "center", alignItems: "center", borderRadius: 999, borderWidth: 1.5, borderColor: colors.ink, backgroundColor: colors.white }}
               >
                 <Text style={{ ...sys.button, fontSize: 15, color: colors.ink }}>
                   {allPicked ? "Clear picks" : `Pick all ${garage.items.length} · ${formatPrice(everythingCents)}`}
@@ -135,7 +134,7 @@ export default function BuyerGarage() {
       </ScrollView>
 
       {!isOwner && (
-        <View style={{ paddingTop: 12, paddingHorizontal: 20, paddingBottom: 34, backgroundColor: colors.cream, borderTopWidth: 1, borderTopColor: colors.hairline }}>
+        <View style={{ paddingTop: 12, paddingHorizontal: 20, paddingBottom: 34, backgroundColor: colors.cream }}>
           <PrimaryButton
             label={pickedItems.length ? `Buy ${pickedItems.length} · ${formatPrice(total)}` : "Tap items to pick"}
             onPress={buy}

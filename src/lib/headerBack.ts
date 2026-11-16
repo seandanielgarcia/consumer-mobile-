@@ -1,35 +1,20 @@
-import { useFocusEffect } from "expo-router";
-import { useCallback, useRef, useSyncExternalStore } from "react";
+import { useFocusEffect, useRoute } from "expo-router";
+import { useCallback, useEffect, useRef } from "react";
 
-type HeaderBack = { onPress: () => void; owner: object };
+const handlers = new Map<string, () => void>();
 
-let current: HeaderBack | null = null;
-const listeners = new Set<() => void>();
-const emit = () => listeners.forEach((listener) => listener());
-const subscribe = (listener: () => void) => {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-};
-
-export function useHeaderBackState(): HeaderBack | null {
-  return useSyncExternalStore(subscribe, () => current);
-}
+export const headerBackHandler = (routeKey: string) => handlers.get(routeKey);
 
 export function useHeaderBack(onPress: () => void) {
+  const { key } = useRoute();
   const handler = useRef(onPress);
   handler.current = onPress;
-  useFocusEffect(
-    useCallback(() => {
-      const owner = {};
-      current = { onPress: () => handler.current(), owner };
-      emit();
-      return () => {
-        if (current?.owner !== owner) return;
-        current = null;
-        emit();
-      };
-    }, []),
-  );
+  useEffect(() => {
+    handlers.set(key, () => handler.current());
+    return () => {
+      handlers.delete(key);
+    };
+  }, [key]);
 }
 
 type LeaveGuard = (leave: () => void) => void;
