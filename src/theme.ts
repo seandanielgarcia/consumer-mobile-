@@ -52,6 +52,18 @@ export const type = {
   heroPrice: { ...fonts.display, fontSize: typeSize.heroPrice, lineHeight: 36 },
 } as const;
 
+export const sys = {
+  title: { fontSize: 28, lineHeight: 34, fontWeight: "700", color: colors.ink },
+  hero: { fontSize: 32, lineHeight: 38, fontWeight: "700", color: colors.ink },
+  header: { fontSize: 20, lineHeight: 25, fontWeight: "600", color: colors.ink },
+  button: { fontSize: 17, fontWeight: "600" },
+  body: { fontSize: 16, lineHeight: 22, fontWeight: "400", color: colors.ink },
+  sentence: { fontSize: 17, lineHeight: 23, fontWeight: "400", color: colors.ink },
+  row: { fontSize: 15, lineHeight: 20, fontWeight: "400", color: colors.ink },
+  label: { fontSize: 13, lineHeight: 18, fontWeight: "500", color: colors.muted },
+  price: { fontSize: 17, lineHeight: 22, fontWeight: "700", color: colors.ink },
+} as const;
+
 export const primaryButton = {
   height: 56,
   borderRadius: spacing.radius,
