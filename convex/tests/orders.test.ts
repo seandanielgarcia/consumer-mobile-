@@ -18,6 +18,13 @@ describe("orders.createPending", () => {
       .rejects.toThrow("Unknown buyer");
   });
 
+  it("rejects a seller buying from their own yard", async () => {
+    const { t, garageId, firstId } = await checkoutFixture();
+    const ownerId = await t.run(async ({ db }) => (await db.get(garageId))!.ownerId);
+    await expect(t.mutation(api.orders.createPending, { buyerId: ownerId, garageId, itemIds: [firstId] }))
+      .rejects.toThrow("own yard");
+  });
+
   it("rejects a cart spanning two yards", async () => {
     const { t, buyerId, garageId, firstId, foreignId } = await checkoutFixture();
     await expect(t.mutation(api.orders.createPending, { buyerId, garageId, itemIds: [firstId, foreignId] }))
