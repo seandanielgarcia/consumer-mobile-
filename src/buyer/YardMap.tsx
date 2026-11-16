@@ -1,5 +1,4 @@
 import * as Haptics from "expo-haptics";
-import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
 import { Keyboard, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
@@ -9,7 +8,7 @@ import { formatPlace } from "../lib/place";
 import { colors, shadows, surfaces, sys } from "../theme";
 import { mapScale, spreadYards } from "./spreadYards";
 import { pinFor } from "./pins";
-import { aboutMiles, formatPrice } from "./format";
+import { aboutMiles } from "./format";
 
 export type MapYard = {
   garageId: Id<"garages">;
@@ -151,7 +150,7 @@ export function YardMap({
           snapToInterval={cardWidth + 12}
           decelerationRate="fast"
           contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
-          style={{ position: "absolute", left: 0, right: 0, bottom: bottomInset + 12 }}
+          style={{ position: "absolute", left: 0, right: 0, bottom: 12 }}
         >
           {ordered.map((yard) => {
             const pin = pinFor(yard.garageId);
@@ -165,20 +164,22 @@ export function YardMap({
                 style={({ pressed }) => ({
                   ...surfaces.card,
                   width: cardWidth,
-                  minHeight: 76,
+                  height: 64,
                   transform: [{ scale: pressed ? 0.98 : 1 }],
                   flexDirection: "row",
                   alignItems: "center",
                   gap: 12,
-                  padding: 12,
-                  borderRadius: 22,
+                  paddingVertical: 8,
+                  paddingLeft: 8,
+                  paddingRight: 14,
+                  borderRadius: 32,
                   backgroundColor: on ? colors.white : colors.mapGround,
                   borderWidth: 1,
                   borderColor: on ? colors.mapBlue : colors.hairline,
                   ...shadows.float,
                 })}
               >
-                <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: pin.bg, alignItems: "center", justifyContent: "center" }}>
+                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: pin.bg, alignItems: "center", justifyContent: "center" }}>
                   <Text style={{ fontSize: 20, fontWeight: "800", color: pin.fg }}>{yard.ownerName.charAt(0).toUpperCase()}</Text>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
@@ -186,17 +187,13 @@ export function YardMap({
                     {yard.ownerName}'s yard
                   </Text>
                   <Text numberOfLines={1} style={sys.label}>
-                    {formatPlace(yard)} · {aboutMiles(yard.distanceMi)} · {yard.liveCount} {yard.liveCount === 1 ? "item" : "items"} from {formatPrice(yard.minPriceCents)}
+                    {formatPlace(yard)} · {aboutMiles(yard.distanceMi)} · {yard.liveCount} {yard.liveCount === 1 ? "item" : "items"}
                   </Text>
                   {!!yard.description?.trim() && (
                     <Text numberOfLines={1} style={sys.label}>{yard.description.trim()}</Text>
                   )}
                 </View>
-                <View style={{ flexDirection: "row", gap: 4 }}>
-                  {yard.photoUrls.slice(0, 2).map((uri) => (
-                    <Image key={uri} source={{ uri }} style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: colors.line }} contentFit="cover" />
-                  ))}
-                </View>
+                <Text style={{ fontSize: 22, color: colors.muted }} accessibilityElementsHidden>›</Text>
               </Pressable>
             );
           })}
