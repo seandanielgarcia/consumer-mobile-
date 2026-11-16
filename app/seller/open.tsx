@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     ...shadows.pin,
   },
-  sharePillText: { fontSize: 17, fontWeight: "800", color: colors.ink },
+  sharePillText: { ...fonts.semibold, fontSize: 17, color: colors.ink },
   donePill: primaryButton,
   donePillText: primaryButtonText,
   keikiCard: { alignItems: "center" },
