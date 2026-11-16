@@ -90,6 +90,10 @@ export function AppHeader({ landing = false, onBack }: { landing?: boolean; onBa
             <Text style={styles.value}>{garage ? "Your yard" : "Home"}</Text>
             <Text style={styles.chevron}>›</Text>
           </Pressable>
+          <Pressable onPress={() => leave(() => router.push("/buyer/purchases"))} style={styles.row} accessibilityRole="button">
+            <Text style={styles.value}>My purchases</Text>
+            <Text style={styles.chevron}>›</Text>
+          </Pressable>
           {garage && (
             <Pressable onPress={() => leave(() => router.push(`/buyer/garage/${garage.garage._id}`))} style={styles.row} accessibilityRole="button">
               <Text style={styles.value}>View as buyer</Text>

@@ -15,7 +15,7 @@ import { SecondaryButton } from "../../src/components/SecondaryButton";
 import { colors, surfaces, sys } from "../../src/theme";
 
 export default function BuyerPaid() {
-  const { orderId, garageId, items } = useLocalSearchParams<{ orderId?: string; garageId?: string; items?: string }>();
+  const { orderId, garageId, items, fromPurchases } = useLocalSearchParams<{ orderId?: string; garageId?: string; items?: string; fromPurchases?: string }>();
   const order = useQuery(api.orders.getOrder, orderId ? { orderId: orderId as Id<"orders"> } : "skip");
   const convex = useConvex();
   const textable = useQuery(api.users.sellerTextable, order?.garageId ? { garageId: order.garageId } : "skip");
@@ -93,7 +93,10 @@ export default function BuyerPaid() {
       </ScrollView>
       <View style={{ paddingHorizontal: 20, paddingBottom: 34, gap: 12 }}>
         {paid && textable && <SecondaryButton label={`Text ${order.sellerName}`} onPress={text} disabled={texting} />}
-        <PrimaryButton label="Back to browsing" onPress={() => router.dismissTo("/buyer")} />
+        <PrimaryButton
+          label={fromPurchases === "1" ? "Back to purchases" : "Back to browsing"}
+          onPress={() => router.dismissTo(fromPurchases === "1" ? "/buyer/purchases" : "/buyer")}
+        />
       </View>
     </View>
   );
