@@ -1,5 +1,4 @@
 import { useMutation, useQuery } from "convex/react";
-import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -13,6 +12,7 @@ import { formatPlace } from "../../src/lib/place";
 import { shareYard } from "../../src/lib/shareYard";
 import { stockImages } from "../../src/lib/stockImages";
 import { markEntered } from "../../src/lib/entered";
+import { openSellSheet } from "../../src/lib/sell";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors, fonts, secondaryButton, secondaryButtonText, shadows, spacing, surfaces } from "../../src/theme";
 
@@ -23,15 +23,7 @@ const POLAROID_POSITIONS = [
   { left: 236, top: 4, transform: [{ rotate: "7deg" }] },
 ];
 
-const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = { mediaTypes: ["images"], quality: 0.6 };
 
-// Photo library and Camera both feed the same review queue (/seller/price).
-async function pickFromLibrary() {
-  const result = await ImagePicker.launchImageLibraryAsync({ ...PICKER_OPTIONS, allowsMultipleSelection: true, selectionLimit: 0 });
-  if (result.canceled || result.assets.length === 0) return;
-  setPickedPhotos(result.assets.map((asset) => asset.uri));
-  router.push("/seller/price");
-}
 
 async function pickSamplePhotos() {
   setPickedPhotos(await loadSamplePhotos());
@@ -73,7 +65,7 @@ function Landing({ user }: { user: { userId: Doc<"users">["_id"]; name?: string 
           ))}
         </View>
         <View style={styles.buttons}>
-          <Pressable style={styles.button} onPress={() => (markEntered(), pickFromLibrary())} accessibilityRole="button">
+          <Pressable style={styles.button} onPress={() => (markEntered(), openSellSheet())} accessibilityRole="button">
             <Text style={styles.buttonText}>Sell your stuff</Text>
           </Pressable>
           <Pressable style={styles.buttonSecondary} onPress={() => (markEntered(), router.navigate("/buyer"))} accessibilityRole="button">
