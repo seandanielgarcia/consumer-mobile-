@@ -8,7 +8,6 @@ import { EmptyState } from "../../src/buyer/EmptyState";
 import { ItemCard } from "../../src/buyer/ItemCard";
 import { locateMe, locatePlace, SF_FALLBACK, useBuyerLocation } from "../../src/buyer/location";
 import { PrimaryButton } from "../../src/components/PrimaryButton";
-import { useHeaderBack } from "../../src/lib/headerBack";
 import { startSelling } from "../../src/lib/sell";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors, sys } from "../../src/theme";
@@ -155,7 +154,6 @@ export default function BuyerNearYou() {
     return () => clearInterval(timer);
   }, []);
   const buyerId = useCurrentUser()?.userId;
-  useHeaderBack("Home", () => router.dismissTo("/"));
   const myYard = useQuery(api.garages.mine, buyerId ? { ownerId: buyerId } : "skip");
   const isDemoUser = useQuery(api.users.isDemoUser, buyerId ? { userId: buyerId } : "skip");
   const { width } = useWindowDimensions();

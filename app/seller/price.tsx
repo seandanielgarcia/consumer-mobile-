@@ -216,7 +216,7 @@ export default function SellerReview() {
   const discard = () => confirmDiscard(() => router.dismissTo("/"));
   useLeaveGuard(confirmDiscard);
 
-  useHeaderBack("Back", () => (editingIndex === null ? discard() : setEditingIndex(null)));
+  useHeaderBack(() => (editingIndex === null ? discard() : setEditingIndex(null)));
 
   const cardWidth = (width - spacing.sidePad * 2 - 12) / 2;
   const overview = (

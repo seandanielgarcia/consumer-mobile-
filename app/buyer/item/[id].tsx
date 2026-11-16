@@ -21,7 +21,7 @@ export default function BuyerItem() {
   const userId = useCurrentUser()?.userId;
   const mine = useQuery(api.garages.mine, userId ? { ownerId: userId } : "skip");
   const back = () => router.dismissTo("/buyer");
-  useHeaderBack("Nearby", back);
+  useHeaderBack(back);
 
   if (item === undefined) return <ActivityIndicator color={colors.ink} style={{ flex: 1, backgroundColor: colors.cream }} />;
   if (item === null) {
