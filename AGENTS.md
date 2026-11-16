@@ -103,13 +103,13 @@ Build to match the mockups except where "Product decisions since the PRD" says o
 
 - 20px side padding, 56–60px top padding, buttons at least 44px tall and fully rounded, big CTAs 60px tall.
 - Colors: brand blue `#2340FF`, cream `#FFF6E5`, price-tag yellow `#FFE14D`, ink `#111111`, muted text `#5A5245`. Keep them in one theme module, not inline.
-- Type: headings in Bricolage Grotesque 800, body in Inter.
+- Type: SF Pro (system font) everywhere; titles 700, buttons 600, body 400. No custom fonts. (Hailey)
 - Items look like polaroids with yellow price stickers.
 - Don't show any AI label (no "Written by AI · tap to edit"): AI-written fields just appear filled in and editable.
 
 ## Seed data
 
-Three fake garages near YC (Mission / Hayes Valley area) with about 10 real clothing photos, in `convex/seed.ts`, so a search for "jeans" returns results. Seed rows use rounded coordinates like everything else.
+Nineteen seed yards across central San Francisco (Mission, Hayes Valley, Castro, SoMa, Potrero Hill and more), all within 2 mi of the default buyer location, with about 70 listings of anything (clothes with sizes, bikes, record players, plants, furniture). They live in `convex/seed.ts`, with photos listed in `src/lib/stock.ts` (CC-licensed, credits alongside). A search for "jeans" returns results. Seed rows use rounded coordinates like everything else.
 
 ## Done criteria (demo)
 

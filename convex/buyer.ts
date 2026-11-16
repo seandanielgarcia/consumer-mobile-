@@ -70,6 +70,7 @@ export const search = query({
         garageId: garage._id,
         ownerName: owners.get(garage.ownerId)?.name ?? "Someone",
         neighborhood: garage.neighborhood,
+        city: garage.city,
         distanceMi,
       });
     }
@@ -97,6 +98,7 @@ export const garage = query({
       ownerName: owner?.name ?? "Someone",
       avatarColor: owner?.avatarColor,
       neighborhood: garage.neighborhood,
+      city: garage.city,
       distanceMi: roughMiles(lat, lng, garage),
       items: items
         .filter((i) => i.status === "live" && !held.has(i._id))

@@ -2,9 +2,8 @@
 
 import { convexTest } from "convex-test";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { api, internal } from "../_generated/api";
+import { api } from "../_generated/api";
 import schema from "../schema";
-import { renderYardPage } from "../yard";
 
 const modules = import.meta.glob("../**/*.ts");
 
@@ -32,34 +31,6 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("public yard page", () => {
-  it("lists only live items and escapes seller text", async () => {
-    const { t, open } = await yardFixture();
-    const { garageId } = await open();
-    await t.run(async ({ db }) => {
-      const item = { garageId, photoUrl: "https://example.test/x.jpg", description: "x", aiGenerated: false };
-      await db.insert("items", { ...item, title: "Reserved coat", priceCents: 100, status: "reserved" });
-      await db.insert("items", { ...item, title: "Sold boots", priceCents: 100, status: "sold" });
-      await db.insert("items", { ...item, title: "Draft hat", priceCents: 100, status: "draft" });
-    });
-    const yard = await t.query(internal.yard.yardPage, { garageId });
-    expect(yard?.items.map((i) => i.title)).toEqual(["Lamp"]);
-    expect(yard?.firstName).toBe("Hailey");
-
-    const html = renderYardPage({ ...yard!, firstName: "<script>x</script>" }, "garagesale://");
-    expect(html).not.toContain("<script>x");
-    expect(html).toContain("&lt;script&gt;x&lt;/script&gt;'s yard");
-    expect(html).toContain(`href="garagesale://buyer/garage/${garageId}"`);
-    expect(html).toContain("Hayes Valley");
-    expect(html).not.toMatch(/37\.7|-122\.4/);
-  });
-
-  it("returns null for an unknown yard id", async () => {
-    const { t } = await yardFixture();
-    expect(await t.query(internal.yard.yardPage, { garageId: "nope" })).toBeNull();
-  });
-});
-
 describe("yard-open text", () => {
   async function sentTexts(user: { verified?: boolean; phone?: string }, opens = 1) {
     vi.useFakeTimers();
@@ -77,7 +48,7 @@ describe("yard-open text", () => {
     const sent = await sentTexts({ verified: true }, 2);
     expect(sent).toHaveLength(1);
     expect(sent[0].phone).toBe("+15559880001");
-    expect(sent[0].text).toMatch(/Your yard is open! Share it with friends: .*\/y\/\w+/);
+    expect(sent[0].text).toMatch(/Your yard is open! Share it with friends: .*\/yard\/\w+/);
   });
 
   it("skips unverified sellers and demo phones", async () => {

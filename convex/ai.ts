@@ -3,7 +3,7 @@ import { action } from "./_generated/server";
 
 const MODEL = "gpt-5.4-mini";
 
-const PROMPT = `You write listings for a neighborhood garage sale app. People sell anything: clothes, furniture, books, kitchenware, toys, electronics, decor.
+const PROMPT = `You write listings for a neighborhood yardsale app. People sell anything: clothes, furniture, books, kitchenware, toys, electronics, decor.
 Look at the photo of one item and return JSON:
 - title: short item name a buyer would search for, at most 4 words, with brand if visible (e.g. "Levi's 501 jeans", "IKEA floor lamp").
 - category: one or two plain words (e.g. "Clothing", "Shoes", "Furniture", "Books", "Kitchen", "Toys", "Electronics", "Decor").

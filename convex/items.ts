@@ -7,18 +7,6 @@ export const generateUploadUrl = mutation({
   handler: async (ctx) => await ctx.storage.generateUploadUrl(),
 });
 
-export const sampleLive = query({
-  args: {},
-  handler: async (ctx) => {
-    const items = await ctx.db
-      .query("items")
-      .withIndex("by_status", (q) => q.eq("status", "live"))
-      .order("desc")
-      .take(4);
-    return items.map((item) => ({ _id: item._id, photoUrl: item.photoUrl, priceCents: item.priceCents }));
-  },
-});
-
 export const liveByGarage = query({
   args: { garageId: v.id("garages") },
   handler: async (ctx, { garageId }) => {

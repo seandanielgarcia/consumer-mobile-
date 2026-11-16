@@ -1,8 +1,8 @@
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { Stack } from "expo-router";
-import { useFonts, BricolageGrotesque_800ExtraBold } from "@expo-google-fonts/bricolage-grotesque";
-import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from "@expo-google-fonts/inter";
 import { useEffect } from "react";
+import { View } from "react-native";
+import { AppHeader } from "../src/components/AppHeader";
 import { loadCurrentUser, useCurrentUserLoaded } from "../src/lib/useCurrentUser";
 import { colors } from "../src/theme";
 
@@ -13,25 +13,22 @@ const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
 });
 
 export default function RootLayout() {
-  const [loaded] = useFonts({
-    BricolageGrotesque_800ExtraBold,
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-  });
   const userLoaded = useCurrentUserLoaded();
   useEffect(() => {
     loadCurrentUser();
   }, []);
-  if (!loaded || !userLoaded) return null;
+  if (!userLoaded) return null;
   return (
     <ConvexProvider client={convex}>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.cream } }}>
+      <View style={{ flex: 1, backgroundColor: colors.cream }}>
+        <AppHeader />
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.cream } }}>
         <Stack.Screen name="signin" options={{ presentation: "modal" }} />
         <Stack.Screen name="buyer/paid" options={{ gestureEnabled: false }} />
         <Stack.Screen name="seller/price" options={{ gestureEnabled: false }} />
         <Stack.Screen name="seller/open" options={{ gestureEnabled: false }} />
-      </Stack>
+        </Stack>
+      </View>
     </ConvexProvider>
   );
 }

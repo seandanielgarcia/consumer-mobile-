@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { internal } from "../_generated/api";
 import type { Id, TableNames } from "../_generated/dataModel";
 import schema from "../schema";
+import { SEED_YARD_PHONES } from "../seed";
 
 const modules = import.meta.glob("../**/*.ts");
 const now = Date.UTC(2026, 0, 1);
@@ -100,9 +101,8 @@ describe.each(cleanups)("$name", ({ run }) => {
       users: await db.query("users").collect(),
       garages: await db.query("garages").collect(),
     }));
-    expect(seeded.users.map((account) => account.phone).sort())
-      .toEqual(["+15550100001", "+15550100002", "+15550100003"]);
-    expect(seeded.garages).toHaveLength(3);
+    expect(seeded.users.map((account) => account.phone).sort()).toEqual([...SEED_YARD_PHONES].sort());
+    expect(seeded.garages).toHaveLength(SEED_YARD_PHONES.length);
 
     vi.setSystemTime(now);
     await run(t);

@@ -1,18 +1,31 @@
-import { useConvex } from "convex/react";
+import { useConvex, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { router } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { requireUser, SignInCancelled } from "../lib/useCurrentUser";
 import { startCheckout } from "./checkout";
 
 export const PAYMENT_FAILED = "Payment didn't go through. Your items are held for 10 min.";
 
+const HOLD_MS = 10 * 60 * 1000;
+
 export function useBuy(garageId: Id<"garages">, onUnavailable?: (itemId: Id<"items">) => void) {
   const convex = useConvex();
   const [buying, setBuying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [order, setOrder] = useState<{ id: Id<"orders">; createdAt: number } | null>(null);
+  const orderId = order?.id ?? null;
   const checkingOut = useRef(false);
+  const status = useQuery(api.orders.getOrder, orderId ? { orderId } : "skip");
+  const orderPaid = status?.status === "paid" || status?.status === "picked_up";
+
+  useEffect(() => {
+    if (!orderPaid || !orderId) return;
+    checkingOut.current = true;
+    router.replace({ pathname: "/buyer/paid", params: { orderId } });
+  }, [orderPaid, orderId]);
 
   const buy = async (itemIds: Id<"items">[]) => {
     if (checkingOut.current || itemIds.length === 0) return;
@@ -29,9 +42,8 @@ export function useBuy(garageId: Id<"garages">, onUnavailable?: (itemId: Id<"ite
         return;
       }
 
-      const result = await startCheckout(convex, buyer, garageId, itemIds);
+      const result = await startCheckout(convex, buyer, garageId, itemIds, (id) => setOrder({ id, createdAt: Date.now() }));
       if (result.paid) {
-        router.replace({ pathname: "/buyer/paid", params: { orderId: result.orderId } });
         paid = true;
         return;
       }
@@ -52,5 +64,7 @@ export function useBuy(garageId: Id<"garages">, onUnavailable?: (itemId: Id<"ite
     }
   };
 
-  return { buy, buying, error, checkingOut };
+  const holding = status?.status === "pending" && !!order && Date.now() - order.createdAt < HOLD_MS;
+  const myOrderItemIds = status && (orderPaid || holding) ? status.items.map((i) => i._id) : [];
+  return { buy, buying, error, checkingOut, myOrderItemIds };
 }
