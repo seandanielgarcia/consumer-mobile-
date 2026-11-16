@@ -1,6 +1,5 @@
 import { useQuery } from "convex/react";
-import { router, useIsFocused } from "expo-router";
-import { StatusBar } from "expo-status-bar";
+import { router } from "expo-router";
 import { useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,7 +22,6 @@ function PersonCircleIcon({ size, color }: { size: number; color: string }) {
 // Rendered as each screen's own header, so it moves with the screen during push, pop and swipe-back.
 export function AppHeader({ onBrand = false, landing = false, onBack }: { onBrand?: boolean; landing?: boolean; onBack?: () => void }) {
   const insets = useSafeAreaInsets();
-  const focused = useIsFocused();
   const user = useCurrentUser();
   const garage = useQuery(api.garages.mine, user ? { ownerId: user.userId } : "skip");
   const [open, setOpen] = useState(false);
@@ -46,7 +44,6 @@ export function AppHeader({ onBrand = false, landing = false, onBack }: { onBran
 
   return (
     <View style={[styles.bar, { paddingTop: insets.top, backgroundColor: onBrand ? colors.brand : colors.cream }]}>
-      {focused && <StatusBar style={onBrand ? "light" : "dark"} />}
       <View style={styles.row}>
         {onBack ? (
           <Pressable onPress={onBack} hitSlop={8} style={styles.back} accessibilityRole="button" accessibilityLabel="Back">

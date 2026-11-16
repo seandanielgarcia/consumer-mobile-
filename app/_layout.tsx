@@ -41,6 +41,7 @@ export default function RootLayout() {
         screenOptions={{
           header: (props) => <StackHeader {...props} />,
           fullScreenGestureEnabled: true,
+          statusBarStyle: "dark",
           contentStyle: { backgroundColor: colors.cream },
         }}
       >
@@ -48,7 +49,8 @@ export default function RootLayout() {
         <Stack.Screen name="signin" options={{ presentation: "modal", headerShown: false }} />
         <Stack.Screen name="buyer/paid" options={{ gestureEnabled: false, headerBackVisible: false }} />
         <Stack.Screen name="seller/price" options={{ gestureEnabled: false }} />
-        <Stack.Screen name="seller/open" options={{ gestureEnabled: false, headerBackVisible: false }} />
+        <Stack.Screen name="seller/open" options={{ gestureEnabled: false, headerBackVisible: false, statusBarStyle: "light" }} />
+        <Stack.Screen name="buyer/garage/[id]" options={{ statusBarStyle: "light" }} />
       </Stack>
     </ConvexProvider>
   );

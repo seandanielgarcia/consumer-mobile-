@@ -1,6 +1,7 @@
 import { useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
-import { Tabs } from "expo-router";
+import { Tabs, useNavigation } from "expo-router";
+import { useEffect, useState } from "react";
 import { ActionSheetIOS } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
@@ -44,10 +45,19 @@ export default function TabsLayout() {
   const entered = useEntered();
   const firstOpen = !entered && !user && !garage;
   const landing = !user || garage === null;
+  const navigation = useNavigation();
+  const [tab, setTab] = useState("index");
+  const onBrand = tab === "index" && landing;
+  useEffect(() => {
+    navigation.setOptions({ statusBarStyle: onBrand ? "light" : "dark" });
+  }, [navigation, onBrand]);
 
   return (
     <Tabs
-      screenListeners={{ tabPress: () => Haptics.selectionAsync() }}
+      screenListeners={({ route }) => ({
+        tabPress: () => Haptics.selectionAsync(),
+        focus: () => setTab(route.name),
+      })}
       screenOptions={{
         header: ({ route }) => {
           const onLanding = route.name === "index" && landing;
