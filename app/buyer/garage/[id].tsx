@@ -120,15 +120,32 @@ export default function BuyerGarage() {
                 </Text>
               </Pressable>
             )}
-            {garage.items.map((item) => (
-              <ItemCard
-                key={item._id}
-                item={item}
-                width={cardWidth}
-                selected={isOwner ? undefined : picked.includes(item._id)}
-                onPress={isOwner ? undefined : () => toggle(item._id)}
-              />
-            ))}
+            {garage.items.map((item) => {
+              const inPicks = picked.includes(item._id);
+              return (
+                <View key={item._id} style={{ width: cardWidth, gap: 8 }}>
+                  <ItemCard
+                    item={item}
+                    width={cardWidth}
+                    selected={!isOwner && inPicks}
+                    onPress={() => router.push({ pathname: "/buyer/item/[id]", params: { id: item._id, fromYard: "1" } })}
+                  />
+                  {!isOwner && (
+                    <Pressable
+                      onPress={() => toggle(item._id)}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: inPicks }}
+                      accessibilityLabel={`Pick ${item.title}`}
+                      style={{ minHeight: 44, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: inPicks ? colors.brand : colors.white }}
+                    >
+                      <Text style={{ ...sys.button, fontSize: 15, color: inPicks ? colors.white : colors.ink }}>
+                        {inPicks ? "✓ Picked" : "Pick item"}
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -136,7 +153,7 @@ export default function BuyerGarage() {
       {!isOwner && (
         <View style={{ paddingTop: 12, paddingHorizontal: 20, paddingBottom: 34, backgroundColor: colors.cream }}>
           <PrimaryButton
-            label={pickedItems.length ? `Buy ${pickedItems.length} · ${formatPrice(total)}` : "Tap items to pick"}
+            label={pickedItems.length ? `Buy ${pickedItems.length} · ${formatPrice(total)}` : "Pick items to buy"}
             onPress={buy}
             disabled={pickedItems.length === 0}
           />
