@@ -13,6 +13,7 @@ import { shareYard } from "../../src/lib/shareYard";
 import { stockImages } from "../../src/lib/stockImages";
 import { markEntered } from "../../src/lib/entered";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
+import { ShareIcon } from "../../src/components/icons";
 import { colors, fonts, secondaryButton, secondaryButtonText, shadows, spacing, surfaces } from "../../src/theme";
 
 const POLAROID_POSITIONS = [
@@ -175,13 +176,24 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
 
   return (
     <View style={[styles.yard, { paddingTop: 8, paddingBottom: 0 }]}>
-      <Text style={styles.yardHeadline}>Your yard{items?.length ? ` · ${counts}` : ""}</Text>
-      <Text style={styles.yardMeta}>{formatPlace(garage)}</Text>
-      {!!items?.length && <View style={styles.textActions}>
-        <Pressable onPress={() => shareYard(garage._id, user.name)} hitSlop={8} style={styles.takePhoto} accessibilityRole="button">
-          <Text style={styles.takePhotoText}>Share my yard</Text>
-        </Pressable>
-      </View>}
+      <View style={styles.yardHeaderRow}>
+        <View style={styles.yardHeaderText}>
+          <Text style={styles.yardHeadline}>Your yard{items?.length ? ` · ${counts}` : ""}</Text>
+          <Text style={styles.yardMeta}>{formatPlace(garage)}</Text>
+        </View>
+        {!!items?.length && (
+          <Pressable
+            onPress={() => shareYard(garage._id, user.name)}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel="Share my yard"
+            style={({ pressed }) => [styles.sharePill, pressed && styles.sharePillPressed]}
+          >
+            <ShareIcon />
+            <Text style={styles.sharePillText}>Share</Text>
+          </Pressable>
+        )}
+      </View>
       {error && !editing && <Text style={styles.error}>{error}</Text>}
       <FlatList
         data={items}
@@ -397,9 +409,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   ctaText: { ...fonts.semibold, fontSize: 17, color: colors.white },
-  textActions: { flexDirection: "row", justifyContent: "center", gap: 24, marginTop: -4 },
-  takePhoto: { minHeight: spacing.minButton, justifyContent: "center" },
-  takePhotoText: { ...fonts.medium, fontSize: 16, color: colors.brand },
+  yardHeaderRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  yardHeaderText: { flex: 1, gap: 4 },
+  sharePill: {
+    height: spacing.minButton,
+    paddingLeft: 14,
+    paddingRight: 16,
+    borderRadius: spacing.radius,
+    backgroundColor: colors.lime,
+    borderWidth: 2,
+    borderColor: colors.white,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    ...shadows.pin,
+  },
+  sharePillPressed: { transform: [{ scale: 0.96 }], opacity: 0.9 },
+  sharePillText: { fontSize: 15, fontWeight: "800", color: colors.ink },
   shopPill: {
     height: 56,
     borderRadius: spacing.radius,
