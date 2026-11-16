@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { query, type QueryCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { haversineMiles, roundCoord } from "./lib/location";
 import { heldItemIds } from "./orders";
@@ -11,16 +11,19 @@ function roughMiles(lat: number, lng: number, garage: Doc<"garages">) {
   return Math.round(miles * 10) / 10;
 }
 
-export const search = query({
-  args: {
-    q: v.string(),
-    lat: v.number(),
-    lng: v.number(),
-    radiusMiles: v.number(),
-    buyerId: v.optional(v.id("users")),
-    now: v.optional(v.number()),
-  },
-  handler: async (ctx, { q, lat, lng, radiusMiles, buyerId, now }) => {
+const searchArgs = {
+  q: v.string(),
+  lat: v.number(),
+  lng: v.number(),
+  radiusMiles: v.number(),
+  buyerId: v.optional(v.id("users")),
+  now: v.optional(v.number()),
+};
+
+type SearchArgs = { q: string; lat: number; lng: number; radiusMiles: number; buyerId?: Id<"users">; now?: number };
+
+// Live listings within the radius, nearest first, one per distinct photo. Shared by `search` (items) and `yards` (pins).
+async function listingsNear(ctx: QueryCtx, { q, lat, lng, radiusMiles, buyerId, now }: SearchArgs) {
     const radius = Math.min(Math.max(radiusMiles, 0), MAX_RADIUS_MILES);
     const term = q.trim();
     let items: Doc<"items">[];
@@ -70,8 +73,11 @@ export const search = query({
         storageId: item.storageId,
         garageId: garage._id,
         ownerName: owners.get(garage.ownerId)?.name ?? "Someone",
+        avatarColor: owners.get(garage.ownerId)?.avatarColor,
         neighborhood: garage.neighborhood,
         city: garage.city,
+        approxLat: garage.approxLat,
+        approxLng: garage.approxLng,
         distanceMi,
       });
     }
@@ -96,6 +102,43 @@ export const search = query({
         seenPhotos.add(photoKey);
         return [listing];
       });
+}
+
+export const search = query({
+  args: searchArgs,
+  handler: async (ctx, args) =>
+    (await listingsNear(ctx, args)).map(({ approxLat: _lat, approxLng: _lng, ...listing }) => listing),
+});
+
+// One entry per yard with live listings in the radius, for the map: rounded (about 1 km) coordinates only.
+export const yards = query({
+  args: searchArgs,
+  handler: async (ctx, args) => {
+    const listings = await listingsNear(ctx, args);
+    const byYard = new Map<Id<"garages">, { garageId: Id<"garages">; ownerName: string; avatarColor?: string; neighborhood: string; city?: string; lat: number; lng: number; distanceMi: number; liveCount: number; minPriceCents: number; photoUrls: string[] }>();
+    for (const l of listings) {
+      const yard = byYard.get(l.garageId);
+      if (yard) {
+        yard.liveCount += 1;
+        yard.minPriceCents = Math.min(yard.minPriceCents, l.priceCents);
+        if (yard.photoUrls.length < 3) yard.photoUrls.push(l.photoUrl);
+      } else {
+        byYard.set(l.garageId, {
+          garageId: l.garageId,
+          ownerName: l.ownerName,
+          avatarColor: l.avatarColor,
+          neighborhood: l.neighborhood,
+          city: l.city,
+          lat: l.approxLat,
+          lng: l.approxLng,
+          distanceMi: l.distanceMi,
+          liveCount: 1,
+          minPriceCents: l.priceCents,
+          photoUrls: [l.photoUrl],
+        });
+      }
+    }
+    return [...byYard.values()].sort((a, b) => a.distanceMi - b.distanceMi);
   },
 });
 

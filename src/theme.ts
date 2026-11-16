@@ -14,6 +14,16 @@ export const colors = {
   veil: "rgba(17,17,17,0.25)",
   frost: "rgba(255,255,255,0.7)",
   scrim: "rgba(0,0,0,0.35)",
+  // Map (Search tab): lavender ground, navy ink, saturated pins
+  mapGround: "#F3F2FA",
+  mapInk: "#1B1B3A",
+  mapBlue: "#2F5BFF",
+  mapLime: "#B6F03A",
+  mapOrange: "#FF7A1A",
+  mapPink: "#FF4FA3",
+  mapWash: "rgba(243,242,250,0.28)",
+  mapRadiusFill: "rgba(47,91,255,0.10)",
+  mapRadiusLine: "rgba(47,91,255,0.25)",
 } as const;
 
 export const fonts = {
