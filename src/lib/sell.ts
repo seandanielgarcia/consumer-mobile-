@@ -1,4 +1,5 @@
 import * as ImagePicker from "expo-image-picker";
+import { ActionSheetIOS } from "react-native";
 import { router } from "expo-router";
 import { setPickedPhotos } from "./pickedPhotos";
 import { loadSamplePhotos } from "./samplePhotos";
@@ -20,6 +21,17 @@ export async function pickFromCamera() {
   if (result.canceled || result.assets.length === 0) return;
   setPickedPhotos(result.assets.map((asset) => asset.uri));
   router.push("/seller/price");
+}
+
+// The one way into selling: library or camera, same review queue after either.
+export function openSellSheet() {
+  ActionSheetIOS.showActionSheetWithOptions(
+    { options: ["Choose from library", "Take photo", "Cancel"], cancelButtonIndex: 2 },
+    (index) => {
+      if (index === 0) pickFromLibrary();
+      if (index === 1) pickFromCamera();
+    },
+  );
 }
 
 export async function pickSamplePhotos() {
