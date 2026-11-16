@@ -21,7 +21,7 @@ export const yard = internalQuery({
       neighborhood: formatPlace(garage),
       items: items
         .filter((i) => i.status === "live")
-        .map((i) => ({ itemId: i._id, title: i.title, photoUrl: i.photoUrl, priceCents: i.priceCents })),
+        .map((i) => ({ itemId: i._id, title: i.title, description: i.description, photoUrl: i.photoUrl, priceCents: i.priceCents })),
     };
   },
 });
@@ -89,8 +89,10 @@ p{margin:8px 0 0;font-size:12px;font-weight:600;letter-spacing:.12em;text-transf
 .card{position:relative;background:#fff;border-radius:22px;padding:8px 8px 12px;box-shadow:0 8px 24px rgba(27,27,58,.10)}
 .card-link{display:block;color:inherit;text-decoration:none}
 .card img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:16px;background:#D9D9EA}
-.price{position:absolute;left:14px;top:calc(100% - 44px);display:inline-block;padding:3px 9px;border:2px solid #1B1B3A;border-radius:8px;background:#B6F03A;font-weight:800;font-size:15px}
-.card .price{top:auto;bottom:46px}
+.photo{position:relative}
+.price{position:absolute;left:8px;bottom:8px;padding:3px 9px;border:2px solid #1B1B3A;border-radius:8px;background:#B6F03A;font-weight:800;font-size:15px}
+.description{padding:0 4px;margin:6px 0 10px;color:#525371;font-size:14px;font-weight:400;line-height:1.4;letter-spacing:normal;text-transform:none}
+.card-link .description{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .title{font-size:15px;font-weight:600;margin-top:8px;padding:0 4px}
 .yard-link{display:inline-flex;align-items:center;min-height:44px;color:#2A52F0;font-weight:600}
 .cta{position:fixed;left:16px;right:16px;bottom:28px;display:block;height:56px;line-height:56px;border-radius:999px;background:#2A52F0;color:#fff;text-align:center;font-weight:800;font-size:18px;text-decoration:none;box-shadow:0 10px 24px rgba(42,82,240,.3)}
@@ -115,7 +117,7 @@ export function registerShareRoutes(http: HttpRouter) {
       const body = `<header><h1>${escape(item.title)}</h1><p>${escape(description)}</p></header>
 <main class="grid single"><div class="card">
 <img src="${escape(item.photoUrl)}" alt="${escape(item.title)}">
-<p>${escape(item.description)}</p>
+<p class="description">${escape(item.description)}</p>
 <a class="yard-link" href="/yard/${item.garageId}">See the yard</a>
 </div></main>`;
       // Render the link in Safari first; the native app is optional for the person opening it.
@@ -137,7 +139,7 @@ export function registerShareRoutes(http: HttpRouter) {
       const cards = yard.items
         .map(
           (i) =>
-            `<a class="card card-link" href="/i/${i.itemId}"><img src="${escape(i.photoUrl)}" alt=""><div class="price">${priceLabel(i.priceCents)}</div><div class="title">${escape(i.title)}</div></a>`,
+            `<a class="card card-link" href="/i/${i.itemId}"><div class="photo"><img src="${escape(i.photoUrl)}" alt=""><div class="price">${priceLabel(i.priceCents)}</div></div><div class="title">${escape(i.title)}</div><p class="description">${escape(i.description)}</p></a>`,
         )
         .join("");
       const body = `<header><h1>${escape(title)}</h1><p>${escape(description)}</p></header><div class="grid">${cards}</div>`;

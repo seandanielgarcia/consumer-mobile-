@@ -87,6 +87,7 @@ function PurchaseList({ buyerId }: { buyerId: Id<"users"> }) {
           <Text numberOfLines={1} style={sys.label}>
             {order.sellerName} · {new Date(time).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
           </Text>
+          {!!item?.description?.trim() && <Text numberOfLines={2} style={sys.label}>{item.description.trim()}</Text>}
           <View style={[styles.badge, canOpen && { backgroundColor: colors.lime }]}>
             <Text style={styles.status}>{statusLabel[order.status]}</Text>
           </View>

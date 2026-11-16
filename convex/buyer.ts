@@ -65,6 +65,7 @@ async function listingsNear(ctx: QueryCtx, { q, lat, lng, radiusMiles, buyerId, 
       results.push({
         _id: item._id,
         title: item.title,
+        description: item.description,
         size: item.size,
         condition: item.condition,
         brand: item.brand,
@@ -117,7 +118,7 @@ export const yards = query({
   args: searchArgs,
   handler: async (ctx, args) => {
     const listings = await listingsNear(ctx, args, true);
-    const byYard = new Map<Id<"garages">, { garageId: Id<"garages">; ownerName: string; avatarColor?: string; neighborhood: string; city?: string; lat: number; lng: number; distanceMi: number; liveCount: number; minPriceCents: number; photoUrls: string[] }>();
+    const byYard = new Map<Id<"garages">, { garageId: Id<"garages">; ownerName: string; avatarColor?: string; neighborhood: string; city?: string; lat: number; lng: number; distanceMi: number; liveCount: number; minPriceCents: number; photoUrls: string[]; description: string }>();
     for (const l of listings) {
       const yard = byYard.get(l.garageId);
       if (yard) {
@@ -137,6 +138,7 @@ export const yards = query({
           liveCount: 1,
           minPriceCents: l.priceCents,
           photoUrls: [l.photoUrl],
+          description: l.description,
         });
       }
     }
@@ -171,6 +173,7 @@ export const garage = query({
         .map((i) => ({
           _id: i._id,
           title: i.title,
+          description: i.description,
           size: i.size,
           condition: i.condition,
           brand: i.brand,

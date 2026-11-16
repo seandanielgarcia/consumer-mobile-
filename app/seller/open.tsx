@@ -2,6 +2,7 @@ import { useQuery } from "convex/react";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { ShareIcon } from "../../src/components/icons";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { saveKeikiToContacts, textKeiki } from "../../src/lib/keiki";
@@ -48,7 +49,8 @@ export default function SellerOpen() {
         {extra > 0 && <Text style={styles.moreLine}>+{extra} more in your yard</Text>}
       </View>
       <Pressable style={styles.sharePill} accessibilityRole="button" onPress={() => shareYard(garageId, user?.name)}>
-        <Text style={styles.sharePillText}>Share my yard with a friend</Text>
+        <ShareIcon />
+        <Text style={secondaryButtonText}>Share yard</Text>
       </Pressable>
       <Pressable style={styles.donePill} accessibilityRole="button" onPress={() => router.dismissTo("/")}>
         <Text style={styles.donePillText}>Done</Text>
@@ -94,17 +96,7 @@ const styles = StyleSheet.create({
   },
   stickerText: { fontSize: 13, fontWeight: "800", color: colors.ink },
   moreLine: { ...fonts.body, fontSize: 15, color: colors.muted, textAlign: "center" },
-  sharePill: {
-    height: 56,
-    borderRadius: spacing.radius,
-    backgroundColor: colors.lime,
-    borderWidth: 2,
-    borderColor: colors.white,
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadows.pin,
-  },
-  sharePillText: { ...fonts.semibold, fontSize: 17, color: colors.ink },
+  sharePill: { ...secondaryButton, flexDirection: "row", gap: 8 },
   donePill: primaryButton,
   donePillText: primaryButtonText,
   keikiCard: { alignItems: "center" },
