@@ -11,16 +11,16 @@ export type StockPhoto = {
 };
 
 export const STOCK: StockPhoto[] = [
-  { file: "levis-501.jpg", use: "landing", title: "Levi's 501 jeans", priceCents: 3000, size: "32", description: "Light wash straight leg 501s, button fly, broken in." },
-  { file: "lamp.jpg", use: "landing", title: "Black floor lamp", priceCents: 2500, description: "Matte black arc floor lamp with a dome shade." },
-  { file: "white-sneakers.jpg", use: "landing", title: "Nike Killshot sneakers", priceCents: 4000, size: "10", description: "White leather low tops with a gum sole, lightly worn." },
-  { file: "tote.jpg", use: "landing", title: "Canvas tote bag", priceCents: 1800, description: "Natural canvas tote with leather handles." },
+  { file: "north-face-fleece.jpg", use: "landing", title: "North Face fleece jacket", priceCents: 3500, size: "M", description: "Black Denali-style fleece with zip pockets, warm and lightly worn." },
+  { file: "gisou-hair-perfume.jpg", use: "landing", title: "Gisou hair perfume", priceCents: 3000, description: "Honey infused hair perfume, 50 ml, mostly full." },
+  { file: "sunkissed-morning-candle.jpg", use: "landing", title: "Sunkissed Morning candle", priceCents: 1200, description: "Large jar candle, barely burned." },
+  { file: "fixx-setting-spray.jpg", use: "landing", title: "FIXX setting spray", priceCents: 1000, description: "All-day makeup setting spray, nearly full." },
 
-  { file: "jacket.jpg", use: "sample", title: "Denim jacket", priceCents: 3500, size: "M", description: "Faded blue trucker jacket." },
-  { file: "jeans.jpg", use: "sample", title: "Light wash jeans", priceCents: 2500, size: "30", description: "Straight leg light wash jeans." },
-  { file: "sneakers.jpg", use: "sample", title: "White sneakers", priceCents: 3000, size: "9", description: "Clean white leather sneakers." },
-  { file: "field-jacket.jpg", use: "sample", title: "Field jacket", priceCents: 4500, size: "M", description: "Olive cotton field jacket with four snap pockets." },
-  { file: "silk-top.jpg", use: "sample", title: "Silk cami top", priceCents: 1500, size: "S", description: "Ivory silk camisole with adjustable straps." },
+  { file: "la-all-star-hoodie.jpg", use: "sample", title: "Los Angeles All-Star hoodie", priceCents: 1800, size: "M", description: "Heather gray pullover hoodie with an embroidered Los Angeles All-Star logo." },
+  { file: "john-galt-striped-shirt.jpg", use: "sample", title: "John Galt striped button-down", priceCents: 1600, size: "One size", description: "Soft blue and white pinstripe button-down with a chest pocket." },
+  { file: "aperire-berry-tint.jpg", use: "sample", title: "Aperire berry tint", priceCents: 800, description: "Berry lip and cheek tint, swatched once." },
+  { file: "cinnamoroll-tin.jpg", use: "sample", title: "Cinnamoroll mint tin", priceCents: 600, description: "Sanrio Cinnamoroll tin, great for small things." },
+  { file: "after-sun-eau-de-toilette.jpg", use: "sample", title: "After Sun eau de toilette", priceCents: 1400, description: "Fresh summery eau de toilette, most of the bottle left." },
 
   { file: "black-skinny-jeans.jpg", use: "seed", seller: "Hailey", title: "Black skinny jeans", priceCents: 2200, size: "28", description: "Washed black skinny jeans with a mid rise and plenty of stretch." },
   { file: "knit-sweater.jpg", use: "seed", seller: "Hailey", title: "Cable knit sweater", priceCents: 2800, size: "M", description: "Chunky oatmeal wool cable knit sweater, cozy and warm." },
