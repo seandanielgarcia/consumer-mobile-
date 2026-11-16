@@ -9,14 +9,17 @@ import { startCheckout } from "./checkout";
 
 export const PAYMENT_FAILED = "Payment didn't go through. Your items are held for 10 min.";
 
+const HOLD_MS = 10 * 60 * 1000;
+
 export function useBuy(garageId: Id<"garages">, onUnavailable?: (itemId: Id<"items">) => void) {
   const convex = useConvex();
   const [buying, setBuying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [orderId, setOrderId] = useState<Id<"orders"> | null>(null);
+  const [order, setOrder] = useState<{ id: Id<"orders">; createdAt: number } | null>(null);
+  const orderId = order?.id ?? null;
   const checkingOut = useRef(false);
-  const order = useQuery(api.orders.getOrder, orderId ? { orderId } : "skip");
-  const orderPaid = order?.status === "paid" || order?.status === "picked_up";
+  const status = useQuery(api.orders.getOrder, orderId ? { orderId } : "skip");
+  const orderPaid = status?.status === "paid" || status?.status === "picked_up";
 
   useEffect(() => {
     if (!orderPaid || !orderId) return;
@@ -39,7 +42,7 @@ export function useBuy(garageId: Id<"garages">, onUnavailable?: (itemId: Id<"ite
         return;
       }
 
-      const result = await startCheckout(convex, buyer, garageId, itemIds, setOrderId);
+      const result = await startCheckout(convex, buyer, garageId, itemIds, (id) => setOrder({ id, createdAt: Date.now() }));
       if (result.paid) {
         paid = true;
         return;
@@ -61,6 +64,7 @@ export function useBuy(garageId: Id<"garages">, onUnavailable?: (itemId: Id<"ite
     }
   };
 
-  const myOrderItemIds = order && order.status !== "cancelled" ? order.items.map((i) => i._id) : [];
+  const holding = status?.status === "pending" && !!order && Date.now() - order.createdAt < HOLD_MS;
+  const myOrderItemIds = status && (orderPaid || holding) ? status.items.map((i) => i._id) : [];
   return { buy, buying, error, checkingOut, myOrderItemIds };
 }

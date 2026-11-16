@@ -8,9 +8,9 @@ import { useBuy } from "../../../src/buyer/useBuy";
 import { EmptyState } from "../../../src/buyer/EmptyState";
 import { aboutMiles, detailLine, formatPrice } from "../../../src/buyer/format";
 import { ItemCard } from "../../../src/buyer/ItemCard";
-import { Header } from "../../../src/components/Header";
 import { PrimaryButton } from "../../../src/components/PrimaryButton";
 import { useBuyerLocation } from "../../../src/buyer/location";
+import { useHeaderBack } from "../../../src/lib/headerBack";
 import { formatPlace } from "../../../src/lib/place";
 import { useCurrentUser } from "../../../src/lib/useCurrentUser";
 import { colors, sys } from "../../../src/theme";
@@ -38,7 +38,7 @@ export default function BuyerGarage() {
   const buy = () => buyItems(pickedItems.map((i) => i._id));
   const { width } = useWindowDimensions();
   const cardWidth = (width - 40 - 12) / 2;
-  const back = () => (router.canGoBack() ? router.back() : router.replace("/buyer"));
+  useHeaderBack("Back", () => (router.canGoBack() ? router.back() : router.replace("/buyer")));
 
   useEffect(() => {
     if (!garage) return;
@@ -67,7 +67,6 @@ export default function BuyerGarage() {
   if (garage === null) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.cream }}>
-        <Header onBack={back} />
         <View style={{ paddingHorizontal: 20 }}>
           <EmptyState headline="This yard is gone" line="The seller closed it." action="Back to browsing" onAction={() => router.dismissTo("/buyer")} />
         </View>
@@ -77,17 +76,15 @@ export default function BuyerGarage() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
-      <Header onBack={back} />
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20, gap: 20 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: garage?.avatarColor ?? colors.tag, alignItems: "center", justifyContent: "center" }}>
-            <Text style={sys.header}>{garage?.ownerName.charAt(0) ?? ""}</Text>
-          </View>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text numberOfLines={1} style={sys.title}>
-              {garage ? `${garage.ownerName}'s yard` : " "}
-            </Text>
-            <Text numberOfLines={1} style={sys.label}>
+      <View style={{ backgroundColor: colors.brand, paddingTop: 4, paddingHorizontal: 20, paddingBottom: 20, flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.tag, alignItems: "center", justifyContent: "center" }}>
+          <Text style={sys.header}>{garage?.ownerName.charAt(0) ?? ""}</Text>
+        </View>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text numberOfLines={1} style={{ ...sys.title, color: colors.cream }}>
+            {garage ? `${garage.ownerName}'s yard` : " "}
+          </Text>
+          <Text numberOfLines={1} style={{ ...sys.label, color: colors.cream }}>
               {garage
                 ? detailLine([
                     formatPlace(garage),
@@ -95,10 +92,10 @@ export default function BuyerGarage() {
                     `${garage.items.length} ${garage.items.length === 1 ? "item" : "items"}`,
                   ])
                 : " "}
-            </Text>
-          </View>
+          </Text>
         </View>
-
+      </View>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, gap: 20 }}>
         {(notice ?? error) && (
           <View style={{ padding: 12, borderRadius: 12, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.hairline }}>
             <Text style={sys.row}>{notice ?? error}</Text>

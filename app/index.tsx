@@ -184,12 +184,7 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
     .join(" · ");
 
   return (
-    <View style={[styles.yard, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 8 }]}>
-      <View style={styles.yardHeader}>
-        <Pressable onPress={() => router.dismissTo("/")} accessibilityRole="link" accessibilityLabel="Home">
-          <Text style={styles.yardWordmark}>yardsale</Text>
-        </Pressable>
-      </View>
+    <View style={[styles.yard, { paddingTop: 8, paddingBottom: insets.bottom + 8 }]}>
       <Text style={styles.yardHeadline}>Your yard{counts ? ` · ${counts}` : ""}</Text>
       <Text style={styles.yardMeta}>{formatPlace(garage)}</Text>
       {error && !editing && <Text style={styles.error}>{error}</Text>}
@@ -300,7 +295,6 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.brand,
-    paddingTop: 60,
     paddingHorizontal: spacing.sidePad,
     paddingBottom: 34,
     justifyContent: "center",
@@ -322,8 +316,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.tag,
     justifyContent: "center",
   },
-  stickerText: { fontFamily: fonts.display, fontSize: 15, color: colors.ink },
-  wordmark: { fontFamily: fonts.display, fontSize: 44, letterSpacing: -1.5, color: colors.cream },
+  stickerText: { ...fonts.display, fontSize: 15, color: colors.ink },
+  wordmark: { ...fonts.wordmark, fontSize: 44, letterSpacing: -1.5, color: colors.cream },
   landingLinks: { marginTop: 8, alignItems: "center", gap: 8 },
   linkButton: {
     minHeight: spacing.minButton,
@@ -333,9 +327,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.cream,
   },
-  sessionText: { fontFamily: fonts.body, fontSize: 14, color: colors.cream },
-  signOut: { fontFamily: fonts.semibold },
-  tagline: { fontFamily: fonts.body, fontSize: 17, lineHeight: 23, color: colors.cream },
+  sessionText: { ...fonts.body, fontSize: 14, color: colors.cream },
+  signOut: { ...fonts.semibold },
+  tagline: { ...fonts.body, fontSize: 17, lineHeight: 23, color: colors.cream },
   button: {
     height: 72,
     borderRadius: 36,
@@ -343,14 +337,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  buttonText: { fontFamily: fonts.display, fontSize: 24, color: colors.ink },
+  buttonText: { ...fonts.semibold, fontSize: 24, color: colors.ink },
 
   // Yard
-  yard: { flex: 1, backgroundColor: colors.cream, paddingTop: spacing.topPadMin, paddingHorizontal: spacing.sidePad, paddingBottom: 34, gap: 8 },
+  yard: { flex: 1, backgroundColor: colors.cream, paddingTop: 4, paddingHorizontal: spacing.sidePad, paddingBottom: 34, gap: 8 },
   yardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  yardWordmark: { fontFamily: fonts.display, fontSize: 20, letterSpacing: -0.5, color: colors.brand },
-  yardHeadline: { fontFamily: fonts.display, fontSize: 30, lineHeight: 34, letterSpacing: -1, color: colors.ink },
-  yardMeta: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
+  yardWordmark: { ...fonts.display, fontSize: 20, letterSpacing: -0.5, color: colors.brand },
+  yardHeadline: { ...fonts.display, fontSize: 30, lineHeight: 34, letterSpacing: -1, color: colors.ink },
+  yardMeta: { ...fonts.body, fontSize: 15, color: colors.muted },
   grid: { paddingTop: 8, paddingBottom: 12, gap: 14 },
   gridRow: { gap: 14 },
   card: { flex: 1, gap: 6 },
@@ -367,10 +361,10 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(17,17,17,0.85)",
     justifyContent: "center",
   },
-  sizeText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.white },
-  cardPrice: { fontFamily: fonts.display, fontSize: 17, lineHeight: 22, color: colors.ink },
-  cardTitle: { fontFamily: fonts.body, fontSize: 15, lineHeight: 20, color: colors.ink },
-  cardMeta: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted },
+  sizeText: { ...fonts.semibold, fontSize: 12, color: colors.white },
+  cardPrice: { ...fonts.display, fontSize: 17, lineHeight: 22, color: colors.ink },
+  cardTitle: { ...fonts.body, fontSize: 15, lineHeight: 20, color: colors.ink },
+  cardMeta: { ...fonts.medium, fontSize: 13, color: colors.muted },
   cardReserved: { color: colors.brand },
   cardActions: { flexDirection: "row", gap: 6 },
   cardAction: {
@@ -382,7 +376,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  cardActionText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.ink },
+  cardActionText: { ...fonts.semibold, fontSize: 14, color: colors.ink },
   bottomBar: { gap: 12, paddingTop: 8 },
   cta: {
     height: 56,
@@ -391,10 +385,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  ctaText: { fontFamily: fonts.semibold, fontSize: 17, color: colors.white },
+  ctaText: { ...fonts.semibold, fontSize: 17, color: colors.white },
   textActions: { flexDirection: "row", justifyContent: "center", gap: 32, marginTop: -4 },
   takePhoto: { minHeight: spacing.minButton, justifyContent: "center" },
-  takePhotoText: { fontFamily: fonts.medium, fontSize: 16, color: colors.brand },
+  takePhotoText: { ...fonts.medium, fontSize: 16, color: colors.brand },
   shopPill: {
     height: 56,
     borderRadius: spacing.radius,
@@ -403,8 +397,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  shopPillText: { fontFamily: fonts.semibold, fontSize: 17, color: colors.ink },
-  error: { fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
+  shopPillText: { ...fonts.semibold, fontSize: 17, color: colors.ink },
+  error: { ...fonts.medium, fontSize: 14, color: colors.ink },
 
   // Edit sheet
 });

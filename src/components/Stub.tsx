@@ -8,10 +8,10 @@ export function Stub({ title }: { title: string }) {
         flex: 1,
         backgroundColor: colors.cream,
         paddingHorizontal: spacing.sidePad,
-        paddingTop: spacing.topPad,
+        paddingTop: 8,
       }}
     >
-      <Text style={{ fontFamily: fonts.display, fontSize: 32, color: colors.ink }}>{title}</Text>
+      <Text style={{ ...fonts.display, fontSize: 32, color: colors.ink }}>{title}</Text>
     </View>
   );
 }

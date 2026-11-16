@@ -18,16 +18,15 @@ export type CardItem = {
 
 export function ItemCard({ item, width, onPress, selected }: { item: CardItem; width: number; onPress: () => void; selected?: boolean }) {
   const details = detailLine([item.size, item.condition]);
-  const place = item.neighborhood ? formatPlace({ neighborhood: item.neighborhood, city: item.city }) : item.ownerName && `${item.ownerName}'s yard`;
   const distance = item.distanceMi !== undefined ? aboutMiles(item.distanceMi) : undefined;
-  const where = detailLine([place, distance]);
+  const place = item.neighborhood ? formatPlace({ neighborhood: item.neighborhood, city: item.city }) : undefined;
   return (
     <Pressable
       onPress={onPress}
       style={{ width, gap: 2 }}
       accessibilityRole={selected === undefined ? "button" : "checkbox"}
       accessibilityState={selected === undefined ? undefined : { checked: selected }}
-      accessibilityLabel={detailLine([formatPrice(item.priceCents), item.title, details, where])}
+      accessibilityLabel={detailLine([formatPrice(item.priceCents), item.title, details, item.ownerName && `${item.ownerName}'s yard`, distance, place])}
     >
       <View style={{ marginBottom: 8 }}>
         <Image
@@ -51,15 +50,20 @@ export function ItemCard({ item, width, onPress, selected }: { item: CardItem; w
           {details}
         </Text>
       )}
-      {where !== "" && (
+      {(item.ownerName || distance) && (
         <View style={{ flexDirection: "row" }}>
-          {!!place && (
+          {item.ownerName && (
             <Text numberOfLines={1} style={{ ...sys.label, flexShrink: 1 }}>
-              {place}
+              {item.ownerName}'s yard{distance ? " · " : ""}
             </Text>
           )}
-          {distance && <Text style={sys.label}>{place ? ` · ${distance}` : distance}</Text>}
+          {distance && <Text style={sys.label}>{distance}</Text>}
         </View>
+      )}
+      {!!place && (
+        <Text numberOfLines={1} style={sys.label}>
+          {place}
+        </Text>
       )}
     </Pressable>
   );

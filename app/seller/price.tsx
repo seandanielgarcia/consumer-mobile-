@@ -1,4 +1,5 @@
 import { useAction, useMutation } from "convex/react";
+import { useHeaderBack, useLeaveGuard } from "../../src/lib/headerBack";
 import { Image } from "expo-image";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import * as Location from "expo-location";
@@ -205,20 +206,21 @@ export default function SellerReview() {
   const toggle = (index: number) =>
     update(index, { review: drafts[index].review === "approved" ? "removed" : "approved" });
 
-  const discard = () => {
-    if (approved.length === 0) return router.dismissTo("/");
+  const confirmDiscard = (leave: () => void) => {
+    if (approved.length === 0) return leave();
     Alert.alert(`Discard ${approved.length} ${approved.length === 1 ? "item" : "items"}?`, undefined, [
       { text: "Keep reviewing", style: "cancel" },
-      { text: "Discard", style: "destructive", onPress: () => router.dismissTo("/") },
+      { text: "Discard", style: "destructive", onPress: leave },
     ]);
   };
+  const discard = () => confirmDiscard(() => router.dismissTo("/"));
+  useLeaveGuard(confirmDiscard);
+
+  useHeaderBack("Back", () => (editingIndex === null ? discard() : setEditingIndex(null)));
 
   const cardWidth = (width - spacing.sidePad * 2 - 12) / 2;
   const overview = (
-      <View style={[styles.summaryScreen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 8 }]}>
-        <Pressable onPress={discard} hitSlop={12} style={styles.back} accessibilityRole="button">
-          <Text style={styles.backText}>← Back</Text>
-        </Pressable>
+      <View style={[styles.summaryScreen, { paddingTop: 8, paddingBottom: insets.bottom + 8 }]}>
         <Text style={styles.headline}>Your yard</Text>
         <Text style={styles.subline}>
           {pricing > 0
@@ -338,19 +340,19 @@ const styles = StyleSheet.create({
   summaryScreen: {
     flex: 1,
     backgroundColor: colors.cream,
-    paddingTop: 56,
+    paddingTop: 4,
     paddingHorizontal: spacing.sidePad,
     paddingBottom: 34,
     gap: 14,
   },
   flex: { flex: 1 },
   back: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center" },
-  backText: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
+  backText: { ...fonts.body, fontSize: 15, color: colors.muted },
   headline: { ...type.title, color: colors.ink },
   approve: primaryButton,
   disabled: { opacity: 0.4 },
   approveText: primaryButtonText,
-  muted: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
+  muted: { ...fonts.body, fontSize: 14, color: colors.muted },
   subline: { ...type.row, color: MUTED, marginTop: -6 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 12, paddingTop: 4, paddingBottom: 12 },
   card: { gap: 2 },
@@ -368,9 +370,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(17,17,17,0.85)",
     justifyContent: "center",
   },
-  sizeText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.white },
-  cardPrice: { fontFamily: fonts.display, fontSize: 17, lineHeight: 22, color: colors.ink },
-  cardTitle: { fontFamily: fonts.body, fontSize: 15, lineHeight: 20, color: colors.ink },
+  sizeText: { ...fonts.semibold, fontSize: 12, color: colors.white },
+  cardPrice: { ...fonts.display, fontSize: 17, lineHeight: 22, color: colors.ink },
+  cardTitle: { ...fonts.body, fontSize: 15, lineHeight: 20, color: colors.ink },
   cardMeta: { ...type.meta, color: MUTED },
   cardFix: { ...type.meta, color: colors.brand },
   toggle: {
@@ -387,6 +389,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   toggleOff: { backgroundColor: "rgba(255,255,255,0.7)", borderColor: colors.ink },
-  toggleText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.white },
-  error: { fontFamily: fonts.medium, fontSize: 14, color: colors.error, textAlign: "center" },
+  toggleText: { ...fonts.semibold, fontSize: 14, color: colors.white },
+  error: { ...fonts.medium, fontSize: 14, color: colors.error, textAlign: "center" },
 });

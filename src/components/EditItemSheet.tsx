@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { colors, fonts, primaryButton, primaryButtonText, spacing, type } from "../theme";
 
@@ -61,6 +61,8 @@ export function EditItemSheet({
 }) {
   const [picker, setPicker] = useState<ChoiceField | null>(null);
   const [pickerText, setPickerText] = useState("");
+  const priceFresh = useRef(false);
+  const priceSelection = useRef({ start: 0, end: 0 });
   const fields: ChoiceField[] = sizeRelevant(value)
     ? ["condition", "size", "brand", "color", "category"]
     : ["condition", "brand", "color", "category"];
@@ -110,8 +112,23 @@ export function EditItemSheet({
               <TextInput
                 accessibilityLabel="Price"
                 value={value.priceCents > 0 ? String(Math.round(value.priceCents / 100)) : ""}
+                selectTextOnFocus
+                onFocus={() => {
+                  priceFresh.current = true;
+                }}
+                onSelectionChange={(e) => {
+                  priceSelection.current = e.nativeEvent.selection;
+                }}
                 onChangeText={(text) => {
-                  const dollars = parseInt(text.replace(/\D/g, ""), 10);
+                  const previous = value.priceCents > 0 ? String(Math.round(value.priceCents / 100)) : "";
+                  const { start, end } = priceSelection.current;
+                  const allSelected = previous !== "" && start === 0 && end === previous.length;
+                  const typed =
+                    priceFresh.current && !allSelected && text === previous + text.slice(-1) && text.length === previous.length + 1
+                      ? text.slice(-1)
+                      : text;
+                  priceFresh.current = false;
+                  const dollars = parseInt(typed.replace(/\D/g, ""), 10);
                   onChange({ priceCents: Number.isNaN(dollars) ? 0 : dollars * 100 });
                 }}
                 placeholder="Required"
@@ -236,15 +253,15 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { height: 56, paddingHorizontal: spacing.sidePad, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   close: { minWidth: 56, minHeight: spacing.minButton, justifyContent: "center" },
-  closeText: { fontFamily: fonts.medium, fontSize: 17, color: colors.brand },
-  headerTitle: { fontFamily: fonts.semibold, fontSize: 17, color: colors.ink },
+  closeText: { ...fonts.medium, fontSize: 17, color: colors.brand },
+  headerTitle: { ...fonts.semibold, fontSize: 17, color: colors.ink },
   body: { paddingHorizontal: spacing.sidePad, paddingBottom: 20, gap: 12 },
   photo: { width: "100%", aspectRatio: 4 / 3, borderRadius: 16, backgroundColor: colors.hairline },
   sticker: { position: "absolute", left: 12, bottom: 12, paddingHorizontal: 10, height: 32, borderRadius: 8, backgroundColor: colors.tag, justifyContent: "center" },
-  stickerText: { fontFamily: fonts.display, fontSize: 18, color: colors.ink },
+  stickerText: { ...fonts.display, fontSize: 18, color: colors.ink },
   note: { ...type.meta, color: colors.muted },
   field: { gap: 6 },
-  label: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted },
+  label: { ...fonts.medium, fontSize: 13, color: colors.muted },
   input: {
     minHeight: 48,
     borderRadius: 12,
@@ -257,27 +274,27 @@ const styles = StyleSheet.create({
   },
   inputTall: { minHeight: 96, alignItems: "flex-start" },
   inputTallText: { minHeight: 96, textAlignVertical: "top" },
-  dollar: { fontFamily: fonts.medium, fontSize: 17, color: colors.ink, marginRight: 4 },
-  inputText: { flex: 1, fontFamily: fonts.body, fontSize: 17, color: colors.ink, paddingVertical: 12 },
+  dollar: { ...fonts.medium, fontSize: 17, color: colors.ink, marginRight: 4 },
+  inputText: { flex: 1, ...fonts.body, fontSize: 17, color: colors.ink, paddingVertical: 12 },
   rows: { backgroundColor: colors.white, borderRadius: 16, paddingHorizontal: 16 },
   row: { height: 48, flexDirection: "row", alignItems: "center", gap: 8 },
   rowDivider: { borderTopWidth: 1, borderTopColor: colors.hairline },
-  rowLabel: { flex: 1, fontFamily: fonts.body, fontSize: 16, color: colors.ink },
-  rowValue: { fontFamily: fonts.medium, fontSize: 16, color: colors.ink, maxWidth: "60%" },
-  rowEmpty: { fontFamily: fonts.medium, fontSize: 16, color: colors.brand },
+  rowLabel: { flex: 1, ...fonts.body, fontSize: 16, color: colors.ink },
+  rowValue: { ...fonts.medium, fontSize: 16, color: colors.ink, maxWidth: "60%" },
+  rowEmpty: { ...fonts.medium, fontSize: 16, color: colors.brand },
   chevron: { fontSize: 20, color: colors.muted, width: 16, textAlign: "center" },
-  error: { fontFamily: fonts.medium, fontSize: 14, color: colors.error },
+  error: { ...fonts.medium, fontSize: 14, color: colors.error },
   footer: { paddingHorizontal: spacing.sidePad, paddingTop: 8, paddingBottom: 34, gap: 4 },
   save: primaryButton,
   saveText: primaryButtonText,
   disabled: { opacity: 0.4 },
   remove: { alignSelf: "center", minHeight: spacing.minButton, justifyContent: "center" },
-  removeText: { fontFamily: fonts.medium, fontSize: 16, color: "#D93025" },
+  removeText: { ...fonts.medium, fontSize: 16, color: "#D93025" },
   scrim: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)" },
   picker: { backgroundColor: colors.cream, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: spacing.sidePad, paddingBottom: 34, gap: 4 },
-  pickerTitle: { fontFamily: fonts.semibold, fontSize: 20, color: colors.ink, marginBottom: 8 },
+  pickerTitle: { ...fonts.semibold, fontSize: 20, color: colors.ink, marginBottom: 8 },
   option: { height: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: colors.hairline },
-  optionText: { fontFamily: fonts.body, fontSize: 17, color: colors.ink },
+  optionText: { ...fonts.body, fontSize: 17, color: colors.ink },
   check: { fontSize: 16, color: colors.brand },
   pickerSave: { marginTop: 12 },
 });

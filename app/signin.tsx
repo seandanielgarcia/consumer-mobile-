@@ -70,15 +70,15 @@ export default function SignIn() {
     if (!done.current) cancelSignIn();
   }, []);
 
-  const finish = (userId: Id<"users">, firstName: string) => {
+  const finish = (userId: Id<"users">, firstName: string, phoneLabel: string) => {
     done.current = true;
     AsyncStorage.removeItem(PENDING_KEY).catch(() => {});
     if (router.canGoBack()) router.back();
-    setCurrentUser({ userId, name: firstName });
+    setCurrentUser({ userId, name: firstName, phone: phoneLabel });
   };
 
   useEffect(() => {
-    if (pending && verified) finish(pending.userId, pending.name);
+    if (pending && verified) finish(pending.userId, pending.name, pending.phone);
   }, [pending, verified]);
 
   const submit = async () => {
@@ -88,7 +88,7 @@ export default function SignIn() {
     try {
       const firstName = name.trim();
       const result = await startVerification({ phone: normalized, name: firstName });
-      if (result.verified) finish(result.userId, result.name);
+      if (result.verified) finish(result.userId, result.name, phone.trim());
       else setPending({ userId: result.userId, code: result.code ?? "", phone: phone.trim(), name: result.name, startedAt: Date.now() });
     } catch {
       setError("Couldn't save that. Try again.");
@@ -215,10 +215,10 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   back: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center" },
-  backText: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
+  backText: { ...fonts.body, fontSize: 15, color: colors.muted },
   headline: { ...type.title, color: colors.ink },
-  fieldLabel: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
-  subhead: { fontFamily: fonts.body, fontSize: 14, lineHeight: 18, color: colors.muted },
+  fieldLabel: { ...fonts.semibold, fontSize: 15, color: colors.ink },
+  subhead: { ...fonts.body, fontSize: 14, lineHeight: 18, color: colors.muted },
   fields: { gap: 10 },
   input: {
     height: 50,
@@ -227,12 +227,12 @@ const styles = StyleSheet.create({
     borderColor: colors.ink,
     backgroundColor: colors.white,
     paddingHorizontal: 16,
-    fontFamily: fonts.body,
+    ...fonts.body,
     fontSize: 16,
     color: colors.ink,
   },
   instructionBlock: { gap: 10, alignItems: "flex-start" },
-  label: { fontFamily: fonts.semibold, fontSize: 15, color: colors.muted },
+  label: { ...fonts.semibold, fontSize: 15, color: colors.muted },
   codeChip: {
     backgroundColor: colors.tag,
     borderRadius: 14,
@@ -241,12 +241,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
-  codeChipText: { fontFamily: fonts.display, fontSize: 30, color: colors.ink },
-  toNumber: { fontFamily: fonts.display, fontSize: 26, color: colors.ink },
-  fromNumber: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
+  codeChipText: { ...fonts.display, fontSize: 30, color: colors.ink },
+  toNumber: { ...fonts.display, fontSize: 26, color: colors.ink },
+  fromNumber: { ...fonts.body, fontSize: 14, color: colors.muted },
   waiting: { flexDirection: "row", alignItems: "center", gap: 8 },
-  waitingText: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
-  error: { fontFamily: fonts.medium, fontSize: 14, color: colors.error },
+  waitingText: { ...fonts.body, fontSize: 14, color: colors.muted },
+  error: { ...fonts.medium, fontSize: 14, color: colors.error },
   spacer: { flex: 1 },
   accessory: {
     backgroundColor: colors.surfaceMuted,
@@ -256,9 +256,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
-  accessoryDone: { fontFamily: fonts.semibold, fontSize: 16, color: colors.brand },
+  accessoryDone: { ...fonts.semibold, fontSize: 16, color: colors.brand },
   skip: { alignSelf: "center", minHeight: 44, justifyContent: "center" },
-  skipText: { fontFamily: fonts.semibold, fontSize: 15, color: colors.muted, textDecorationLine: "underline" },
+  skipText: { ...fonts.semibold, fontSize: 15, color: colors.muted, textDecorationLine: "underline" },
   cta: primaryButton,
   ctaDisabled: { opacity: 0.5 },
   ctaText: primaryButtonText,

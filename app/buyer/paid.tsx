@@ -8,7 +8,6 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { PAID_GRACE_MS } from "../../src/buyer/checkout";
 import { detailLine, formatPrice } from "../../src/buyer/format";
 import { PAYMENT_FAILED } from "../../src/buyer/useBuy";
-import { Header } from "../../src/components/Header";
 import { PrimaryButton } from "../../src/components/PrimaryButton";
 import { colors, sys } from "../../src/theme";
 
@@ -36,8 +35,7 @@ export default function BuyerPaid() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
-      <Header />
-      <ScrollView contentContainerStyle={{ paddingTop: 12, paddingHorizontal: 20, paddingBottom: 20, gap: 12 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 16, paddingHorizontal: 20, paddingBottom: 20, gap: 12 }}>
         {(paid || pending) && (
           <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.tag, alignItems: "center", justifyContent: "center" }}>
             {paid ? <Text style={{ ...sys.title, lineHeight: 32 }}>✓</Text> : <ActivityIndicator color={colors.ink} />}

@@ -8,7 +8,7 @@ import { EmptyState } from "../../../src/buyer/EmptyState";
 import { aboutMiles, formatPrice } from "../../../src/buyer/format";
 import { useBuyerLocation } from "../../../src/buyer/location";
 import { useBuy } from "../../../src/buyer/useBuy";
-import { Header } from "../../../src/components/Header";
+import { useHeaderBack } from "../../../src/lib/headerBack";
 import { PrimaryButton } from "../../../src/components/PrimaryButton";
 import { colors, sys } from "../../../src/theme";
 
@@ -18,12 +18,12 @@ export default function BuyerItem() {
   const item = useQuery(api.buyer.item, location ? { itemId: id as Id<"items">, lat: location.lat, lng: location.lng } : "skip");
   const { buy, buying, error } = useBuy((item?.garage._id ?? "") as Id<"garages">);
   const back = () => router.dismissTo("/buyer");
+  useHeaderBack("Nearby", back);
 
   if (item === undefined) return <ActivityIndicator color={colors.ink} style={{ flex: 1, backgroundColor: colors.cream }} />;
   if (item === null) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.cream }}>
-        <Header onBack={back} />
         <View style={{ paddingHorizontal: 20 }}>
           <EmptyState headline="This one's gone" line="Someone else got it first." action="Back to browsing" onAction={back} />
         </View>
@@ -41,8 +41,7 @@ export default function BuyerItem() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
-      <Header onBack={back} />
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24, gap: 12 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24, gap: 12 }}>
         <Image source={{ uri: item.photoUrl }} style={{ width: "100%", aspectRatio: 1, borderRadius: 16, backgroundColor: colors.line }} contentFit="cover" />
         <View style={{ alignSelf: "flex-start", backgroundColor: colors.tag, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
           <Text style={{ ...sys.hero, fontSize: 28, lineHeight: 34 }}>{formatPrice(item.priceCents)}</Text>
