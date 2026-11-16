@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     height: 22,
     paddingHorizontal: 8,
     borderRadius: 11,
-    backgroundColor: "rgba(17,17,17,0.85)",
+    backgroundColor: colors.badge,
     justifyContent: "center",
   },
   sizeText: { ...fonts.semibold, fontSize: 12, color: colors.white },
