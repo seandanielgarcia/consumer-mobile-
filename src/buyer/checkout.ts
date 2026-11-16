@@ -30,7 +30,8 @@ function waitForReturn(purchaseUrl: string, returnUrl: string): Promise<boolean>
   });
 }
 
-export const PAID_GRACE_MS = 10000;
+// Whop's webhook has measured 7–11 s on device; give it 30 s before we call a payment failed.
+export const PAID_GRACE_MS = 30000;
 
 export async function waitForPaid(convex: ConvexReactClient, orderId: Id<"orders">): Promise<boolean> {
   const deadline = Date.now() + PAID_GRACE_MS;

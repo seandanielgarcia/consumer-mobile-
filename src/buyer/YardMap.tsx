@@ -1,3 +1,4 @@
+import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
@@ -82,6 +83,7 @@ export function YardMap({
   }, [yards, selected]);
 
   const pick = (yard: MapYard & { pinLat: number; pinLng: number }) => {
+    Haptics.selectionAsync().catch(() => {});
     setSelected(yard.garageId);
     carousel.current?.scrollTo({ x: 0, animated: true });
     map.current?.animateCamera({ center: { latitude: yard.pinLat, longitude: yard.pinLng } }, { duration: 350 });

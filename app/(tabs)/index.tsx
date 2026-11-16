@@ -134,6 +134,10 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
   const change = (item: Item, status: "sold" | "live") => run(() => setStatus({ itemId: item._id, ownerId: user.userId, status }));
 
   const openEdit = (item: Item) => {
+    if (item.status === "reserved") {
+      setError("Reserved items can't be edited until pickup. Mark it sold or put it back first.");
+      return;
+    }
     setError(null);
     setEditing(item);
     setDraft(toFields(item));
