@@ -99,6 +99,8 @@ export const getOrder = query({
     return {
       status: order.status,
       totalCents: order.totalCents,
+      garageId: order.garageId,
+      neighborhood: garage?.neighborhood,
       sellerName: seller?.name?.split(" ")[0] ?? "The seller",
       items: items
         .filter((i) => i !== null)

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { useBuy } from "../../../src/buyer/useBuy";
+import { isCheckingOut } from "../../../src/buyer/checkout";
 import { EmptyState } from "../../../src/buyer/EmptyState";
 import { aboutMiles, detailLine, formatPrice } from "../../../src/buyer/format";
 import { ItemCard } from "../../../src/buyer/ItemCard";
@@ -36,8 +36,7 @@ export default function BuyerGarage() {
     const names = itemIds.map((id) => titles.current.get(id) ?? "An item");
     setNotice(names.map((name) => `${name} just got taken, so we removed it from your picks.`).join(" "));
   }, []);
-  const { buy: buyItems, buying, error, checkingOut, myOrderItemIds } = useBuy(garageId, (itemId) => removeUnavailable([itemId]));
-  const buy = () => buyItems(pickedItems.map((i) => i._id));
+  const buy = () => router.push({ pathname: "/buyer/confirm", params: { garageId, items: pickedItems.map((i) => i._id).join(",") } });
   const { width } = useWindowDimensions();
   const cardWidth = (width - 40 - 12) / 2;
   useHeaderBack(() => (router.canGoBack() ? router.back() : router.replace("/buyer")));
@@ -46,9 +45,9 @@ export default function BuyerGarage() {
     if (!garage) return;
     garage.items.forEach((i) => titles.current.set(i._id, i.title));
     const live = new Set<string>(garage.items.map((i) => i._id));
-    const gone = picked.filter((p) => !live.has(p) && !myOrderItemIds.includes(p));
-    if (gone.length > 0 && !checkingOut.current) removeUnavailable(gone);
-  }, [garage, picked, buying, checkingOut, removeUnavailable, myOrderItemIds]);
+    const gone = picked.filter((p) => !live.has(p));
+    if (gone.length > 0 && !isCheckingOut()) removeUnavailable(gone);
+  }, [garage, picked, removeUnavailable]);
 
   const pickedItems = garage?.items.filter((i) => picked.includes(i._id)) ?? [];
   const total = pickedItems.reduce((sum, i) => sum + i.priceCents, 0);
@@ -98,9 +97,9 @@ export default function BuyerGarage() {
         </View>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, gap: 20 }}>
-        {(notice ?? error) && (
+        {notice && (
           <View style={{ padding: 12, borderRadius: 12, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.hairline }}>
-            <Text style={sys.row}>{notice ?? error}</Text>
+            <Text style={sys.row}>{notice}</Text>
           </View>
         )}
 
@@ -141,7 +140,6 @@ export default function BuyerGarage() {
             label={pickedItems.length ? `Buy ${pickedItems.length} · ${formatPrice(total)}` : "Tap items to pick"}
             onPress={buy}
             disabled={pickedItems.length === 0}
-            loading={buying}
           />
         </View>
       )}
