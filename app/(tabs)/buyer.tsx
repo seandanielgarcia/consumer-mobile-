@@ -169,6 +169,13 @@ export default function BuyerNearYou() {
   }, [results, size, under30]);
   const wider = RADII.find((r) => r > radiusMiles);
   const filtered = !!size || under30;
+  const filterText = [size && `size ${size}`, under30 && "under $30"].filter(Boolean).join(" ");
+  const clearFilters = () => {
+    setSize(null);
+    setUnder30(false);
+    setSizeOpen(false);
+  };
+  const mapYards = (yards ?? []).filter((y) => !filtered || shown.some((i) => i.garageId === y.garageId));
 
   const controls = (
     <View style={{ gap: 10 }}>
@@ -221,7 +228,15 @@ export default function BuyerNearYou() {
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
         <Pill label={location.label} suffix={` · ${radiusMiles} mi ▾`} active={false} onPress={() => setSheetOpen(true)} />
-        <Pill label={size ? `Size ${size} ▾` : "Size ▾"} active={!!size} onPress={() => setSizeOpen((o) => !o)} />
+        <Pill
+          label={size ? `Size ${size} ✕` : "Size ▾"}
+          active={!!size}
+          onPress={() => {
+            if (!size) return setSizeOpen((o) => !o);
+            setSize(null);
+            setSizeOpen(false);
+          }}
+        />
         <Pill label="Under $30" active={under30} onPress={() => setUnder30((u) => !u)} />
       </ScrollView>
       {sizeOpen && (
@@ -247,18 +262,22 @@ export default function BuyerNearYou() {
     return (
       <View style={{ flex: 1, backgroundColor: colors.mapGround }}>
         <YardMap
-          yards={(yards ?? []).filter((y) => !filtered || shown.some((i) => i.garageId === y.garageId))}
+          yards={mapYards}
           center={{ lat: location.lat, lng: location.lng }}
           radiusMiles={radiusMiles}
           topInset={sizeOpen ? 160 : 110}
           bottomInset={0}
         />
         <View pointerEvents="box-none" style={{ position: "absolute", left: 20, right: 20, top: 8 }}>{controls}</View>
-        {yards !== undefined && yards.length === 0 && (
+        {yards !== undefined && results !== undefined && mapYards.length === 0 && (
           <View pointerEvents="box-none" style={{ position: "absolute", left: 20, right: 20, bottom: 24 }}>
             <View style={{ backgroundColor: colors.white, borderRadius: 22, padding: 16, shadowColor: colors.mapInk, shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 8 } }}>
-              <Text style={{ ...sys.row, fontWeight: "700" }}>{q.trim() ? `No "${q.trim()}" within ${radiusMiles} mi yet` : `No yards within ${radiusMiles} mi yet`}</Text>
-              {wider && (
+              <Text style={{ ...sys.row, fontWeight: "700" }}>{filtered && yards.length > 0 ? `No matches with ${filterText}` : q.trim() ? `No "${q.trim()}" within ${radiusMiles} mi yet` : `No yards within ${radiusMiles} mi yet`}</Text>
+              {filtered && yards.length > 0 ? (
+                <Pressable onPress={clearFilters} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
+                  <Text style={{ ...sys.button, color: colors.brand }}>Clear filter</Text>
+                </Pressable>
+              ) : wider && (
                 <Pressable onPress={() => setRadiusMiles(wider)} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
                   <Text style={{ ...sys.button, color: colors.brand }}>Try {wider} mi</Text>
                 </Pressable>
@@ -279,14 +298,12 @@ export default function BuyerNearYou() {
           <ActivityIndicator color={colors.ink} style={{ marginTop: 40 }} />
         ) : shown.length === 0 ? (
           <EmptyState
-            headline={q.trim() ? `No "${q.trim()}" within ${radiusMiles} mi yet` : `Nothing within ${radiusMiles} mi yet`}
-            line={filtered ? "Your filters may be hiding some." : wider ? "Try looking a little farther." : "Check back soon."}
-            action={filtered ? "Clear filters" : wider ? `Try ${wider} mi` : undefined}
+            headline={filtered && (results?.length ?? 0) > 0 ? `No matches with ${filterText}` : q.trim() ? `No "${q.trim()}" within ${radiusMiles} mi yet` : `Nothing within ${radiusMiles} mi yet`}
+            line={filtered ? "Your filter is hiding everything here." : wider ? "Try looking a little farther." : "Check back soon."}
+            action={filtered ? "Clear filter" : wider ? `Try ${wider} mi` : undefined}
             onAction={() => {
-              if (filtered) {
-                setSize(null);
-                setUnder30(false);
-              } else if (wider) setRadiusMiles(wider);
+              if (filtered) clearFilters();
+              else if (wider) setRadiusMiles(wider);
             }}
           />
         ) : (

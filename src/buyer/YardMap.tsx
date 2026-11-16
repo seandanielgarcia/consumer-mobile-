@@ -34,6 +34,26 @@ const pinFor = (id: string) => PINS[[...id].reduce((h, c) => (h * 31 + c.charCod
 const MILE_M = 1609.344;
 const DEG_PER_MILE = 1 / 69;
 
+export function spreadYards<T extends { garageId: string; lat: number; lng: number }>(yards: T[], radiusMiles: number): (T & { pinLat: number; pinLng: number })[] {
+  const groups = new Map<string, T[]>();
+  for (const yard of yards) {
+    const key = `${yard.lat},${yard.lng}`;
+    groups.set(key, [...(groups.get(key) ?? []), yard]);
+  }
+  return yards.map((yard) => {
+    const group = groups.get(`${yard.lat},${yard.lng}`)!;
+    if (group.length < 2) return { ...yard, pinLat: yard.lat, pinLng: yard.lng };
+    const i = [...group].sort((a, b) => a.garageId.localeCompare(b.garageId)).indexOf(yard);
+    const angle = (2 * Math.PI * i) / group.length - Math.PI / 2;
+    const fan = regionFor(yard.lat, yard.lng, radiusMiles).latitudeDelta / 13;
+    return {
+      ...yard,
+      pinLat: yard.lat + fan * Math.sin(angle),
+      pinLng: yard.lng + (fan * Math.cos(angle)) / Math.cos((yard.lat * Math.PI) / 180),
+    };
+  });
+}
+
 export function regionFor(lat: number, lng: number, radiusMiles: number): Region {
   const span = radiusMiles * 2 * DEG_PER_MILE * 1.25;
   return { latitude: lat, longitude: lng, latitudeDelta: span, longitudeDelta: span / Math.cos((lat * Math.PI) / 180) };
@@ -62,16 +82,18 @@ export function YardMap({
     map.current?.animateToRegion(regionFor(center.lat, center.lng, radiusMiles), 450);
   }, [center.lat, center.lng, radiusMiles]);
 
+  const pins = useMemo(() => spreadYards(yards, radiusMiles), [yards, radiusMiles]);
+
   const ordered = useMemo(() => {
     if (!selected) return yards;
     const i = yards.findIndex((y) => y.garageId === selected);
     return i < 0 ? yards : [...yards.slice(i), ...yards.slice(0, i)];
   }, [yards, selected]);
 
-  const pick = (yard: MapYard) => {
+  const pick = (yard: MapYard & { pinLat: number; pinLng: number }) => {
     setSelected(yard.garageId);
     carousel.current?.scrollTo({ x: 0, animated: true });
-    map.current?.animateCamera({ center: { latitude: yard.lat, longitude: yard.lng } }, { duration: 350 });
+    map.current?.animateCamera({ center: { latitude: yard.pinLat, longitude: yard.pinLng } }, { duration: 350 });
   };
 
   return (
@@ -95,14 +117,14 @@ export function YardMap({
         <Marker coordinate={{ latitude: center.lat, longitude: center.lng }} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false} accessibilityLabel="Your search spot">
           <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.mapBlue, borderWidth: 4, borderColor: colors.white }} />
         </Marker>
-        {yards.map((yard) => {
+        {pins.map((yard) => {
           const on = yard.garageId === selected;
           const pin = pinFor(yard.garageId);
           const size = on ? 58 : 44;
           return (
             <Marker
               key={yard.garageId}
-              coordinate={{ latitude: yard.lat, longitude: yard.lng }}
+              coordinate={{ latitude: yard.pinLat, longitude: yard.pinLng }}
               anchor={{ x: 0.5, y: 0.5 }}
               onPress={(e) => {
                 e.stopPropagation();
