@@ -96,6 +96,7 @@ describe("Keiki photo submission", () => {
 
 describe("Keiki item links", () => {
   it("shows the listing in Safari without launching an Expo development server", async () => {
+    vi.stubEnv("YARDSALE_APP_LINK_BASE", undefined);
     vi.stubEnv("APP_LINK_BASE", "exp://anonymous-8081.exp.direct/--/");
     const { t, firstId } = await checkoutFixture();
     const response = await t.fetch(`/i/${firstId}`);
@@ -107,6 +108,30 @@ describe("Keiki item links", () => {
     expect(html).toContain("$1");
     expect(html).not.toContain("location.href");
     expect(html).not.toContain("anonymous-8081.exp.direct");
+    expect(html).not.toContain("Open in yardsale app");
+  });
+
+  it.each(["garagesale://", "exp://192.168.1.10:8084/--/"])("uses the configured launch URL %s", async (base) => {
+    vi.stubEnv("YARDSALE_APP_LINK_BASE", base);
+    const { t, firstId, garageId } = await checkoutFixture();
+
+    const item = await t.fetch(`/i/${firstId}`);
+    expect(await item.text()).toContain(`href="${base}buyer/item/${firstId}"`);
+
+    const yard = await t.fetch(`/yard/${garageId}`);
+    const html = await yard.text();
+    expect(html).toContain(`href="${base}buyer/garage/${garageId}"`);
+    expect(html).toContain(`href="/i/${firstId}"`);
+  });
+
+  it("keeps yard listings browsable without an app launch URL", async () => {
+    vi.stubEnv("YARDSALE_APP_LINK_BASE", "javascript:alert(1)");
+    const { t, firstId, garageId } = await checkoutFixture();
+    const response = await t.fetch(`/yard/${garageId}?appUrl=exp://untrusted.example/--/`);
+    const html = await response.text();
+    expect(html).not.toContain("Open in yardsale app");
+    expect(html).toContain(`href="/i/${firstId}"`);
+    expect((await t.fetch(`/i/${firstId}`)).status).toBe(200);
   });
 
   it("does not expose unavailable listings through a text link", async () => {
