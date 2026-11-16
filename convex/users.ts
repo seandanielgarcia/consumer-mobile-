@@ -1,5 +1,6 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import type { Doc } from "./_generated/dataModel";
 import { SEED_YARD_PHONES } from "./seed";
 
 const AVATAR_COLORS = ["#FFE14D", "#7EE0B5", "#FF8FB1", "#9DB4D6"];
@@ -112,14 +113,38 @@ export const devSkipVerification = mutation({
   },
 });
 
-const isTextableSeller = (phone: string) => isDemoPhone(phone) || SEED_YARD_PHONES.includes(phone);
+// sellerContact trusts a client-supplied buyerId, so only demo and seed numbers are textable.
+// allowBuyerTexts is stored but inert until session-token auth (option A) lands; then the opt-in returns.
+const isTextableSeller = (seller: Doc<"users">) =>
+  /^\+[1-9]\d{7,14}$/.test(seller.phone) && (isDemoPhone(seller.phone) || SEED_YARD_PHONES.includes(seller.phone));
+
+export const requestBuyerTexts = mutation({
+  args: { garageId: v.id("garages"), ownerId: v.id("users"), allow: v.boolean() },
+  handler: async (ctx, { garageId, ownerId, allow }) => {
+    const garage = await ctx.db.get(garageId);
+    const seller = garage?.ownerId === ownerId ? await ctx.db.get(ownerId) : null;
+    if (!seller?.verified) throw new ConvexError("Verify your phone before changing buyer texts.");
+    const previous = seller.buyerTextsRequest;
+    const now = Date.now();
+    if (previous?.allow === allow && previous.expiresAt > now) return previous.code;
+
+    // Leading zeroes keep consent codes separate from regular sign-in codes.
+    // Only a Keiki text from the seller's phone can apply the requested change.
+    let code: string;
+    do {
+      code = String((allow ? 1 : 501) + Math.floor(Math.random() * 499)).padStart(4, "0");
+    } while (code === previous?.code);
+    await ctx.db.patch(ownerId, { buyerTextsRequest: { code, allow, expiresAt: now + CODE_TTL_MS } });
+    return code;
+  },
+});
 
 export const sellerTextable = query({
   args: { garageId: v.id("garages") },
   handler: async (ctx, { garageId }) => {
     const garage = await ctx.db.get(garageId);
     const seller = garage && (await ctx.db.get(garage.ownerId));
-    return !!seller && isTextableSeller(seller.phone);
+    return !!seller && isTextableSeller(seller);
   },
 });
 
@@ -132,7 +157,7 @@ export const sellerContact = query({
     const garage = await ctx.db.get(garageId);
     if (!garage || garage.ownerId === buyerId) return null;
     const seller = await ctx.db.get(garage.ownerId);
-    if (!seller?.phone || !isTextableSeller(seller.phone)) return null;
+    if (!seller || !isTextableSeller(seller)) return null;
     return { firstName: seller.name.trim().split(/\s+/)[0] || "the seller", phone: seller.phone };
   },
 });

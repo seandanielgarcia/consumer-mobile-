@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { api } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 import { SEED_YARD_PHONES } from "../seed";
 import { checkoutFixture } from "./fixtures.test-setup";
 
@@ -26,6 +26,73 @@ describe("users.sellerContact", () => {
 
     expect(await t.query(api.users.sellerContact, { garageId, buyerId })).toBeNull();
     expect(await t.query(api.users.sellerTextable, { garageId })).toBe(false);
+  });
+
+  it("never shares a verified, opted-in real-number seller's phone", async () => {
+    const { t, buyerId, garageId } = await checkoutFixture();
+    await t.run(async ({ db }) => {
+      await db.patch(buyerId, { verified: true });
+      await db.patch((await db.get(garageId))!.ownerId, { phone: "+16505550123", verified: true, allowBuyerTexts: true });
+    });
+
+    expect(await t.query(api.users.sellerContact, { garageId, buyerId })).toBeNull();
+    expect(await t.query(api.users.sellerTextable, { garageId })).toBe(false);
+  });
+
+  it("records a confirmed buyer-texts opt-in without sharing the real number", async () => {
+    vi.stubEnv("KEIKI_TOOL_TOKEN", "test-token");
+    const { t, buyerId, garageId, sellerPhone } = await checkoutFixture();
+    const ownerId = await t.run(async ({ db }) => {
+      const ownerId = (await db.get(garageId))!.ownerId;
+      await db.patch(ownerId, { verified: true });
+      await db.patch(buyerId, { verified: true });
+      return ownerId;
+    });
+    const contact = () => t.query(api.users.sellerContact, { garageId, buyerId });
+    const textable = () => t.query(api.users.sellerTextable, { garageId });
+    const sendCode = async (code: number | string) => {
+      const response = await t.fetch("/keiki/verify_phone?token=test-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input: { code }, context: { phone: sellerPhone } }),
+      });
+      expect(response.status).toBe(200);
+      return response.json();
+    };
+
+    await expect(t.mutation(api.users.requestBuyerTexts, { garageId, ownerId: buyerId, allow: true })).rejects.toThrow();
+    const on = await t.mutation(api.users.requestBuyerTexts, { garageId, ownerId, allow: true });
+    expect(on).toMatch(/^0[0-4]\d{2}$/);
+    expect(await contact()).toBeNull();
+    expect(await textable()).toBe(false);
+    expect(await t.mutation(internal.keiki.verifyPhone, { phones: ["+15559770002"], code: on })).toEqual({ error: "bad_code" });
+
+    expect(await sendCode(Number(on))).toMatchObject({ ok: true });
+    expect(await t.run(async ({ db }) => (await db.get(ownerId))!.allowBuyerTexts)).toBe(true);
+    expect(await textable()).toBe(false);
+    expect(await contact()).toBeNull();
+    expect(await t.query(api.users.sellerContact, { garageId })).toBeNull();
+    expect(await t.query(api.users.sellerContact, { garageId, buyerId: ownerId })).toBeNull();
+    expect(await sendCode(on)).toEqual({ error: "bad_code" });
+
+    const off = await t.mutation(api.users.requestBuyerTexts, { garageId, ownerId, allow: false });
+    expect(await sendCode(on)).toEqual({ error: "bad_code" });
+    expect(await sendCode(off)).toMatchObject({ ok: true });
+    expect(await textable()).toBe(false);
+    expect(await contact()).toBeNull();
+  });
+
+  it("rejects expired buyer text consent codes", async () => {
+    const { t, garageId, sellerPhone } = await checkoutFixture();
+    const ownerId = await t.run(async ({ db }) => {
+      const ownerId = (await db.get(garageId))!.ownerId;
+      await db.patch(ownerId, { verified: true, buyerTextsRequest: { allow: true, code: "0123", expiresAt: Date.now() - 1 } });
+      return ownerId;
+    });
+
+    expect(await t.mutation(internal.keiki.verifyPhone, { phones: [sellerPhone], code: "0123" })).toEqual({ error: "expired" });
+    expect(await t.query(api.users.sellerTextable, { garageId })).toBe(false);
+    expect(await t.mutation(api.users.requestBuyerTexts, { garageId, ownerId, allow: true })).not.toBe("0123");
   });
 
   it("allows seed sellers' fictional numbers", async () => {

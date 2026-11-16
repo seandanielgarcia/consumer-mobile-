@@ -9,6 +9,8 @@ export default defineSchema({
     verified: v.optional(v.boolean()),
     verifyCode: v.optional(v.string()),
     verifyCodeExpiresAt: v.optional(v.number()),
+    allowBuyerTexts: v.optional(v.boolean()),
+    buyerTextsRequest: v.optional(v.object({ code: v.string(), expiresAt: v.number(), allow: v.boolean() })),
   })
     .index("by_phone", ["phone"])
     .index("by_verifyCode", ["verifyCode"]),

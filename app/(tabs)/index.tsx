@@ -1,12 +1,13 @@
 import { useMutation, useQuery } from "convex/react";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import { EditItemSheet, type EditableItem } from "../../src/components/EditItemSheet";
 import { PrimaryButton } from "../../src/components/PrimaryButton";
+import { textKeikiVerification } from "../../src/lib/keiki";
 import { formatPlace } from "../../src/lib/place";
 import { shareYard } from "../../src/lib/shareYard";
 import { stockImages } from "../../src/lib/stockImages";
@@ -92,6 +93,11 @@ const toFields = (item: Item): EditState => ({
 // Signed-in seller with a yard: Home is the yard.
 function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: string }; garage: Doc<"garages"> }) {
   const items = useQuery(api.items.byGarage, { garageId: garage._id });
+  const textable = useQuery(api.users.sellerTextable, { garageId: garage._id });
+  const demoUser = useQuery(api.users.isDemoUser, { userId: user.userId });
+  const requestBuyerTexts = useMutation(api.users.requestBuyerTexts);
+  const [textRequest, setTextRequest] = useState<boolean>();
+  const [openingMessages, setOpeningMessages] = useState(false);
   const [picking, setPicking] = useState(false);
   const [pickerError, setPickerError] = useState(false);
   const addPhotos = async () => {
@@ -112,6 +118,40 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
   const [draft, setDraft] = useState<EditState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (textRequest === textable) setTextRequest(undefined);
+  }, [textRequest, textable]);
+
+  const changeBuyerTexts = () => {
+    if (textable === undefined || openingMessages) return;
+    const allow = !textable;
+    Alert.alert(
+      allow ? "Allow texts from buyers?" : "Turn off buyer texts?",
+      allow
+        ? "Signed-in buyers can see your phone number in Messages. Send the draft to Keiki to confirm."
+        : "Send the draft to Keiki to remove the text button from your yard.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Open Messages",
+          onPress: async () => {
+            setOpeningMessages(true);
+            setError(null);
+            try {
+              const code = await requestBuyerTexts({ garageId: garage._id, ownerId: user.userId, allow });
+              await textKeikiVerification(code);
+              setTextRequest(allow);
+            } catch {
+              setError("Couldn't start buyer text setup. Try again.");
+            } finally {
+              setOpeningMessages(false);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const run = async (work: () => Promise<unknown>) => {
     setBusy(true);
@@ -194,6 +234,12 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
           </Pressable>
         )}
       </View>
+      {demoUser === false && textable !== undefined && (
+        <Pressable onPress={changeBuyerTexts} disabled={openingMessages} style={styles.buyerTexts} accessibilityRole="button">
+          <Text style={styles.buyerTextsText}>{textable ? "Turn off buyer texts" : "Allow buyer texts"}</Text>
+        </Pressable>
+      )}
+      {textRequest !== undefined && <Text style={styles.yardMeta}>Send the draft to Keiki to confirm.</Text>}
       {error && !editing && <Text style={styles.error}>{error}</Text>}
       <FlatList
         data={items}
@@ -426,6 +472,8 @@ const styles = StyleSheet.create({
   },
   sharePillPressed: { transform: [{ scale: 0.96 }], opacity: 0.9 },
   sharePillText: { ...fonts.semibold, fontSize: 15, color: colors.ink },
+  buyerTexts: { alignSelf: "flex-start", minHeight: spacing.minButton, justifyContent: "center" },
+  buyerTextsText: { ...fonts.semibold, fontSize: 15, color: colors.brand },
   shopPill: {
     height: 56,
     borderRadius: spacing.radius,
