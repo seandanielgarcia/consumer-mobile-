@@ -60,17 +60,19 @@ function page(title: string, description: string, image: string | undefined, bod
 <meta property="og:description" content="${escape(description)}">
 ${image ? `<meta property="og:image" content="${escape(image)}">` : ""}
 <style>
-body{margin:0;background:#FFF6E5;color:#111;font-family:-apple-system,system-ui,sans-serif}
-header{background:#2340FF;color:#FFF6E5;padding:40px 20px 22px}
-h1{margin:0;font-size:30px;letter-spacing:-1px}
-p{margin:6px 0 0;font-size:15px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 16px 120px}
+body{margin:0;background:#F3F2FA;color:#1B1B3A;font-family:-apple-system,system-ui,sans-serif}
+header{padding:44px 20px 18px}
+h1{margin:0;font-size:32px;font-weight:800;letter-spacing:-1px}
+p{margin:8px 0 0;font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#6E6F8F}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:4px 16px 120px}
 .grid.single{grid-template-columns:minmax(0,440px);justify-content:center}
-.card img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;background:#CFC3AA}
-.price{display:inline-block;margin-top:6px;padding:2px 8px;border:2px solid #111;border-radius:8px;background:#FFE14D;font-weight:800}
-.title{font-size:14px;margin-top:4px}
-.yard-link{display:inline-flex;align-items:center;min-height:44px;color:#2340FF;font-weight:600}
-.cta{position:fixed;left:16px;right:16px;bottom:28px;display:block;height:56px;line-height:56px;border-radius:999px;background:#2340FF;color:#fff;text-align:center;font-weight:800;font-size:18px;text-decoration:none}
+.card{position:relative;background:#fff;border-radius:22px;padding:8px 8px 12px;box-shadow:0 8px 24px rgba(27,27,58,.10)}
+.card img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:16px;background:#D9D9EA}
+.price{position:absolute;left:14px;top:calc(100% - 44px);display:inline-block;padding:3px 9px;border:2px solid #1B1B3A;border-radius:8px;background:#B6F03A;font-weight:800;font-size:15px}
+.card .price{top:auto;bottom:46px}
+.title{font-size:15px;font-weight:600;margin-top:8px;padding:0 4px}
+.yard-link{display:inline-flex;align-items:center;min-height:44px;color:#2A52F0;font-weight:600}
+.cta{position:fixed;left:16px;right:16px;bottom:28px;display:block;height:56px;line-height:56px;border-radius:999px;background:#2A52F0;color:#fff;text-align:center;font-weight:800;font-size:18px;text-decoration:none;box-shadow:0 10px 24px rgba(42,82,240,.3)}
 </style></head><body>${body}
 ${appUrl ? `<a class="cta" href="${escape(appUrl)}">Open in yardsale app</a>` : ""}
 </body></html>`;
