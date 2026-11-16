@@ -22,8 +22,8 @@ const searchArgs = {
 
 type SearchArgs = { q: string; lat: number; lng: number; radiusMiles: number; buyerId?: Id<"users">; now?: number };
 
-// Live listings within the radius, nearest first, one per distinct photo. Shared by `search` (items) and `yards` (pins).
-async function listingsNear(ctx: QueryCtx, { q, lat, lng, radiusMiles, buyerId, now }: SearchArgs) {
+// Live listings within the radius, nearest first. Shared by item search and map pins.
+async function listingsNear(ctx: QueryCtx, { q, lat, lng, radiusMiles, buyerId, now }: SearchArgs, keepMatchingYards: boolean) {
     const radius = Math.min(Math.max(radiusMiles, 0), MAX_RADIUS_MILES);
     const term = q.trim();
     let items: Doc<"items">[];
@@ -98,8 +98,10 @@ async function listingsNear(ctx: QueryCtx, { q, lat, lng, radiusMiles, buyerId, 
     return listings
       .sort((a, b) => a.listing.distanceMi - b.listing.distanceMi)
       .flatMap(({ listing, photoKey }) => {
-        if (seenPhotos.has(photoKey)) return [];
-        seenPhotos.add(photoKey);
+        // Separate sellers can offer matching items even when they use the same photo.
+        const key = keepMatchingYards ? `${listing.garageId}:${photoKey}` : photoKey;
+        if (seenPhotos.has(key)) return [];
+        seenPhotos.add(key);
         return [listing];
       });
 }
@@ -107,14 +109,14 @@ async function listingsNear(ctx: QueryCtx, { q, lat, lng, radiusMiles, buyerId, 
 export const search = query({
   args: searchArgs,
   handler: async (ctx, args) =>
-    (await listingsNear(ctx, args)).map(({ approxLat: _lat, approxLng: _lng, ...listing }) => listing),
+    (await listingsNear(ctx, args, !!args.q.trim())).map(({ approxLat: _lat, approxLng: _lng, ...listing }) => listing),
 });
 
 // One entry per yard with live listings in the radius, for the map: rounded (about 1 km) coordinates only.
 export const yards = query({
   args: searchArgs,
   handler: async (ctx, args) => {
-    const listings = await listingsNear(ctx, args);
+    const listings = await listingsNear(ctx, args, true);
     const byYard = new Map<Id<"garages">, { garageId: Id<"garages">; ownerName: string; avatarColor?: string; neighborhood: string; city?: string; lat: number; lng: number; distanceMi: number; liveCount: number; minPriceCents: number; photoUrls: string[] }>();
     for (const l of listings) {
       const yard = byYard.get(l.garageId);

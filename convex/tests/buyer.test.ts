@@ -10,10 +10,10 @@ const modules = import.meta.glob("../**/*.ts");
 
 afterEach(() => vi.unstubAllEnvs());
 
-it.each(["", "jacket"])("shows an uploaded photo once across titles and yards in Browse (%j)", async (q) => {
+it("deduplicates Browse photos and shows every matching yard in list and map search", async () => {
   vi.stubEnv("CONVEX_CLOUD_URL", "https://example.convex.cloud");
   const t = convexTest(schema, modules);
-  const nearestId = await t.run(async ({ db, storage }) => {
+  const { yardId, otherYardId } = await t.run(async ({ db, storage }) => {
     const ownerId = await db.insert("users", { name: "Maya", phone: "+15559770001", avatarColor: "#2340FF" });
     const yard = { ownerId, neighborhood: "Mission", approxLat: 37.76, approxLng: -122.42, isOpen: true };
     const yardId = await db.insert("garages", yard);
@@ -31,20 +31,35 @@ it.each(["", "jacket"])("shows an uploaded photo once across titles and yards in
         ...listing, garageId, storageId, title, photoUrl: (await storage.getUrl(storageId))!,
       });
 
-    const nearest = await insert(yardId, first, "Jacket");
+    await insert(yardId, first, "Jacket");
     await insert(yardId, different, "Jacket");
     // Older rows can reference a stored image through the URL alone.
     await db.insert("items", {
       ...listing, garageId: otherYardId, title: "Denim jacket",
       photoUrl: `https://example.convex.cloud/api/storage/${duplicate}`,
     });
-    return nearest;
+    await insert(yardId, duplicate, "Another denim jacket");
+    const unrelatedYardId = await db.insert("garages", { ...yard, approxLng: -122.43 });
+    await db.insert("items", {
+      ...listing, garageId: unrelatedYardId, title: "Lamp", description: "Blue desk lamp",
+      photoUrl: "https://example.test/lamp.jpg",
+    });
+    return { yardId, otherYardId };
   });
 
-  const results = await t.query(api.buyer.search, { q, lat: 37.76, lng: -122.42, radiusMiles: 2 });
-  expect(results).toHaveLength(2);
-  expect(results.map((item) => item.title)).toEqual(["Jacket", "Jacket"]);
-  expect(results.some((item) => item._id === nearestId)).toBe(true);
+  const nearby = { lat: 37.76, lng: -122.42, radiusMiles: 2 };
+  const browse = await t.query(api.buyer.search, { ...nearby, q: "" });
+  expect(browse.filter((item) => item.title !== "Lamp").map((item) => item.garageId))
+    .toEqual([yardId, yardId]);
+
+  const search = { ...nearby, q: "  jacket " };
+  const matches = await t.query(api.buyer.search, search);
+  expect(matches.map((item) => item.garageId)).toEqual([yardId, yardId, otherYardId]);
+  const pins = await t.query(api.buyer.yards, search);
+  expect(pins.map(({ garageId, liveCount }) => ({ garageId, liveCount }))).toEqual([
+    { garageId: yardId, liveCount: 2 },
+    { garageId: otherYardId, liveCount: 1 },
+  ]);
 });
 
 it.each(["", "Silk"])("shows another seller's listing and excludes the signed-in user's yard (%j)", async (q) => {
