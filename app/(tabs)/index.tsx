@@ -13,6 +13,7 @@ import { formatPlace } from "../../src/lib/place";
 import { shareYard } from "../../src/lib/shareYard";
 import { stockImages } from "../../src/lib/stockImages";
 import { markEntered } from "../../src/lib/entered";
+import { pickFromCamera } from "../../src/lib/sell";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors, fonts, spacing } from "../../src/theme";
 
@@ -178,6 +179,9 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
       <Text style={styles.yardHeadline}>Your yard{counts ? ` · ${counts}` : ""}</Text>
       <Text style={styles.yardMeta}>{formatPlace(garage)}</Text>
       <View style={styles.textActions}>
+        <Pressable onPress={pickFromCamera} hitSlop={8} style={styles.takePhoto} accessibilityRole="button">
+          <Text style={styles.takePhotoText}>Take photo</Text>
+        </Pressable>
         <Pressable onPress={() => router.push(`/buyer/garage/${garage._id}`)} hitSlop={8} style={styles.takePhoto} accessibilityRole="button">
           <Text style={styles.takePhotoText}>View your yard</Text>
         </Pressable>
@@ -369,7 +373,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   ctaText: { ...fonts.semibold, fontSize: 17, color: colors.white },
-  textActions: { flexDirection: "row", justifyContent: "center", gap: 32, marginTop: -4 },
+  textActions: { flexDirection: "row", justifyContent: "center", gap: 24, marginTop: -4 },
   takePhoto: { minHeight: spacing.minButton, justifyContent: "center" },
   takePhotoText: { ...fonts.medium, fontSize: 16, color: colors.brand },
   shopPill: {

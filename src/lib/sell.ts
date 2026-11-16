@@ -1,5 +1,4 @@
 import * as ImagePicker from "expo-image-picker";
-import { ActionSheetIOS } from "react-native";
 import { router } from "expo-router";
 import { setPickedPhotos } from "./pickedPhotos";
 import { loadSamplePhotos } from "./samplePhotos";
@@ -26,13 +25,4 @@ export async function pickFromCamera() {
 export async function pickSamplePhotos() {
   setPickedPhotos(await loadSamplePhotos());
   router.push("/seller/price");
-}
-
-export function startSelling(showSamples: boolean) {
-  const options = ["Photo library", "Camera", ...(showSamples ? ["Use sample photos"] : []), "Cancel"];
-  ActionSheetIOS.showActionSheetWithOptions({ title: "Sell your stuff", options, cancelButtonIndex: options.length - 1 }, (index) => {
-    if (options[index] === "Photo library") pickFromLibrary();
-    if (options[index] === "Camera") pickFromCamera();
-    if (options[index] === "Use sample photos") pickSamplePhotos();
-  });
 }
