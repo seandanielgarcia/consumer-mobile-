@@ -266,7 +266,7 @@ export default function BuyerNearYou() {
           center={{ lat: location.lat, lng: location.lng }}
           radiusMiles={radiusMiles}
           topInset={sizeOpen ? 160 : 110}
-          bottomInset={0}
+          bottomInset={108}
         />
         <View pointerEvents="box-none" style={{ position: "absolute", left: 20, right: 20, top: 8 }}>{controls}</View>
         {yards !== undefined && results !== undefined && mapYards.length === 0 && (
