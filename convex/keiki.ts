@@ -3,6 +3,7 @@ import { internalAction, internalMutation, internalQuery, type QueryCtx } from "
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { describeItemPhoto } from "./ai";
+import { yardLink } from "./yard";
 
 type ToolResult = Record<string, unknown>;
 
@@ -222,6 +223,13 @@ export const verifyPhone = internalMutation({
     if (!user.verifyCode || user.verifyCode !== code.trim()) return { error: "bad_code" };
     if (!user.verifyCodeExpiresAt || user.verifyCodeExpiresAt <= Date.now()) return { error: "expired" };
     await ctx.db.patch(user._id, { verified: true, verifyCode: undefined, verifyCodeExpiresAt: undefined });
-    return { ok: true };
+    const garage = await ctx.db
+      .query("garages")
+      .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
+      .first();
+    const reply = garage
+      ? `You're verified! Share your yard with friends: ${yardLink(garage._id)}`
+      : "You're verified! Open your yard in the app to start selling.";
+    return { ok: true, reply };
   },
 });
