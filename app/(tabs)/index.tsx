@@ -17,6 +17,10 @@ import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { ShareIcon } from "../../src/components/icons";
 import { colors, fonts, secondaryButton, secondaryButtonText, shadows, spacing, surfaces } from "../../src/theme";
 
+// Off since #77: sellerContact shares only demo and seed numbers, so a real seller's opt-in does nothing.
+// Turn back on with session-token auth (option A).
+const BUYER_TEXTS_ENABLED = false;
+
 const POLAROID_POSITIONS = [
   { left: 8, top: 18, transform: [{ rotate: "-8deg" }] },
   { left: 92, top: 0, transform: [{ rotate: "4deg" }] },
@@ -234,12 +238,12 @@ function Yard({ user, garage }: { user: { userId: Doc<"users">["_id"]; name?: st
           </Pressable>
         )}
       </View>
-      {demoUser === false && textable !== undefined && (
+      {BUYER_TEXTS_ENABLED && demoUser === false && textable !== undefined && (
         <Pressable onPress={changeBuyerTexts} disabled={openingMessages} style={styles.buyerTexts} accessibilityRole="button">
           <Text style={styles.buyerTextsText}>{textable ? "Turn off buyer texts" : "Allow buyer texts"}</Text>
         </Pressable>
       )}
-      {textRequest !== undefined && <Text style={styles.yardMeta}>Send the draft to Keiki to confirm.</Text>}
+      {BUYER_TEXTS_ENABLED && textRequest !== undefined && <Text style={styles.yardMeta}>Send the draft to Keiki to confirm.</Text>}
       {error && !editing && <Text style={styles.error}>{error}</Text>}
       <FlatList
         data={items}
