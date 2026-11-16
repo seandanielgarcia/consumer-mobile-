@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { useSyncExternalStore } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
 
-export type CurrentUser = { userId: Id<"users">; name?: string };
+export type CurrentUser = { userId: Id<"users">; name?: string; phone?: string };
 
 const STORAGE_KEY = "garage-sale/user";
 

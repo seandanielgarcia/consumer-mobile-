@@ -2,6 +2,16 @@ import { v } from "convex/values";
 import { internalAction, internalMutation, type MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { roundCoord } from "./lib/location";
+import { STOCK, type StockPhoto } from "../src/lib/stock";
+
+const seedItems = (seller: StockPhoto["seller"]) =>
+  STOCK.filter((s) => s.use === "seed" && s.seller === seller).map(({ file, title, size, priceCents, description }) => ({
+    photo: file.replace(/\.jpg$/, ""),
+    title,
+    size,
+    priceCents,
+    description,
+  }));
 
 const SEED = [
   {
@@ -9,42 +19,194 @@ const SEED = [
     phone: "+15550100001",
     avatarColor: "#FFE14D",
     neighborhood: "Mission",
+    city: "San Francisco",
     lat: 37.7599,
     lng: -122.4148,
-    items: [
-      { photo: "levis-501", title: "Levi's 501 jeans", size: "28", priceCents: 3000, description: "Light wash straight leg Levi's 501 jeans, button fly, soft and broken in." },
-      { photo: "silk-top", title: "Silk cami top", size: "S", priceCents: 1500, description: "Ivory silk camisole with adjustable straps and a lace trim neckline." },
-      { photo: "field-jacket", title: "Field jacket", size: "M", priceCents: 4000, description: "Olive cotton military field jacket with four snap pockets and a drawcord waist." },
-    ],
+    items: seedItems("Hailey"),
   },
   {
     name: "Maya",
     phone: "+15550100002",
     avatarColor: "#7EE0B5",
     neighborhood: "Hayes Valley",
+    city: "San Francisco",
     lat: 37.7764,
     lng: -122.4242,
-    items: [
-      { photo: "black-skinny-jeans", title: "Black skinny jeans", size: "28", priceCents: 2200, description: "Washed black skinny jeans with a mid rise and plenty of stretch." },
-      { photo: "wide-leg-jeans", title: "Wide leg jeans", size: "27", priceCents: 2500, description: "Medium wash high waisted wide leg jeans, cropped at the ankle." },
-      { photo: "knit-sweater", title: "Cable knit sweater", size: "M", priceCents: 2800, description: "Chunky oatmeal wool cable knit sweater, cozy and warm." },
-    ],
+    items: seedItems("Maya"),
   },
   {
     name: "Jon",
     phone: "+15550100003",
     avatarColor: "#FF8FB1",
     neighborhood: "Dogpatch",
+    city: "San Francisco",
     lat: 37.7609,
     lng: -122.3876,
-    items: [
-      { photo: "mom-jeans", title: "Mom jeans", size: "28", priceCents: 1800, description: "Light blue vintage mom jeans with a paper bag waist and tie belt." },
-      { photo: "denim-jacket", title: "Denim trucker jacket", size: "L", priceCents: 3500, description: "Classic medium blue denim trucker jacket, nicely faded." },
-      { photo: "flannel-shirt", title: "Plaid flannel shirt", size: "L", priceCents: 2000, description: "Red and black buffalo plaid flannel button up shirt." },
-      { photo: "white-sneakers", title: "White leather sneakers", size: "10", priceCents: 3000, description: "White leather low top sneakers with a gum sole, lightly worn." },
-    ],
+    items: seedItems("Jon"),
+  },
+  {
+    name: "Priya",
+    phone: "+15550100004",
+    avatarColor: "#9DB4D6",
+    neighborhood: "Inner Mission",
+    city: "San Francisco",
+    lat: 37.758,
+    lng: -122.41,
+    items: seedItems("Priya"),
+  },
+  {
+    name: "Marcus",
+    phone: "+15550100005",
+    avatarColor: "#FFB347",
+    neighborhood: "Potrero Hill",
+    city: "San Francisco",
+    lat: 37.7605,
+    lng: -122.4005,
+    items: seedItems("Marcus"),
+  },
+  {
+    name: "Sofia",
+    phone: "+15550100006",
+    avatarColor: "#C3B1E1",
+    neighborhood: "Castro",
+    city: "San Francisco",
+    lat: 37.7609,
+    lng: -122.435,
+    items: seedItems("Sofia"),
+  },
+  {
+    name: "Wen",
+    phone: "+15550100007",
+    avatarColor: "#7EC8E3",
+    neighborhood: "SoMa",
+    city: "San Francisco",
+    lat: 37.7785,
+    lng: -122.4056,
+    items: seedItems("Wen"),
+  },
+  {
+    name: "Amara",
+    phone: "+15550100008",
+    avatarColor: "#F4A6A6",
+    neighborhood: "Eureka Valley",
+    city: "San Francisco",
+    lat: 37.764,
+    lng: -122.43,
+    items: seedItems("Amara"),
+  },
+  {
+    name: "Diego",
+    phone: "+15550100009",
+    avatarColor: "#B5EAD7",
+    neighborhood: "Lower Haight",
+    city: "San Francisco",
+    lat: 37.7718,
+    lng: -122.4302,
+    items: seedItems("Diego"),
+  },
+  {
+    name: "Noor",
+    phone: "+15550100010",
+    avatarColor: "#FFDAC1",
+    neighborhood: "Western Addition",
+    city: "San Francisco",
+    lat: 37.78,
+    lng: -122.433,
+    items: seedItems("Noor"),
+  },
+  {
+    name: "Kenji",
+    phone: "+15550100011",
+    avatarColor: "#E2F0CB",
+    neighborhood: "Haight-Ashbury",
+    city: "San Francisco",
+    lat: 37.7705,
+    lng: -122.44,
+    items: seedItems("Kenji"),
+  },
+  {
+    name: "Fatima",
+    phone: "+15550100012",
+    avatarColor: "#FFC8DD",
+    neighborhood: "Alamo Square",
+    city: "San Francisco",
+    lat: 37.7764,
+    lng: -122.4346,
+    items: seedItems("Fatima"),
+  },
+  {
+    name: "Luca",
+    phone: "+15550100013",
+    avatarColor: "#BDE0FE",
+    neighborhood: "Union Square",
+    city: "San Francisco",
+    lat: 37.784,
+    lng: -122.4075,
+    items: seedItems("Luca"),
+  },
+  {
+    name: "Tomás",
+    phone: "+15550100014",
+    avatarColor: "#CDB4DB",
+    neighborhood: "Lower Nob Hill",
+    city: "San Francisco",
+    lat: 37.784,
+    lng: -122.415,
+    items: seedItems("Tomás"),
+  },
+  {
+    name: "Aisha",
+    phone: "+15550100015",
+    avatarColor: "#A0E7E5",
+    neighborhood: "Mission Dolores",
+    city: "San Francisco",
+    lat: 37.7596,
+    lng: -122.4269,
+    items: seedItems("Aisha"),
+  },
+  {
+    name: "Hana",
+    phone: "+15550100016",
+    avatarColor: "#FDFFB6",
+    neighborhood: "Duboce Triangle",
+    city: "San Francisco",
+    lat: 37.769,
+    lng: -122.433,
+    items: seedItems("Hana"),
+  },
+  {
+    name: "Ravi",
+    phone: "+15550100017",
+    avatarColor: "#FFADAD",
+    neighborhood: "Japantown",
+    city: "San Francisco",
+    lat: 37.784,
+    lng: -122.429,
+    items: seedItems("Ravi"),
+  },
+  {
+    name: "Elena",
+    phone: "+15550100018",
+    avatarColor: "#CAFFBF",
+    neighborhood: "Mission Bay",
+    city: "San Francisco",
+    lat: 37.77,
+    lng: -122.39,
+    items: seedItems("Elena"),
+  },
+  {
+    name: "Jamal",
+    phone: "+15550100019",
+    avatarColor: "#9BF6FF",
+    neighborhood: "Civic Center",
+    city: "San Francisco",
+    lat: 37.781,
+    lng: -122.415,
+    items: seedItems("Jamal"),
   },
 ];
+export const SEED_YARD_PHONES = SEED.map((g) => g.phone);
+
 
 export const storePhoto = internalAction({
   args: { base64: v.string() },
@@ -75,10 +237,12 @@ export const run = internalMutation({
         (await ctx.db.insert("garages", {
           ownerId,
           neighborhood: g.neighborhood,
+          city: g.city,
           approxLat: roundCoord(g.lat),
           approxLng: roundCoord(g.lng),
           isOpen: true,
         }));
+      if (garage && !garage.city) await ctx.db.patch(garage._id, { city: g.city });
       const existing = await ctx.db
         .query("items")
         .withIndex("by_garage", (q) => q.eq("garageId", garageId))
@@ -211,7 +375,9 @@ export const devCleanup = internalMutation({
       (i) =>
         !protect(i) &&
         !held.items.has(i._id) &&
-        (dropGarageIds.has(i.garageId) || TEST_TITLE.test(i.title) || (seedGarageIds.has(i.garageId) && !SEED_TITLES.has(i.title))),
+        (dropGarageIds.has(i.garageId) ||
+          (TEST_TITLE.test(i.title) && !(seedGarageIds.has(i.garageId) && SEED_TITLES.has(i.title))) ||
+          (seedGarageIds.has(i.garageId) && !SEED_TITLES.has(i.title))),
     );
     const dropItemIds = new Set<Id<"items">>(dropItems.map((i) => i._id));
 

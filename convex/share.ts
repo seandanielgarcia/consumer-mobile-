@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import type { HttpRouter } from "convex/server";
 import { internal } from "./_generated/api";
 import { httpAction, internalQuery } from "./_generated/server";
+import { formatPlace } from "../src/lib/place";
 
 export const yard = internalQuery({
   args: { id: v.string() },
@@ -17,7 +18,7 @@ export const yard = internalQuery({
     return {
       garageId: garage._id,
       ownerName: owner?.name ?? "Someone",
-      neighborhood: garage.neighborhood,
+      neighborhood: formatPlace(garage),
       items: items
         .filter((i) => i.status === "live")
         .map((i) => ({ title: i.title, photoUrl: i.photoUrl, priceCents: i.priceCents })),

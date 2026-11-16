@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { api, internal } from "../_generated/api";
 import type { Doc } from "../_generated/dataModel";
 import schema from "../schema";
+import { SEED_YARD_PHONES } from "../seed";
 
 const modules = import.meta.glob("../**/*.ts");
 
@@ -30,7 +31,7 @@ describe("garage location privacy", () => {
     await t.mutation(internal.seed.run, { photos: {} });
 
     const garages = await t.run(({ db }) => db.query("garages").collect());
-    expect(garages).toHaveLength(3);
+    expect(garages).toHaveLength(SEED_YARD_PHONES.length);
     garages.forEach(expectPrivateLocation);
   });
 

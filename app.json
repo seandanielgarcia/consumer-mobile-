@@ -10,9 +10,9 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.garagesale.app",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "Pick photos of clothes to sell.",
-        "NSCameraUsageDescription": "Take photos of clothes to sell.",
-        "NSLocationWhenInUseUsageDescription": "Show yard sales near you."
+        "NSPhotoLibraryUsageDescription": "Pick photos of things to sell.",
+        "NSCameraUsageDescription": "Take photos of things to sell.",
+        "NSLocationWhenInUseUsageDescription": "Show yardsales near you."
       }
     },
     "plugins": [
