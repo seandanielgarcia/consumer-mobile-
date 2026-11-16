@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { SEED_YARD_PHONES } from "./seed";
 
 const AVATAR_COLORS = ["#FFE14D", "#7EE0B5", "#FF8FB1", "#9DB4D6"];
 const CODE_TTL_MS = 10 * 60 * 1000;
@@ -111,6 +112,17 @@ export const devSkipVerification = mutation({
   },
 });
 
+const isTextableSeller = (phone: string) => isDemoPhone(phone) || SEED_YARD_PHONES.includes(phone);
+
+export const sellerTextable = query({
+  args: { garageId: v.id("garages") },
+  handler: async (ctx, { garageId }) => {
+    const garage = await ctx.db.get(garageId);
+    const seller = garage && (await ctx.db.get(garage.ownerId));
+    return !!seller && isTextableSeller(seller.phone);
+  },
+});
+
 export const sellerContact = query({
   args: { garageId: v.id("garages"), buyerId: v.optional(v.id("users")) },
   handler: async (ctx, { garageId, buyerId }) => {
@@ -120,7 +132,7 @@ export const sellerContact = query({
     const garage = await ctx.db.get(garageId);
     if (!garage || garage.ownerId === buyerId) return null;
     const seller = await ctx.db.get(garage.ownerId);
-    if (!seller?.phone) return null;
+    if (!seller?.phone || !isTextableSeller(seller.phone)) return null;
     return { firstName: seller.name.trim().split(/\s+/)[0] || "the seller", phone: seller.phone };
   },
 });

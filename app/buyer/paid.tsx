@@ -17,6 +17,7 @@ export default function BuyerPaid() {
   const { orderId, garageId, items } = useLocalSearchParams<{ orderId?: string; garageId?: string; items?: string }>();
   const order = useQuery(api.orders.getOrder, orderId ? { orderId: orderId as Id<"orders"> } : "skip");
   const convex = useConvex();
+  const textable = useQuery(api.users.sellerTextable, order?.garageId ? { garageId: order.garageId } : "skip");
   const [graceOver, setGraceOver] = useState(false);
   const [texting, setTexting] = useState(false);
   const [textProblem, setTextProblem] = useState<string | null>(null);
@@ -87,7 +88,7 @@ export default function BuyerPaid() {
         {textProblem && <Text style={{ ...sys.row, fontWeight: "500" }}>{textProblem}</Text>}
       </ScrollView>
       <View style={{ paddingHorizontal: 20, paddingBottom: 34, gap: 12 }}>
-        {paid && order?.garageId && <SecondaryButton label={`Text ${order.sellerName}`} onPress={text} disabled={texting} />}
+        {paid && textable && <SecondaryButton label={`Text ${order.sellerName}`} onPress={text} disabled={texting} />}
         <PrimaryButton label="Back to browsing" onPress={() => router.dismissTo("/buyer")} />
       </View>
     </View>

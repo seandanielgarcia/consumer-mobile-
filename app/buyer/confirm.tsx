@@ -25,6 +25,7 @@ export default function BuyerConfirm() {
   const location = useBuyerLocation();
   const buyerId = useCurrentUser()?.userId;
   const [now] = useState(() => Math.floor(Date.now() / 30000) * 30000);
+  const textable = useQuery(api.users.sellerTextable, { garageId });
   const garage = useQuery(api.buyer.garage, { garageId, lat: location.lat, lng: location.lng, buyerId, now });
   const [itemIds, setItemIds] = useState(() => (params.items ?? "").split(",").filter(Boolean) as Id<"items">[]);
   const [notice, setNotice] = useState<string | null>(null);
@@ -95,7 +96,7 @@ export default function BuyerConfirm() {
         {(notice ?? error) && <Text style={{ ...sys.row, fontWeight: "500" }}>{notice ?? error}</Text>}
       </ScrollView>
       <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 34, gap: 12, backgroundColor: colors.cream, borderTopWidth: 1, borderTopColor: colors.hairline }}>
-        <SecondaryButton label={`Text ${seller}`} onPress={text} disabled={texting || buying} />
+        {textable && <SecondaryButton label={`Text ${seller}`} onPress={text} disabled={texting || buying} />}
         <PrimaryButton label={`Pay ${formatPrice(total)}`} onPress={() => buy(items.map((i) => i._id))} loading={buying} />
       </View>
     </View>
