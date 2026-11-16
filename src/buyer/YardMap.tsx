@@ -23,11 +23,11 @@ export type MapYard = {
 
 // Pin palette: saturated, each pair passes 4.5:1 for the initial. Stable per yard.
 const PINS = [
-  { bg: "#2F5BFF", fg: "#FFFFFF" },
-  { bg: "#B6F03A", fg: "#1B1B3A" },
-  { bg: "#FF7A1A", fg: "#1B1B3A" },
-  { bg: "#FF4FA3", fg: "#FFFFFF" },
-  { bg: "#1B1B3A", fg: "#FFFFFF" },
+  { bg: colors.mapBlue, fg: colors.white },
+  { bg: colors.mapLime, fg: colors.mapInk },
+  { bg: colors.mapOrange, fg: colors.mapInk },
+  { bg: colors.mapPink, fg: colors.white },
+  { bg: colors.mapInk, fg: colors.white },
 ];
 const pinFor = (id: string) => PINS[[...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % PINS.length];
 
@@ -91,9 +91,9 @@ export function YardMap({
         mapPadding={{ top: topInset, right: 0, bottom: bottomInset, left: 0 }}
         accessibilityLabel={`Map of ${yards.length} yards within ${radiusMiles} miles`}
       >
-        <Circle center={{ latitude: center.lat, longitude: center.lng }} radius={radiusMiles * MILE_M} fillColor="rgba(47,91,255,0.10)" strokeColor="rgba(47,91,255,0.25)" strokeWidth={1} />
+        <Circle center={{ latitude: center.lat, longitude: center.lng }} radius={radiusMiles * MILE_M} fillColor={colors.mapRadiusFill} strokeColor={colors.mapRadiusLine} strokeWidth={1} />
         <Marker coordinate={{ latitude: center.lat, longitude: center.lng }} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false} accessibilityLabel="Your search spot">
-          <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: "#2F5BFF", borderWidth: 4, borderColor: colors.white }} />
+          <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.mapBlue, borderWidth: 4, borderColor: colors.white }} />
         </Marker>
         {yards.map((yard) => {
           const on = yard.garageId === selected;
@@ -119,10 +119,10 @@ export function YardMap({
                   borderRadius: size / 2,
                   backgroundColor: pin.bg,
                   borderWidth: on ? 5 : 3,
-                  borderColor: on ? "#1B1B3A" : colors.white,
+                  borderColor: on ? colors.mapInk : colors.white,
                   alignItems: "center",
                   justifyContent: "center",
-                  shadowColor: "#1B1B3A",
+                  shadowColor: colors.mapInk,
                   shadowOpacity: 0.22,
                   shadowRadius: 6,
                   shadowOffset: { width: 0, height: 4 },
@@ -134,7 +134,7 @@ export function YardMap({
           );
         })}
       </MapView>
-      <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(243,242,250,0.28)" }} />
+      <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: colors.mapWash }} />
 
       {yards.length > 0 && (
         <ScrollView
@@ -165,8 +165,8 @@ export function YardMap({
                   borderRadius: 22,
                   backgroundColor: colors.white,
                   borderWidth: 2,
-                  borderColor: on ? "#2F5BFF" : colors.white,
-                  shadowColor: "#1B1B3A",
+                  borderColor: on ? colors.mapBlue : colors.white,
+                  shadowColor: colors.mapInk,
                   shadowOpacity: 0.14,
                   shadowRadius: 14,
                   shadowOffset: { width: 0, height: 8 },

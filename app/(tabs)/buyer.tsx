@@ -181,7 +181,7 @@ export default function BuyerNearYou() {
           alignItems: "center",
           gap: 10,
           paddingHorizontal: 16,
-          shadowColor: "#1B1B3A",
+          shadowColor: colors.mapInk,
           shadowOpacity: view === "map" ? 0.12 : 0,
           shadowRadius: 12,
           shadowOffset: { width: 0, height: 6 },
@@ -245,7 +245,7 @@ export default function BuyerNearYou() {
 
   if (view === "map") {
     return (
-      <View style={{ flex: 1, backgroundColor: "#F3F2FA" }}>
+      <View style={{ flex: 1, backgroundColor: colors.mapGround }}>
         <YardMap
           yards={(yards ?? []).filter((y) => !filtered || shown.some((i) => i.garageId === y.garageId))}
           center={{ lat: location.lat, lng: location.lng }}
@@ -256,7 +256,7 @@ export default function BuyerNearYou() {
         <View pointerEvents="box-none" style={{ position: "absolute", left: 20, right: 20, top: 8 }}>{controls}</View>
         {yards !== undefined && yards.length === 0 && (
           <View pointerEvents="box-none" style={{ position: "absolute", left: 20, right: 20, bottom: 24 }}>
-            <View style={{ backgroundColor: colors.white, borderRadius: 22, padding: 16, shadowColor: "#1B1B3A", shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 8 } }}>
+            <View style={{ backgroundColor: colors.white, borderRadius: 22, padding: 16, shadowColor: colors.mapInk, shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 8 } }}>
               <Text style={{ ...sys.row, fontWeight: "700" }}>{q.trim() ? `No "${q.trim()}" within ${radiusMiles} mi yet` : `No yards within ${radiusMiles} mi yet`}</Text>
               {wider && (
                 <Pressable onPress={() => setRadiusMiles(wider)} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
