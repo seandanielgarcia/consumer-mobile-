@@ -10,7 +10,6 @@ import { aboutMiles, detailLine, formatPrice } from "../../../src/buyer/format";
 import { ItemCard } from "../../../src/buyer/ItemCard";
 import { PrimaryButton } from "../../../src/components/PrimaryButton";
 import { useBuyerLocation } from "../../../src/buyer/location";
-import { useHeaderBack } from "../../../src/lib/headerBack";
 import { formatPlace } from "../../../src/lib/place";
 import { useCurrentUser } from "../../../src/lib/useCurrentUser";
 import { pinFor } from "../../../src/buyer/pins";
@@ -40,7 +39,6 @@ export default function BuyerGarage() {
   const buy = () => router.push({ pathname: "/buyer/confirm", params: { garageId, items: pickedItems.map((i) => i._id).join(",") } });
   const { width } = useWindowDimensions();
   const cardWidth = (width - 40 - 12) / 2;
-  useHeaderBack(() => (router.canGoBack() ? router.back() : router.replace("/buyer")));
 
   useEffect(() => {
     if (!garage) return;

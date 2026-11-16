@@ -1,8 +1,10 @@
 import { useQuery } from "convex/react";
+import * as Haptics from "expo-haptics";
 import { Tabs } from "expo-router";
 import { ActionSheetIOS, View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
+import { AppHeader } from "../../src/components/AppHeader";
 import { useEntered } from "../../src/lib/entered";
 import { pickFromCamera, pickFromLibrary } from "../../src/lib/sell";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
@@ -56,11 +58,13 @@ export default function TabsLayout() {
   const garage = useQuery(api.garages.mine, user ? { ownerId: user.userId } : "skip");
   const entered = useEntered();
   const firstOpen = !entered && !user && !garage;
+  const landing = !user || garage === null;
 
   return (
     <Tabs
+      screenListeners={{ tabPress: () => Haptics.selectionAsync() }}
       screenOptions={{
-        headerShown: false,
+        header: ({ route }) => <AppHeader landing={route.name === "index" && landing} />,
         tabBarActiveTintColor: colors.brand,
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: firstOpen

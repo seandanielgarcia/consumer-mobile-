@@ -1,11 +1,11 @@
 import { useQuery } from "convex/react";
-import { router, usePathname } from "expo-router";
+import { router } from "expo-router";
 import { useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
-import { guardedLeave, useHeaderBackState } from "../lib/headerBack";
+import { guardedLeave } from "../lib/headerBack";
 import { requireUser, signOut, useCurrentUser } from "../lib/useCurrentUser";
 import { pinFor } from "../buyer/pins";
 import { colors, fonts, spacing } from "../theme";
@@ -20,15 +20,12 @@ function PersonCircleIcon({ size, color }: { size: number; color: string }) {
   );
 }
 
-export function AppHeader() {
+// Rendered as each screen's own header, so it moves with the screen during push, pop and swipe-back.
+export function AppHeader({ landing = false, onBack }: { landing?: boolean; onBack?: () => void }) {
   const insets = useSafeAreaInsets();
-  const pathname = usePathname();
   const user = useCurrentUser();
   const garage = useQuery(api.garages.mine, user ? { ownerId: user.userId } : "skip");
   const [open, setOpen] = useState(false);
-  const back = useHeaderBackState();
-
-  const landing = pathname === "/" && !garage;
   const pin = user ? pinFor(user.userId) : null;
 
   const press = () => {
@@ -49,14 +46,14 @@ export function AppHeader() {
   return (
     <View style={[styles.bar, { paddingTop: insets.top, backgroundColor: colors.cream }]}>
       <View style={styles.row}>
-        {back ? (
-          <Pressable onPress={back.onPress} hitSlop={8} style={styles.back} accessibilityRole="button" accessibilityLabel="Back">
+        {onBack ? (
+          <Pressable onPress={onBack} hitSlop={8} style={styles.back} accessibilityRole="button" accessibilityLabel="Back">
             <Text style={styles.backText}>‹ Back</Text>
           </Pressable>
         ) : (
           <View />
         )}
-        {!landing && !back && (
+        {!landing && !onBack && (
           <View style={[styles.wordmarkSlot, styles.wordmarkLeft]} pointerEvents="box-none">
             <Pressable onPress={() => guardedLeave(() => router.dismissTo("/"))} hitSlop={8} accessibilityRole="link" accessibilityLabel="yardsale, Home">
               <Text style={styles.wordmark}>yardsale</Text>
