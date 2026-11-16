@@ -5,6 +5,8 @@ import * as WebBrowser from "expo-web-browser";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 
+import { rememberPurchase } from "./purchaseHistory";
+
 let checkingOut = false;
 
 export const isCheckingOut = () => checkingOut;
@@ -52,6 +54,7 @@ export async function startCheckout(
 ): Promise<{ orderId: Id<"orders">; paid: boolean }> {
   const { orderId } = await convex.mutation(api.orders.createPending, { buyerId, garageId, itemIds });
   const returnUrl = Linking.createURL("buyer/paid", { queryParams: { garageId, items: itemIds.join(",") } });
+  await rememberPurchase(buyerId, orderId);
   onOrder(orderId);
   const { purchaseUrl } = (await convex.action(anyApi.whop.createOrderCheckout, { orderId, returnUrl })) as { purchaseUrl: string };
   checkingOut = true;
