@@ -64,7 +64,7 @@ export function EditItemSheet({
   const [pickerText, setPickerText] = useState("");
   const [freeText, setFreeText] = useState(false);
   const priceFresh = useRef(false);
-  const keyboard = useKeyboardInset();
+  const keyboardInset = useKeyboardInset();
   const priceSelection = useRef({ start: 0, end: 0 });
   const fields: ChoiceField[] = sizeRelevant(value)
     ? ["condition", "size", "brand", "color", "category"]
@@ -91,7 +91,7 @@ export function EditItemSheet({
 
   return (
     <Modal visible={visible} presentationStyle="pageSheet" animationType="slide" onRequestClose={onClose}>
-      <View ref={keyboard.ref} style={[styles.screen, { paddingBottom: keyboard.inset }]}>
+      <View style={[styles.screen, { paddingBottom: keyboardInset }]}>
         <View style={styles.header}>
           <Pressable onPress={onClose} hitSlop={12} style={styles.close} accessibilityRole="button">
             <Text style={styles.closeText}>Close</Text>

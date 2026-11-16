@@ -47,7 +47,7 @@ export default function SignIn() {
   const [error, setError] = useState<string | null>(null);
   const done = useRef(false);
   const phoneInput = useRef<React.ComponentRef<typeof TextInput>>(null);
-  const keyboard = useKeyboardInset();
+  const keyboardInset = useKeyboardInset();
   const verified = useQuery(api.users.isVerified, pending ? { userId: pending.userId } : "skip");
   const normalized = normalizePhone(phone);
   const missing = name.trim() === "" ? "Add your first name" : normalized === null ? "Add your phone number" : "";
@@ -115,7 +115,7 @@ export default function SignIn() {
   };
 
   return (
-    <View ref={keyboard.ref} style={[styles.flex, { paddingBottom: keyboard.inset }]}>
+    <View style={[styles.flex, { paddingBottom: keyboardInset }]}>
       <View style={styles.screen}>
         {Platform.OS === "ios" && (
           <InputAccessoryView nativeID={PHONE_ACCESSORY}>

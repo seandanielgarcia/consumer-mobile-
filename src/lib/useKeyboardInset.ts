@@ -1,19 +1,16 @@
-import { type ComponentRef, useEffect, useRef, useState } from "react";
-import { Keyboard, LayoutAnimation, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Dimensions, Keyboard, LayoutAnimation } from "react-native";
 
-// How far the keyboard covers this view, measured in window coordinates so it also holds inside iOS page sheets,
-// which float above the bottom of the screen.
+// How much of the screen the keyboard covers, for a view that reaches the bottom of the screen.
+// KeyboardAvoidingView measures inside an iOS page sheet's own coordinates, so it under-pads by the sheet's top offset.
 export function useKeyboardInset() {
-  const ref = useRef<ComponentRef<typeof View>>(null);
   const [inset, setInset] = useState(0);
   useEffect(() => {
     const subscription = Keyboard.addListener("keyboardWillChangeFrame", ({ endCoordinates, duration }) => {
-      ref.current?.measureInWindow((_x, y, _width, height) => {
-        if (duration) LayoutAnimation.configureNext({ duration, update: { type: LayoutAnimation.Types.keyboard } });
-        setInset(Math.max(0, y + height - endCoordinates.screenY));
-      });
+      if (duration) LayoutAnimation.configureNext({ duration, update: { type: LayoutAnimation.Types.keyboard } });
+      setInset(Math.max(0, Dimensions.get("screen").height - endCoordinates.screenY));
     });
     return () => subscription.remove();
   }, []);
-  return { ref, inset };
+  return inset;
 }
