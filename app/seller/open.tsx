@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { textKeiki } from "../../src/lib/keiki";
+import { saveKeikiToContacts, textKeiki } from "../../src/lib/keiki";
 import { formatPlace } from "../../src/lib/place";
 import { shareYard } from "../../src/lib/shareYard";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
@@ -53,9 +53,14 @@ export default function SellerOpen() {
       <Pressable style={styles.donePill} accessibilityRole="button" onPress={() => router.dismissTo("/")}>
         <Text style={styles.donePillText}>Done</Text>
       </Pressable>
-      <Pressable onPress={textKeiki} accessibilityRole="button" style={styles.keiki}>
-        <Text style={styles.keikiText}>More later? Text Keiki a pic and a price.</Text>
-      </Pressable>
+      <View style={styles.keikiCard}>
+        <Pressable onPress={textKeiki} accessibilityRole="button" style={styles.keiki}>
+          <Text style={styles.keikiText}>More later? Text Keiki a pic and a price.</Text>
+        </Pressable>
+        <Pressable onPress={saveKeikiToContacts} hitSlop={8} accessibilityRole="button" style={styles.keiki}>
+          <Text style={styles.keikiSave}>Save Keiki to contacts</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -106,6 +111,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   donePillText: { ...fonts.semibold, fontSize: 17, color: colors.ink },
+  keikiCard: { alignItems: "center" },
   keiki: { minHeight: spacing.minButton, alignItems: "center", justifyContent: "center" },
+  keikiSave: { ...fonts.semibold, fontSize: 15, color: colors.cream },
   keikiText: { ...fonts.medium, fontSize: 15, color: colors.cream, textDecorationLine: "underline" },
 });

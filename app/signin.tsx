@@ -13,12 +13,13 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { api } from "../convex/_generated/api";
 import type { Id } from "../convex/_generated/dataModel";
 import { cancelSignIn, setCurrentUser } from "../src/lib/useCurrentUser";
-import { colors, fonts, primaryButton, primaryButtonText, spacing, type } from "../src/theme";
+import { colors, fonts, primaryButton, primaryButtonText, spacing, sys, type } from "../src/theme";
 
 const KEIKI_NUMBER = "+17796251378";
 const KEIKI_NUMBER_DISPLAY = "+1 779-625-1378";
@@ -46,9 +47,13 @@ export default function SignIn() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const done = useRef(false);
+  const phoneInput = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const window = useWindowDimensions();
+  const [sheetHeight, setSheetHeight] = useState(window.height);
   const verified = useQuery(api.users.isVerified, pending ? { userId: pending.userId } : "skip");
   const normalized = normalizePhone(phone);
-  const canContinue = name.trim() !== "" && normalized !== null && !saving;
+  const missing = name.trim() === "" ? "Add your first name" : normalized === null ? "Add your phone number" : "";
+  const canContinue = !missing && !saving;
 
   const setPending = (next: Pending | null) => {
     setPendingState(next);
@@ -112,123 +117,144 @@ export default function SignIn() {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.screen}>
-      {Platform.OS === "ios" && (
-        <InputAccessoryView nativeID={PHONE_ACCESSORY}>
-          <View style={styles.accessory}>
-            <Pressable onPress={Keyboard.dismiss} hitSlop={10}>
-              <Text style={styles.accessoryDone}>Done</Text>
-            </Pressable>
-          </View>
-        </InputAccessoryView>
-      )}
-      <Pressable onPress={() => (pending ? setPending(null) : router.canGoBack() ? router.back() : router.replace("/"))} hitSlop={12} style={styles.back}>
-        <Text style={styles.backText}>{pending ? "← Back" : "Cancel"}</Text>
-      </Pressable>
-      {pending ? (
-        <>
-          <View style={styles.instructionBlock}>
-            <Text style={styles.label}>Text this to Keiki</Text>
-            <View style={styles.codeChip}>
-              <Text style={styles.codeChipText}>K-FERUEU verify {pending.code}</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={window.height - sheetHeight}
+      onLayout={(e) => setSheetHeight(e.nativeEvent.layout.height)}
+      style={styles.flex}
+    >
+      <View style={styles.screen}>
+        {Platform.OS === "ios" && (
+          <InputAccessoryView nativeID={PHONE_ACCESSORY}>
+            <View style={styles.accessory}>
+              <Pressable onPress={Keyboard.dismiss} hitSlop={10}>
+                <Text style={styles.accessoryDone}>Done</Text>
+              </Pressable>
             </View>
-            <Text style={styles.toNumber}>to {KEIKI_NUMBER_DISPLAY}</Text>
-            <Text style={styles.fromNumber}>from {pending.phone}</Text>
-          </View>
-          <View style={styles.waiting}>
-            <ActivityIndicator color={colors.brand} size="small" />
-            <Text style={styles.waitingText}>Waiting for your text…</Text>
-          </View>
-        </>
-      ) : (
-        <>
-          <Text style={styles.headline}>{reason ?? "Sign in to continue"}</Text>
-          <View style={styles.fields}>
-            <Text style={styles.fieldLabel}>First name</Text>
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              placeholder="Hailey"
-              placeholderTextColor={colors.muted}
-              autoCapitalize="words"
-              autoComplete="given-name"
-              textContentType="givenName"
-              returnKeyType="next"
-              style={styles.input}
-              autoFocus
-            />
-          </View>
-          <View style={styles.fields}>
-            <Text style={styles.fieldLabel}>Phone number</Text>
-            <TextInput
-              value={phone}
-              onChangeText={(text) => {
-                setPhone(text);
-                if (text.replace(/\D/g, "").length === 10) Keyboard.dismiss();
-              }}
-              inputAccessoryViewID={PHONE_ACCESSORY}
-              placeholder="(555) 555-0123"
-              placeholderTextColor={colors.muted}
-              keyboardType="phone-pad"
-              autoComplete="tel"
-              textContentType="telephoneNumber"
-              style={styles.input}
-            />
-            <Text style={styles.subhead}>Buyers see your first name only.</Text>
-          </View>
-        </>
-      )}
-      {error && <Text style={styles.error}>{error}</Text>}
-      <View style={styles.spacer} />
-      {pending ? (
-        <>
-          {__DEV__ && (
-            <Pressable onPress={skip} hitSlop={8} style={styles.skip}>
-              <Text style={styles.skipText}>Skip (dev)</Text>
-            </Pressable>
-          )}
-          <Pressable onPress={textKeiki} style={styles.cta} accessibilityRole="button">
-            <Text style={styles.ctaText}>Open Messages</Text>
+          </InputAccessoryView>
+        )}
+        <View style={styles.header}>
+          <Pressable
+            onPress={() => (pending ? setPending(null) : router.canGoBack() ? router.back() : router.replace("/"))}
+            hitSlop={12}
+            style={styles.headerSide}
+            accessibilityRole="button"
+          >
+            <Text style={styles.headerAction}>{pending ? "Back" : "Close"}</Text>
           </Pressable>
-        </>
-      ) : (
-        <Pressable
-          onPress={submit}
-          disabled={!canContinue}
-          style={[styles.cta, !canContinue && styles.ctaDisabled]}
-          accessibilityRole="button"
-        >
-          {saving ? <ActivityIndicator color={colors.cream} /> : <Text style={styles.ctaText}>Continue</Text>}
-        </Pressable>
-      )}
+          <Text style={styles.headerTitle}>Sign in</Text>
+          <View style={styles.headerSide} />
+        </View>
+        {pending ? (
+          <>
+            <View style={styles.instructionBlock}>
+              <Text style={styles.label}>Text this to Keiki</Text>
+              <View style={styles.codeChip}>
+                <Text style={styles.codeChipText}>K-FERUEU verify {pending.code}</Text>
+              </View>
+              <Text style={styles.toNumber}>to {KEIKI_NUMBER_DISPLAY}</Text>
+              <Text style={styles.fromNumber}>from {pending.phone}</Text>
+            </View>
+            <View style={styles.waiting}>
+              <ActivityIndicator color={colors.brand} size="small" />
+              <Text style={styles.waitingText}>Waiting for your text…</Text>
+            </View>
+          </>
+        ) : (
+          <>
+            <Text style={styles.headline}>{reason ?? "Sign in to continue"}</Text>
+            <View style={styles.fields}>
+              <Text style={sys.label}>First name</Text>
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                placeholder="Hailey"
+                placeholderTextColor={colors.muted}
+                autoCapitalize="words"
+                autoComplete="given-name"
+                textContentType="givenName"
+                returnKeyType="next"
+                submitBehavior="submit"
+                onSubmitEditing={() => phoneInput.current?.focus()}
+                style={styles.input}
+                autoFocus
+              />
+            </View>
+            <View style={styles.fields}>
+              <Text style={sys.label}>Phone number</Text>
+              <TextInput
+                ref={phoneInput}
+                value={phone}
+                onChangeText={(text) => {
+                  setPhone(text);
+                  if (text.replace(/\D/g, "").length === 10) Keyboard.dismiss();
+                }}
+                inputAccessoryViewID={PHONE_ACCESSORY}
+                placeholder="(555) 555-0123"
+                placeholderTextColor={colors.muted}
+                keyboardType="phone-pad"
+                autoComplete="tel"
+                textContentType="telephoneNumber"
+                style={styles.input}
+              />
+              <Text style={styles.subhead}>Buyers see your first name only.</Text>
+            </View>
+          </>
+        )}
+        {error && <Text style={styles.error}>{error}</Text>}
+        <View style={styles.spacer} />
+        {pending ? (
+          <>
+            {__DEV__ && (
+              <Pressable onPress={skip} hitSlop={8} style={styles.skip}>
+                <Text style={styles.skipText}>Skip (dev)</Text>
+              </Pressable>
+            )}
+            <Pressable onPress={textKeiki} style={styles.cta} accessibilityRole="button">
+              <Text style={styles.ctaText}>Open Messages</Text>
+            </Pressable>
+          </>
+        ) : (
+          <Pressable
+            onPress={submit}
+            disabled={!canContinue}
+            style={[styles.cta, !canContinue && styles.ctaDisabled]}
+            accessibilityRole="button"
+          >
+            {saving ? <ActivityIndicator color={colors.cream} /> : <Text style={styles.ctaText}>{missing || "Continue"}</Text>}
+          </Pressable>
+        )}
+      </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1, backgroundColor: colors.cream },
   screen: {
     flex: 1,
     backgroundColor: colors.cream,
-    paddingTop: 24,
+    paddingTop: 8,
     paddingHorizontal: spacing.sidePad,
     paddingBottom: 34,
     gap: 16,
   },
-  back: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center" },
-  backText: { ...fonts.body, fontSize: 15, color: colors.muted },
+  header: { height: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  headerSide: { minWidth: 60, minHeight: spacing.minButton, justifyContent: "center" },
+  headerAction: { ...fonts.semibold, fontSize: 17, color: colors.brand },
+  headerTitle: { ...fonts.semibold, fontSize: 17, color: colors.ink },
   headline: { ...type.title, color: colors.ink },
-  fieldLabel: { ...fonts.semibold, fontSize: 15, color: colors.ink },
   subhead: { ...fonts.body, fontSize: 14, lineHeight: 18, color: colors.muted },
-  fields: { gap: 10 },
+  fields: { gap: 8 },
   input: {
-    height: 50,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: colors.ink,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.hairline,
     backgroundColor: colors.white,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     ...fonts.body,
-    fontSize: 16,
+    fontSize: 17,
     color: colors.ink,
   },
   instructionBlock: { gap: 10, alignItems: "flex-start" },
@@ -260,6 +286,6 @@ const styles = StyleSheet.create({
   skip: { alignSelf: "center", minHeight: 44, justifyContent: "center" },
   skipText: { ...fonts.semibold, fontSize: 15, color: colors.muted, textDecorationLine: "underline" },
   cta: primaryButton,
-  ctaDisabled: { opacity: 0.5 },
+  ctaDisabled: { opacity: 0.4 },
   ctaText: primaryButtonText,
 });

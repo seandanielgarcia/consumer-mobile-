@@ -56,7 +56,7 @@ export function EditItemSheet({
   busy?: boolean;
   error?: string | null;
   onSave: () => void;
-  onRemove: () => void;
+  onRemove?: () => void;
   onClose: () => void;
 }) {
   const [picker, setPicker] = useState<ChoiceField | null>(null);
@@ -200,9 +200,11 @@ export function EditItemSheet({
           >
             <Text style={styles.saveText}>{missing ? `Add ${missing} to save` : "Save"}</Text>
           </Pressable>
-          <Pressable onPress={confirmRemove} disabled={busy} hitSlop={8} style={styles.remove} accessibilityRole="button">
-            <Text style={styles.removeText}>Remove item</Text>
-          </Pressable>
+          {onRemove && (
+            <Pressable onPress={confirmRemove} disabled={busy} hitSlop={8} style={styles.remove} accessibilityRole="button">
+              <Text style={styles.removeText}>Remove item</Text>
+            </Pressable>
+          )}
         </View>
         <Modal visible={picker !== null} transparent animationType="slide" onRequestClose={() => pick()}>
           <Pressable style={styles.scrim} onPress={() => pick()} />
@@ -289,7 +291,7 @@ const styles = StyleSheet.create({
   saveText: primaryButtonText,
   disabled: { opacity: 0.4 },
   remove: { alignSelf: "center", minHeight: spacing.minButton, justifyContent: "center" },
-  removeText: { ...fonts.medium, fontSize: 16, color: "#D93025" },
+  removeText: { ...fonts.medium, fontSize: 16, color: colors.destructive },
   scrim: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)" },
   picker: { backgroundColor: colors.cream, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: spacing.sidePad, paddingBottom: 34, gap: 4 },
   pickerTitle: { ...fonts.semibold, fontSize: 20, color: colors.ink, marginBottom: 8 },
