@@ -1,12 +1,12 @@
 import { useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
 import { Tabs } from "expo-router";
-import { ActionSheetIOS, View } from "react-native";
+import { View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import { api } from "../../convex/_generated/api";
 import { AppHeader } from "../../src/components/AppHeader";
 import { useEntered } from "../../src/lib/entered";
-import { pickFromCamera, pickFromLibrary } from "../../src/lib/sell";
+import { openSellSheet } from "../../src/lib/sell";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { colors, shadows } from "../../src/theme";
 
@@ -90,13 +90,7 @@ export default function TabsLayout() {
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
-            ActionSheetIOS.showActionSheetWithOptions(
-              { options: ["Choose from library", "Take photo", "Cancel"], cancelButtonIndex: 2 },
-              (index) => {
-                if (index === 0) pickFromLibrary();
-                if (index === 1) pickFromCamera();
-              },
-            );
+            openSellSheet();
           },
         }}
       />

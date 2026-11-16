@@ -7,11 +7,11 @@ import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import { EditItemSheet, type EditableItem } from "../../src/components/EditItemSheet";
 import { PrimaryButton } from "../../src/components/PrimaryButton";
-import { pickFromLibrary, pickSamplePhotos } from "../../src/lib/sell";
 import { formatPlace } from "../../src/lib/place";
 import { shareYard } from "../../src/lib/shareYard";
 import { stockImages } from "../../src/lib/stockImages";
 import { markEntered } from "../../src/lib/entered";
+import { openSellSheet, pickSamplePhotos, pickFromLibrary } from "../../src/lib/sell";
 import { useCurrentUser } from "../../src/lib/useCurrentUser";
 import { ShareIcon } from "../../src/components/icons";
 import { colors, fonts, secondaryButton, secondaryButtonText, shadows, spacing, surfaces } from "../../src/theme";
@@ -56,7 +56,7 @@ function Landing({ user }: { user: { userId: Doc<"users">["_id"]; name?: string 
           ))}
         </View>
         <View style={styles.buttons}>
-          <Pressable style={styles.button} onPress={() => (markEntered(), pickFromLibrary())} accessibilityRole="button">
+          <Pressable style={styles.button} onPress={() => (markEntered(), openSellSheet())} accessibilityRole="button">
             <Text style={styles.buttonText}>Sell your stuff</Text>
           </Pressable>
           <Pressable style={styles.buttonSecondary} onPress={() => (markEntered(), router.navigate("/buyer"))} accessibilityRole="button">
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     ...shadows.pin,
   },
   sharePillPressed: { transform: [{ scale: 0.96 }], opacity: 0.9 },
-  sharePillText: { fontSize: 15, fontWeight: "800", color: colors.ink },
+  sharePillText: { ...fonts.semibold, fontSize: 15, color: colors.ink },
   shopPill: {
     height: 56,
     borderRadius: spacing.radius,

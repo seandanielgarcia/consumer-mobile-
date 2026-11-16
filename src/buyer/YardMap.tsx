@@ -2,7 +2,7 @@ import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
-import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { Keyboard, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import MapView, { Circle, Marker, type Region } from "react-native-maps";
 import type { Id } from "../../convex/_generated/dataModel";
 import { formatPlace } from "../lib/place";
@@ -70,6 +70,7 @@ export function YardMap({
   }, [yards, selected]);
 
   const pick = (yard: MapYard & { pinLat: number; pinLng: number }) => {
+    Keyboard.dismiss();
     Haptics.selectionAsync().catch(() => {});
     setSelected(yard.garageId);
     carousel.current?.scrollTo({ x: 0, animated: true });
@@ -92,7 +93,10 @@ export function YardMap({
         showsCompass={false}
         pitchEnabled={false}
         rotateEnabled={false}
-        onPress={() => setSelected(null)}
+        onPress={() => {
+          Keyboard.dismiss();
+          setSelected(null);
+        }}
         mapPadding={{ top: topInset, right: 0, bottom: bottomInset, left: 0 }}
         accessibilityLabel={`Map of ${yards.length} yards within ${radiusMiles} miles`}
       >
